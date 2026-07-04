@@ -27,9 +27,7 @@ export default function Home() {
           <LatestNewsSection />
         </ScrollReveal>
         <div className="newspaper-rule max-w-7xl mx-auto" />
-        <ScrollReveal effect="zoom" delay={50} className="section-sheen section-crest">
-          <FeaturedStorySection />
-        </ScrollReveal>
+        <FeaturedStorySection />
         <div className="newspaper-rule max-w-7xl mx-auto" />
         <ScrollReveal effect="rise" delay={40} className="section-wave">
           <CategoriesSection />

@@ -5,7 +5,10 @@ import SectionHeader from "@/components/newspaper/SectionHeader";
 
 export default function FeaturedStorySection() {
   return (
-    <section className="bg-heritage py-12 text-cream">
+    <section
+      className="py-12 text-cream"
+      style={{ backgroundColor: "#4C2B08" }}
+    >
       <div className="mx-auto max-w-7xl px-4">
         <SectionHeader
           title="Featured"

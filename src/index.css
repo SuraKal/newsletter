@@ -143,10 +143,10 @@
 .category-label {
   font-family: 'Inter', sans-serif;
   font-size: 0.65rem;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: hsl(var(--heritage));
+  color: #4c2b08;
 }
 
 /* Metadata text */
