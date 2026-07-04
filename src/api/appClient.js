@@ -58,12 +58,20 @@ const writeJson = (key, value) => {
 };
 
 const ensureSeedData = () => {
-  if (!storage || storage.getItem(usersKey)) {
+  if (!storage) {
     return;
   }
 
-  writeJson(usersKey, defaultUsers);
-  writeJson(resetTokensKey, {});
+  const existingUsers = readJson(usersKey, []);
+  const preservedUsers = existingUsers.filter(
+    (user) => user.id !== "admin-1" && user.id !== "reader-1",
+  );
+
+  writeJson(usersKey, [...defaultUsers, ...preservedUsers]);
+
+  if (!storage.getItem(resetTokensKey)) {
+    writeJson(resetTokensKey, {});
+  }
 };
 
 const readUsers = () => {
