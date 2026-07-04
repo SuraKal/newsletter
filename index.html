@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ንቐደም — Premium Newspaper & Publishing</title>
+    <meta
+      name="description"
+      content="ንቐደም is a premium newspaper publishing platform delivering trusted journalism, in-depth analysis, and real-time news coverage. Subscribe for unlimited digital and print access."
+    />
+    <meta property="og:title" content="ንቐደም — The Newspaper of Record" />
+    <meta
+      property="og:description"
+      content="Premium journalism, delivered digitally and to your door. Subscribe to ንቐደም for unlimited access to award-winning reporting."
+    />
+    <meta property="og:type" content="website" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("ንቐደም-theme");
+          if (t === "dark") {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

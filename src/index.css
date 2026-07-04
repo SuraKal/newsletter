@@ -1,0 +1,203 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 20% 97%;
+    --foreground: 0 0% 7%;
+    --card: 40 20% 97%;
+    --card-foreground: 0 0% 7%;
+    --popover: 40 20% 97%;
+    --popover-foreground: 0 0% 7%;
+    --primary: 25 16% 24%;
+    --primary-foreground: 40 20% 97%;
+    --secondary: 37 18% 93%;
+    --secondary-foreground: 0 0% 7%;
+    --muted: 37 18% 93%;
+    --muted-foreground: 30 5% 37%;
+    --accent: 37 18% 93%;
+    --accent-foreground: 0 0% 7%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 30 10% 78%;
+    --input: 30 10% 78%;
+    --ring: 25 16% 24%;
+    --chart-1: 25 16% 24%;
+    --chart-2: 30 5% 37%;
+    --chart-3: 37 18% 93%;
+    --chart-4: 40 20% 97%;
+    --chart-5: 0 0% 7%;
+    --radius: 0.25rem;
+    --font-heading: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --font-body: 'Lora', Georgia, serif;
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --paper: 40 20% 97%;
+    --ink: 0 0% 7%;
+    --heritage: 25 16% 24%;
+    --vellum: 37 18% 93%;
+    --redacted: 30 5% 37%;
+    --sidebar-background: 37 18% 93%;
+    --sidebar-foreground: 0 0% 7%;
+    --sidebar-primary: 25 16% 24%;
+    --sidebar-primary-foreground: 40 20% 97%;
+    --sidebar-accent: 37 18% 93%;
+    --sidebar-accent-foreground: 0 0% 7%;
+    --sidebar-border: 30 10% 78%;
+    --sidebar-ring: 25 16% 24%;
+  }
+
+  .dark {
+    --background: 20 12% 9%;
+    --foreground: 40 30% 93%;
+    --card: 20 12% 11%;
+    --card-foreground: 40 30% 93%;
+    --popover: 20 12% 11%;
+    --popover-foreground: 40 30% 93%;
+    --primary: 35 35% 62%;
+    --primary-foreground: 20 12% 9%;
+    --secondary: 20 10% 14%;
+    --secondary-foreground: 40 30% 93%;
+    --muted: 20 10% 14%;
+    --muted-foreground: 30 8% 62%;
+    --accent: 20 10% 14%;
+    --accent-foreground: 40 30% 93%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 40 30% 93%;
+    --border: 30 8% 22%;
+    --input: 30 8% 22%;
+    --ring: 35 35% 62%;
+    --chart-1: 35 35% 62%;
+    --chart-2: 30 8% 62%;
+    --chart-3: 20 10% 14%;
+    --chart-4: 20 12% 9%;
+    --chart-5: 40 30% 93%;
+    --paper: 20 12% 9%;
+    --ink: 40 30% 93%;
+    --heritage: 35 35% 62%;
+    --vellum: 20 10% 13%;
+    --redacted: 30 8% 62%;
+    --sidebar-background: 20 10% 13%;
+    --sidebar-foreground: 40 30% 93%;
+    --sidebar-primary: 35 35% 62%;
+    --sidebar-primary-foreground: 20 12% 9%;
+    --sidebar-accent: 20 10% 13%;
+    --sidebar-accent-foreground: 40 30% 93%;
+    --sidebar-border: 30 8% 22%;
+    --sidebar-ring: 35 35% 62%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    font-size: 18px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    line-height: 1.15;
+  }
+}
+
+/* Editorial newspaper rules */
+.newspaper-rule {
+  border-top: 1px solid rgba(120, 113, 108, 0.3);
+}
+
+.newspaper-rule-thick {
+  border-top: 2px solid hsl(var(--ink));
+}
+
+.newspaper-rule-double {
+  border-top: 3px double hsl(var(--ink));
+}
+
+.newspaper-rule-vertical {
+  border-right: 1px solid rgba(120, 113, 108, 0.3);
+}
+
+/* Drop cap for featured articles */
+.drop-cap::first-letter {
+  float: left;
+  font-family: var(--font-heading);
+  font-size: 4.5em;
+  line-height: 0.8;
+  padding-right: 0.1em;
+  padding-top: 0.05em;
+  color: hsl(var(--heritage));
+  font-weight: 700;
+}
+
+/* Category labels */
+.category-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: hsl(var(--heritage));
+}
+
+/* Metadata text */
+.meta-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: hsl(var(--redacted));
+}
+
+/* Sepia hover effect for images */
+.editorial-image {
+  transition: filter 0.4s ease;
+  filter: saturate(0.85);
+}
+
+.editorial-image:hover {
+  filter: saturate(1) contrast(1.05);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--paper));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--heritage));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--ink));
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus states */
+*:focus-visible {
+  outline: 2px solid hsl(var(--heritage));
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: rgba(72, 60, 50, 0.15);
+  color: hsl(var(--ink));
+}
