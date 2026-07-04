@@ -12,30 +12,53 @@ import TestimonialsSection from "@/components/newspaper/TestimonialsSection";
 import EditorialsSection from "@/components/newspaper/EditorialsSection";
 import NewsletterSection from "@/components/newspaper/NewsletterSection";
 import Footer from "@/components/newspaper/Footer";
+import ScrollReveal from "@/components/newspaper/ScrollReveal";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-paper">
       <Masthead />
-      <main>
-        <HeroSection />
+      <main className="overflow-hidden">
+        <ScrollReveal effect="wipe" className="section-sheen section-drift">
+          <HeroSection />
+        </ScrollReveal>
         <div className="newspaper-rule max-w-7xl mx-auto" />
-        <LatestNewsSection />
+        <ScrollReveal effect="float" delay={40} className="section-spark">
+          <LatestNewsSection />
+        </ScrollReveal>
         <div className="newspaper-rule max-w-7xl mx-auto" />
-        <FeaturedStorySection />
+        <ScrollReveal effect="zoom" delay={50} className="section-sheen section-crest">
+          <FeaturedStorySection />
+        </ScrollReveal>
         <div className="newspaper-rule max-w-7xl mx-auto" />
-        <CategoriesSection />
-        <SubscriptionSection />
+        <ScrollReveal effect="rise" delay={40} className="section-wave">
+          <CategoriesSection />
+        </ScrollReveal>
+        <ScrollReveal effect="fade" delay={35} className="section-panel">
+          <SubscriptionSection />
+        </ScrollReveal>
         <div className="newspaper-rule max-w-7xl mx-auto" />
-        <DeliverySection />
-        <BusinessSection />
-        <MobileAppSection />
+        <ScrollReveal effect="wipe" delay={35} className="section-trace">
+          <DeliverySection />
+        </ScrollReveal>
+        <ScrollReveal effect="rise" delay={35} className="section-nightglow">
+          <BusinessSection />
+        </ScrollReveal>
+        <ScrollReveal effect="zoom" delay={45} className="section-techfloat">
+          <MobileAppSection />
+        </ScrollReveal>
         <div className="newspaper-rule max-w-7xl mx-auto" />
-        <TestimonialsSection />
+        <ScrollReveal effect="fade" delay={35} className="section-echo">
+          <TestimonialsSection />
+        </ScrollReveal>
         <div className="newspaper-rule max-w-7xl mx-auto" />
-        <EditorialsSection />
+        <ScrollReveal effect="rise" delay={35} className="section-inkflow">
+          <EditorialsSection />
+        </ScrollReveal>
         <div className="newspaper-rule max-w-7xl mx-auto" />
-        <NewsletterSection />
+        <ScrollReveal effect="wipe" delay={35} className="section-mailpulse">
+          <NewsletterSection />
+        </ScrollReveal>
       </main>
       <Footer />
     </div>

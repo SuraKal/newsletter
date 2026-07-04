@@ -22,7 +22,7 @@ export default function CategoriesSection() {
           <Link
             key={cat}
             to={`/categories?cat=${cat.toLowerCase()}`}
-            className="group relative overflow-hidden aspect-[3/4]"
+            className="hover-lift group relative aspect-[3/4] overflow-hidden"
           >
             <img
               src={categoryImages[cat]}
@@ -31,7 +31,7 @@ export default function CategoriesSection() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-3">
-              <h3 className="font-sans text-xs font-bold tracking-widest uppercase text-paper">
+              <h3 className="font-sans text-xs font-extrabold tracking-widest uppercase text-paper">
                 {cat}
               </h3>
             </div>

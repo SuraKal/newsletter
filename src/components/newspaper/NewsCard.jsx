@@ -7,7 +7,7 @@ export default function NewsCard({ article, variant = "default" }) {
   if (variant === "compact") {
     return (
       <Link to={`/article/${id}`} className="group block">
-        <article className="flex gap-3 py-3 border-b border-stone-300/30">
+        <article className="hover-lift flex gap-3 border-b border-stone-300/30 py-3">
           <div className="flex-1">
             <span className="category-label">{category}</span>
             <h4 className="font-heading text-sm font-bold text-ink leading-snug mt-1 group-hover:text-heritage transition-colors">
@@ -29,9 +29,9 @@ export default function NewsCard({ article, variant = "default" }) {
 
   return (
     <Link to={`/article/${id}`} className="group block">
-      <article>
-        {image && (
-          <div className="overflow-hidden mb-3">
+        <article className="hover-lift rounded-[1rem]">
+          {image && (
+            <div className="overflow-hidden mb-3">
             <img
               src={image}
               alt={headline}

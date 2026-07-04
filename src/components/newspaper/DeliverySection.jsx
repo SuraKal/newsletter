@@ -33,60 +33,60 @@ const steps = [
 export default function DeliverySection() {
   return (
     <section className="max-w-7xl mx-auto px-4 py-16">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        <div>
-          <span className="category-label">For Print Subscribers</span>
-          <h2 className="font-display text-3xl md:text-4xl font-black text-ink leading-tight mt-2">
-            Track Your Newspaper Delivery in Real Time
-          </h2>
-          <p className="font-body text-base text-redacted mt-4 leading-relaxed">
-            As a print subscriber, you can monitor every step of your
-            newspaper's journey — from the printing press to your front door.
-            Our real-time tracking system keeps you informed at every stage.
-          </p>
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <span className="category-label">For Print Subscribers</span>
+            <h2 className="mt-2 font-display text-3xl font-black leading-tight text-ink md:text-4xl">
+              Track Your Newspaper Delivery in Real Time
+            </h2>
+            <p className="mt-4 font-body text-base leading-relaxed text-redacted">
+              As a print subscriber, you can monitor every step of your
+              newspaper&apos;s journey from the printing press to your front door.
+              Our real-time tracking system keeps you informed at every stage.
+            </p>
 
-          <div className="mt-8 space-y-4">
-            {steps.map((step, i) => (
-              <div key={step.label} className="flex items-start gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="w-10 h-10 rounded-full border-2 border-heritage flex items-center justify-center">
-                    <step.icon className="w-4 h-4 text-heritage" />
+            <div className="mt-8 space-y-4">
+              {steps.map((step, i) => (
+                <div key={step.label} className="flex items-start gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-heritage">
+                      <step.icon className="h-4 w-4 text-heritage" />
+                    </div>
+                    {i < steps.length - 1 && (
+                      <div className="h-6 w-px border-l border-dashed border-heritage/40" />
+                    )}
                   </div>
-                  {i < steps.length - 1 && (
-                    <div className="w-px h-6 border-l border-dashed border-heritage/40" />
-                  )}
-                </div>
-                <div className="pt-1.5">
-                  <div className="flex items-baseline gap-3">
-                    <h4 className="font-sans text-sm font-bold tracking-wider uppercase text-ink">
-                      {step.label}
-                    </h4>
-                    <span className="meta-text">{step.time}</span>
+                  <div className="pt-1.5">
+                    <div className="flex items-baseline gap-3">
+                      <h4 className="font-sans text-sm font-bold uppercase tracking-wider text-ink">
+                        {step.label}
+                      </h4>
+                      <span className="meta-text">{step.time}</span>
+                    </div>
+                    <p className="mt-0.5 font-body text-sm text-redacted">
+                      {step.desc}
+                    </p>
                   </div>
-                  <p className="font-body text-sm text-redacted mt-0.5">
-                    {step.desc}
-                  </p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            <Link
+              to="/delivery"
+              className="hover-lift mt-8 inline-block bg-heritage px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
+            >
+              Track Delivery
+            </Link>
           </div>
 
-          <Link
-            to="/delivery"
-            className="inline-block mt-8 font-sans text-xs font-bold tracking-wider uppercase bg-heritage text-paper px-6 py-3 hover:bg-ink transition-colors"
-          >
-            Track Delivery
-          </Link>
+          <div className="overflow-hidden">
+            <img
+              src={IMAGES.delivery}
+              alt="Newspaper printing press in action"
+              className="editorial-image aspect-[16/9] w-full object-cover"
+            />
+          </div>
         </div>
-
-        <div className="overflow-hidden">
-          <img
-            src={IMAGES.delivery}
-            alt="Newspaper printing press in action"
-            className="w-full aspect-[16/9] object-cover editorial-image"
-          />
-        </div>
-      </div>
-    </section>
+      </section>
   );
 }

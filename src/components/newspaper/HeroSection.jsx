@@ -9,36 +9,34 @@ import NewsCard from "@/components/newspaper/NewsCard";
 
 export default function HeroSection() {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-        {/* Left Column — Sidebar Headlines */}
-        <div className="lg:col-span-3 newspaper-rule-vertical pr-4 hidden lg:block">
+    <section className="mx-auto max-w-7xl px-4 py-6">
+      <div className="grid grid-cols-1 gap-0 lg:grid-cols-12">
+        <div className="hidden pr-4 lg:col-span-3 lg:block newspaper-rule-vertical">
           <div className="space-y-0">
-            {sidebarArticles.map((article, i) => (
+            {sidebarArticles.map((article) => (
               <NewsCard key={article.id} article={article} variant="compact" />
             ))}
           </div>
         </div>
 
-        {/* Center Column — Lead Story */}
         <div className="lg:col-span-6 lg:px-6">
           <Link to={`/article/${heroArticle.id}`} className="group block">
             <article>
               <span className="category-label">{heroArticle.category}</span>
-              <div className="overflow-hidden my-3">
+              <div className="my-3 overflow-hidden">
                 <img
                   src={heroArticle.image}
                   alt={heroArticle.headline}
-                  className="w-full aspect-[16/9] object-cover editorial-image group-hover:scale-[1.01] transition-transform duration-700"
+                  className="editorial-image aspect-[16/9] w-full object-cover transition-transform duration-700 group-hover:scale-[1.01]"
                 />
               </div>
-              <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-black text-ink leading-tight group-hover:text-heritage transition-colors">
+              <h2 className="font-display text-2xl font-black leading-tight text-ink transition-colors group-hover:text-heritage md:text-3xl lg:text-4xl">
                 {heroArticle.headline}
               </h2>
-              <p className="font-body text-base text-redacted mt-3 leading-relaxed">
+              <p className="mt-3 font-body text-base leading-relaxed text-redacted">
                 {heroArticle.summary}
               </p>
-              <div className="flex items-center gap-2 mt-3">
+              <div className="mt-3 flex items-center gap-2">
                 <span className="meta-text font-semibold">
                   By {heroArticle.author}
                 </span>
@@ -50,42 +48,37 @@ export default function HeroSection() {
             </article>
           </Link>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-wrap gap-3 mt-6 pb-6">
+          <div className="mt-6 flex flex-wrap gap-3 pb-6">
             <Link
               to="/subscriptions"
-              className="font-sans text-xs font-bold tracking-wider uppercase bg-heritage text-paper px-6 py-3 hover:bg-ink transition-colors"
+              className="hover-lift bg-heritage px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
             >
               Subscribe Now
             </Link>
             <Link
               to="/news"
-              className="font-sans text-xs font-bold tracking-wider uppercase border-2 border-ink text-ink px-6 py-3 hover:bg-ink hover:text-paper transition-colors"
+              className="hover-lift border-2 border-ink px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-ink hover:text-paper"
             >
               Read Today's Edition
             </Link>
           </div>
         </div>
 
-        {/* Right Column */}
-        <div className="lg:col-span-3 lg:pl-4 lg:border-l border-stone-300/50 hidden lg:block">
-          <Link
-            to={`/article/${rightColumnArticle.id}`}
-            className="group block"
-          >
-            <article>
+        <div className="hidden border-l border-stone-300/50 lg:col-span-3 lg:block lg:pl-4">
+          <Link to={`/article/${rightColumnArticle.id}`} className="group block">
+            <article className="section-sheen">
               <img
                 src={rightColumnArticle.image}
                 alt={rightColumnArticle.headline}
-                className="w-full aspect-[4/3] object-cover editorial-image mb-3"
+                className="editorial-image mb-3 aspect-[4/3] w-full object-cover transition-transform duration-700 group-hover:scale-[1.01]"
               />
               <span className="category-label">
                 {rightColumnArticle.category}
               </span>
-              <h3 className="font-heading text-lg font-bold text-ink leading-snug mt-1.5 group-hover:text-heritage transition-colors">
+              <h3 className="mt-1.5 font-heading text-lg font-bold leading-snug text-ink transition-colors group-hover:text-heritage">
                 {rightColumnArticle.headline}
               </h3>
-              <p className="font-body text-sm text-redacted mt-2 leading-relaxed">
+              <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
                 {rightColumnArticle.summary}
               </p>
               <p className="meta-text mt-2">By {rightColumnArticle.author}</p>
@@ -94,9 +87,8 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Mobile: Show sidebar articles below */}
-      <div className="lg:hidden mt-6 pt-6 border-t border-stone-300/30">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="mt-6 border-t border-stone-300/30 pt-6 lg:hidden">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {sidebarArticles.slice(0, 2).map((article) => (
             <NewsCard key={article.id} article={article} variant="compact" />
           ))}

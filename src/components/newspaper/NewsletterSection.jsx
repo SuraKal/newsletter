@@ -23,7 +23,7 @@ export default function NewsletterSection() {
         <p className="font-body text-base text-redacted mt-3 leading-relaxed">
           Start your day informed. Our curated morning newsletter delivers the
           most important headlines, analysis, and insights directly to your
-          inbox — every weekday at 7:00 AM.
+          inbox - every weekday at 7:00 AM.
         </p>
 
         {submitted ? (
@@ -34,7 +34,7 @@ export default function NewsletterSection() {
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="mt-8 flex flex-col sm:flex-row gap-3 max-w-lg mx-auto"
+            className="mt-8 flex flex-col gap-3 max-w-lg mx-auto sm:flex-row"
           >
             <input
               type="email"
@@ -46,7 +46,7 @@ export default function NewsletterSection() {
             />
             <button
               type="submit"
-              className="font-sans text-xs font-bold tracking-wider uppercase bg-heritage text-paper px-6 py-3 hover:bg-ink transition-colors"
+              className="font-sans text-xs font-bold tracking-wider uppercase bg-heritage text-paper px-6 py-3 transition-colors hover:bg-ink"
             >
               Subscribe
             </button>
