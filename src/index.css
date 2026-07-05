@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 33% 98%;
+    --foreground: 0 0% 10%;
+    --card: 40 33% 98%;
+    --card-foreground: 0 0% 10%;
+    --popover: 40 33% 98%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 24 30% 22%;
+    --primary-foreground: 40 33% 98%;
+    --secondary: 38 30% 92%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 38 20% 93%;
+    --muted-foreground: 30 5% 40%;
+    --accent: 38 30% 92%;
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 36 15% 82%;
+    --input: 36 15% 82%;
+    --ring: 24 30% 22%;
+    --chart-1: 24 30% 22%;
+    --chart-2: 38 30% 60%;
+    --chart-3: 30 10% 50%;
+    --chart-4: 40 20% 70%;
+    --chart-5: 20 25% 40%;
+    --radius: 0.25rem;
+    --font-heading: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --font-body: 'Source Serif 4', Georgia, serif;
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --sidebar-background: 40 33% 96%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 24 30% 22%;
+    --sidebar-primary-foreground: 40 33% 98%;
+    --sidebar-accent: 38 30% 92%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 36 15% 82%;
+    --sidebar-ring: 24 30% 22%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+    font-size: 18px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .nq-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  .nq-hairline {
+    @apply border-t;
+    border-color: #D1CDC0;
+  }
+  .nq-hairline-v {
+    @apply border-l;
+    border-color: #D1CDC0;
+  }
+  .nq-category-label {
+    @apply text-xs font-sans uppercase tracking-widest font-semibold;
+    color: #4A3728;
+  }
+  .nq-headline {
+    font-family: var(--font-heading);
+    @apply font-bold leading-tight;
+    color: #1A1A1A;
+  }
+  .nq-headline:hover {
+    text-shadow: 0 0 20px rgba(74, 55, 40, 0.15);
+  }
+  .nq-deck {
+    font-family: var(--font-sans);
+    @apply text-sm leading-relaxed;
+    color: #555;
+  }
+  .nq-drop-cap::first-letter {
+    float: left;
+    font-family: var(--font-heading);
+    font-size: 4.5em;
+    line-height: 0.8;
+    padding-right: 0.1em;
+    padding-top: 0.05em;
+    color: #4A3728;
+    font-weight: 700;
+  }
+  .nq-btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-sans font-semibold tracking-wide uppercase transition-all duration-200 rounded-full;
+    background-color: #4A3728;
+    color: #FDFBF7;
+  }
+  .nq-btn-primary:hover {
+    background-color: #3A2A1D;
+  }
+  .nq-btn-outline {
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-sans font-semibold tracking-wide uppercase transition-all duration-200 border rounded-full;
+    border-color: #4A3728;
+    color: #4A3728;
+  }
+  .nq-btn-outline:hover {
+    background-color: #4A3728;
+    color: #FDFBF7;
+  }
+  .nq-section-title {
+    font-family: var(--font-heading);
+    @apply text-2xl md:text-3xl font-bold;
+    color: #1A1A1A;
+  }
+  .nq-vellum {
+    background-color: #F5F0E1;
+  }
+  .nq-parchment {
+    background-color: #FDFBF7;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F5F0E1;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1CDC0;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4A3728;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Font-sans utility */
+.font-sans {
+  font-family: var(--font-sans) !important;
+}
