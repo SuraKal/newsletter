@@ -156,6 +156,145 @@ export default function BusinessPage() {
             </div>
           </div>
         </section>
+
+        <section className="max-w-7xl mx-auto px-4 py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-10 lg:gap-14">
+            <div>
+              <span className="font-sans text-[0.6rem] font-bold tracking-widest uppercase text-heritage">
+                Business Inquiry
+              </span>
+              <h2 className="mt-2 font-display text-3xl font-black text-ink md:text-4xl">
+                Send a business request
+              </h2>
+              <p className="mt-4 max-w-2xl font-body text-base leading-relaxed text-redacted">
+                Use this form for sponsorships, advertising, bulk subscriptions,
+                enterprise partnerships, or newsroom collaboration requests.
+                We will route it to the right commercial contact.
+              </p>
+
+              <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div className="border border-stone-300/60 bg-vellum p-6">
+                  <h3 className="font-sans text-xs font-bold uppercase tracking-widest text-ink">
+                    Response Time
+                  </h3>
+                  <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
+                    Most business inquiries receive a reply within 1 business
+                    day.
+                  </p>
+                </div>
+                <div className="border border-stone-300/60 bg-vellum p-6">
+                  <h3 className="font-sans text-xs font-bold uppercase tracking-widest text-ink">
+                    Best For
+                  </h3>
+                  <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
+                    Advertising, partnerships, sponsorships, and enterprise
+                    access.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border border-stone-300/60 bg-paper p-6 shadow-[0_18px_40px_rgba(0,0,0,0.06)]">
+              <h3 className="font-display text-2xl font-black text-ink">
+                Business Contact Form
+              </h3>
+              <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
+                Tell us about your organization and we’ll follow up with the
+                right plan or contact person.
+              </p>
+
+              <form className="mt-6 space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
+                      Work Email
+                    </label>
+                    <input
+                      type="email"
+                      className="w-full border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
+                      Company
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
+                      Request Type
+                    </label>
+                    <select className="w-full border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage">
+                      <option>Advertising</option>
+                      <option>Bulk Subscription</option>
+                      <option>Partnership</option>
+                      <option>Sponsorship</option>
+                      <option>Enterprise Access</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
+                      Company Size
+                    </label>
+                    <select className="w-full border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage">
+                      <option>1-10</option>
+                      <option>11-50</option>
+                      <option>51-200</option>
+                      <option>200+</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
+                      Preferred Contact
+                    </label>
+                    <select className="w-full border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage">
+                      <option>Email</option>
+                      <option>Phone</option>
+                      <option>WhatsApp</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
+                    Message
+                  </label>
+                  <textarea
+                    rows={6}
+                    className="w-full resize-none border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage"
+                    placeholder="Tell us about your company, goals, and what you need from us."
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  className="inline-flex bg-heritage px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
+                >
+                  Send Business Request
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

@@ -7,10 +7,10 @@ export default function NewsCard({ article, variant = "default" }) {
   if (variant === "compact") {
     return (
       <Link to={`/article/${id}`} className="group block">
-        <article className="hover-lift flex gap-3 border-b border-stone-300/30 py-3">
-          <div className="flex-1">
+        <article className="hover-lift flex gap-4 rounded-[1rem] border border-stone-300/50 bg-paper p-4 shadow-[0_10px_26px_rgba(0,0,0,0.04)]">
+          <div className="min-w-0 flex-1">
             <span className="category-label">{category}</span>
-            <h4 className="font-heading text-sm font-bold text-ink leading-snug mt-1 group-hover:text-heritage transition-colors">
+            <h4 className="mt-1 font-heading text-sm font-bold leading-snug text-ink transition-colors group-hover:text-heritage">
               {headline}
             </h4>
             <p className="meta-text mt-1">{date}</p>
@@ -19,7 +19,7 @@ export default function NewsCard({ article, variant = "default" }) {
             <img
               src={image}
               alt={headline}
-              className="w-16 h-16 object-cover editorial-image flex-shrink-0"
+              className="h-14 w-14 flex-shrink-0 rounded-[0.75rem] object-cover editorial-image sm:h-16 sm:w-16"
             />
           )}
         </article>
@@ -29,30 +29,30 @@ export default function NewsCard({ article, variant = "default" }) {
 
   return (
     <Link to={`/article/${id}`} className="group block">
-        <article className="hover-lift rounded-[1rem]">
-          {image && (
-            <div className="overflow-hidden mb-3">
+      <article className="hover-lift rounded-[1.25rem] border border-stone-300/60 bg-paper p-5 shadow-[0_14px_34px_rgba(0,0,0,0.05)]">
+        {image && (
+          <div className="mb-4 overflow-hidden rounded-[0.9rem]">
             <img
               src={image}
               alt={headline}
-              className="w-full aspect-[4/3] object-cover editorial-image group-hover:scale-[1.02] transition-transform duration-500"
+              className="aspect-[4/3] w-full object-cover editorial-image transition-transform duration-500 group-hover:scale-[1.02]"
             />
           </div>
         )}
         <span className="category-label">{category}</span>
-        <h3 className="font-heading text-lg md:text-xl font-bold text-ink leading-tight mt-1.5 group-hover:text-heritage transition-colors">
+        <h3 className="mt-2 font-heading text-lg font-bold leading-tight text-ink transition-colors group-hover:text-heritage md:text-xl">
           {headline}
         </h3>
         {summary && (
-          <p className="font-body text-sm text-redacted mt-2 leading-relaxed line-clamp-3">
+          <p className="mt-3 line-clamp-3 font-body text-sm leading-relaxed text-redacted">
             {summary}
           </p>
         )}
-        <div className="flex items-center gap-2 mt-2">
+        <div className="mt-4 flex items-center gap-2 border-t border-stone-300/40 pt-3">
           <span className="meta-text">{date}</span>
           {author && (
             <>
-              <span className="meta-text">·</span>
+              <span className="meta-text">Â·</span>
               <span className="meta-text">{category}</span>
             </>
           )}

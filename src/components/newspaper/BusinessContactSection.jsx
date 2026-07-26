@@ -6,9 +6,9 @@ const contactCards = [
   {
     icon: Mail,
     title: "Business Email",
-    detail: "business@áŠ•á‰á‹°áˆ.com",
+    detail: "business@neqedem.com",
     note: "Best for partnerships, sponsorships, and media kits.",
-    href: "mailto:business@áŠ•á‰á‹°áˆ.com?subject=Business%20Inquiry",
+    href: "mailto:business@neqedem.com?subject=Business%20Inquiry",
     action: "Email the team",
   },
   {

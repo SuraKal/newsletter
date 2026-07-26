@@ -82,16 +82,16 @@ export default function HeroSection() {
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-6">
-      <div className="grid grid-cols-1 gap-0 lg:grid-cols-12">
-        <div className="hidden pr-4 lg:col-span-3 lg:block newspaper-rule-vertical">
-          <div className="space-y-0">
+      <div className="grid grid-cols-1 gap-0 lg:grid-cols-12 lg:gap-6 xl:gap-8">
+        <div className="hidden lg:col-span-3 lg:block lg:pr-4 newspaper-rule-vertical">
+          <div className="space-y-3">
             {sidebarArticles.map((article) => (
               <NewsCard key={article.id} article={article} variant="compact" />
             ))}
           </div>
         </div>
 
-        <div className="lg:col-span-6 lg:px-6">
+        <div className="lg:col-span-6 lg:px-2 xl:px-4">
           <Carousel setApi={setApi} opts={{ loop: true }} className="group relative">
             <CarouselContent>
               {heroSlides.map((slide) => (
@@ -188,24 +188,24 @@ export default function HeroSection() {
           </div>
         </div>
 
-        <div className="hidden border-l border-stone-300/50 lg:col-span-3 lg:block lg:pl-4">
+        <div className="hidden border-l border-stone-300/50 lg:col-span-3 lg:block lg:pl-6">
           <Link to={`/article/${rightColumnArticle.id}`} className="group block">
             <article className="section-sheen">
               <img
                 src={rightColumnArticle.image}
                 alt={rightColumnArticle.headline}
-                className="editorial-image mb-3 aspect-[4/3] w-full object-cover transition-transform duration-700 group-hover:scale-[1.01]"
+                className="editorial-image mb-4 aspect-[5/4] w-full object-cover transition-transform duration-700 group-hover:scale-[1.01]"
               />
               <span className="category-label">
                 {rightColumnArticle.category}
               </span>
-              <h3 className="mt-1.5 font-heading text-lg font-bold leading-snug text-ink transition-colors group-hover:text-heritage">
+              <h3 className="mt-2 font-heading text-lg font-bold leading-snug text-ink transition-colors group-hover:text-heritage">
                 {rightColumnArticle.headline}
               </h3>
-              <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
+              <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
                 {rightColumnArticle.summary}
               </p>
-              <p className="meta-text mt-2">By {rightColumnArticle.author}</p>
+              <p className="meta-text mt-3">By {rightColumnArticle.author}</p>
             </article>
           </Link>
         </div>

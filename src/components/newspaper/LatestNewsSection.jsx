@@ -5,11 +5,11 @@ import { latestNews } from "@/lib/demoData";
 
 export default function LatestNewsSection() {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-10">
+    <section className="mx-auto max-w-7xl px-4 py-12">
       <SectionHeader title="Latest News" viewAllLink="/news" />
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:gap-0 lg:grid-cols-4 lg:divide-x lg:divide-stone-300/50">
+      <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
         {latestNews.map((article) => (
-          <div key={article.id} className="lg:px-5 first:lg:pl-0 last:lg:pr-0">
+          <div key={article.id} className="h-full">
             <NewsCard article={article} />
           </div>
         ))}

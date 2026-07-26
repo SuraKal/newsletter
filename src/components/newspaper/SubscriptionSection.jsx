@@ -17,14 +17,11 @@ export default function SubscriptionSection() {
           news. Choose the plan that suits your reading habits.
         </p>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-stone-300/50">
+        <div className="grid grid-cols-1 gap-7 md:grid-cols-3 lg:gap-6">
           {subscriptionPlans.map((plan) => (
-            <div
-              key={plan.name}
-              className="lg:px-8 first:lg:pl-0 last:lg:pr-0"
-            >
+            <div key={plan.name} className="h-full">
               <div
-                className={`h-full p-6 ${plan.highlighted ? "bg-paper border border-heritage/20" : ""}`}
+                className={`h-full rounded-[1.25rem] border p-7 shadow-[0_12px_30px_rgba(0,0,0,0.04)] ${plan.highlighted ? "bg-paper border-heritage/20" : "bg-vellum border-stone-300/50"}`}
               >
                 {plan.highlighted && (
                   <span className="font-sans text-[0.6rem] font-bold tracking-widest uppercase text-heritage bg-heritage/10 px-3 py-1 mb-4 inline-block">

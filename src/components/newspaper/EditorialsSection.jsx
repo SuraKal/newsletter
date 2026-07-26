@@ -5,11 +5,11 @@ import NewsCard from "@/components/newspaper/NewsCard";
 
 export default function EditorialsSection() {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-10">
+    <section className="mx-auto max-w-7xl px-4 py-12">
       <SectionHeader title="Opinion & Analysis" viewAllLink="/news" />
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:gap-0 lg:grid-cols-3 lg:divide-x lg:divide-stone-300/50">
+      <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
         {editorials.map((article) => (
-          <div key={article.id} className="lg:px-5 first:lg:pl-0 last:lg:pr-0">
+          <div key={article.id} className="h-full">
             <NewsCard article={article} />
           </div>
         ))}
