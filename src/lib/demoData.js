@@ -113,39 +113,58 @@ export const latestNews = [
 ];
 
 export const categoryArticles = {
-  politics: [
+  news: [
     {
-      id: "pol-1",
+      id: "news-1",
       image: IMAGES.politics,
-      category: "Politics",
+      category: "News",
       date: "July 4, 2026",
-      headline: "Constitutional Court Rules on Landmark Digital Privacy Case",
+      headline: "City Council Approves New Waterline and Road Repair Program",
       summary:
-        "The ruling establishes new precedent for citizens' rights in the digital age.",
+        "The $18 million package targets aging mains, flood-prone intersections, and long-delayed neighborhood resurfacing work.",
+      author: "Nadia Okello",
+      readTime: "5 min read",
+      body: [
+        "The council vote came after weeks of public hearings in which residents described recurring water interruptions and dangerous road conditions across several districts.",
+        "Officials said the first phase will focus on the oldest utility corridors, with crews expected to begin work before the end of the month.",
+        "Community leaders welcomed the measure but urged the city to publish a transparent construction schedule so residents can plan around traffic disruptions.",
+      ],
     },
   ],
-  sports: [
+  community: [
     {
-      id: "spo-1",
-      image: IMAGES.sports,
-      category: "Sports",
-      date: "July 4, 2026",
-      headline:
-        "International Athletics Federation Announces Revolutionary Drug Testing Protocol",
-      summary:
-        "The new system employs AI-powered analysis to detect performance-enhancing substances.",
-    },
-  ],
-  economy: [
-    {
-      id: "eco-1",
-      image: IMAGES.economy,
-      category: "Economy",
+      id: "community-1",
+      image: IMAGES.culture,
+      category: "Community",
       date: "July 3, 2026",
-      headline:
-        "Global Markets Rally as Inflation Data Shows Sustained Downward Trend",
+      headline: "Local Couple Celebrates 50 Years of Marriage Surrounded by Family",
       summary:
-        "Investors respond positively to consumer price indices across major economies.",
+        "What began at a neighborhood church picnic in the late 1970s has grown into a family story spanning four generations.",
+      author: "Esther Mumo",
+      readTime: "4 min read",
+      body: [
+        "The celebration included tributes from children, grandchildren, and longtime neighbors who filled the hall with laughter and photographs.",
+        "Friends described the couple as steady anchors in the community, known for mentoring young people and hosting holiday meals for those far from home.",
+        "The family said the anniversary was not only a private milestone, but a reminder of the bonds that make neighborhoods stronger.",
+      ],
+    },
+  ],
+  business: [
+    {
+      id: "business-1",
+      image: IMAGES.business,
+      category: "Business",
+      date: "July 2, 2026",
+      headline: "Family-Owned Logistics Firm Expands After Securing Regional Contract",
+      summary:
+        "The company will add vehicles, hire drivers, and open a second warehouse to handle growing distribution demand.",
+      author: "Martin Owino",
+      readTime: "6 min read",
+      body: [
+        "The contract marks a turning point for the thirty-year-old firm, which started with a single delivery truck and two employees.",
+        "Executives said the expansion will create new jobs in dispatch, warehousing, and route management over the next quarter.",
+        "Industry analysts noted that small logistics providers are increasingly benefiting from businesses seeking more flexible regional distribution partners.",
+      ],
     },
   ],
   technology: [

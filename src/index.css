@@ -405,6 +405,29 @@
   z-index: 1;
 }
 
+.partners-marquee {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
+}
+
+.partners-marquee-track {
+  animation: partners-marquee 24s linear infinite;
+}
+
+@keyframes partners-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .scroll-reveal,
   .scroll-reveal.is-active,
@@ -430,6 +453,10 @@
   .scroll-reveal.section-echo::after,
   .scroll-reveal.section-inkflow::after,
   .scroll-reveal.section-mailpulse::after {
+    animation: none;
+  }
+
+  .partners-marquee-track {
     animation: none;
   }
 }

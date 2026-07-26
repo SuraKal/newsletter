@@ -13,6 +13,12 @@ import { NAV_LINKS, CATEGORIES } from "@/lib/constants";
 import DarkModeToggle from "@/components/DarkModeToggle";
 
 const SEARCH_SUGGESTIONS = ["Politics", "Business", "Technology", "Markets"];
+const SOCIAL_LINKS = [
+  { name: "Facebook", slug: "facebook", href: "https://facebook.com" },
+  { name: "TikTok", slug: "tiktok", href: "https://tiktok.com" },
+  { name: "Instagram", slug: "instagram", href: "https://instagram.com" },
+  { name: "X", slug: "x", href: "https://x.com" },
+];
 
 export default function Masthead() {
   const [compactHeader, setCompactHeader] = useState(false);
@@ -152,13 +158,32 @@ export default function Masthead() {
           }`}
         >
           <div className="flex items-center justify-between px-4 py-2">
-            <div className="flex items-center gap-4">
+            <div className="hidden items-center gap-4 md:flex">
               <span className="meta-text">Today: {today}</span>
               <span className="meta-text hidden sm:inline">
                 Edition: International
               </span>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:hidden">
+              {SOCIAL_LINKS.map((social) => (
+                <a
+                  key={social.name}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-stone-300/60 bg-paper transition-colors hover:border-heritage hover:bg-vellum"
+                  aria-label={social.name}
+                  title={social.name}
+                >
+                  <img
+                    src={`https://cdn.simpleicons.org/${social.slug}`}
+                    alt=""
+                    className="h-3.5 w-3.5"
+                  />
+                </a>
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
               <button className="meta-text flex items-center gap-1 transition-colors hover:text-heritage">
                 <Globe className="h-3.5 w-3.5" />
                 <span>EN</span>
@@ -178,10 +203,10 @@ export default function Masthead() {
             compactHeader ? "py-3" : "py-5"
           }`}
         >
-          <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
+          <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 md:gap-3">
             <button
               onClick={toggleSearch}
-              className={`inline-flex h-11 w-11 items-center justify-center rounded-full border transition-all ${
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-all md:h-11 md:w-11 ${
                 searchOpen
                   ? "border-cream bg-cream text-heritage"
                   : "border-cream/25 text-cream hover:border-cream hover:text-white"
@@ -197,35 +222,56 @@ export default function Masthead() {
             </button>
 
             <Link to="/" className="text-center" onClick={closeAllPanels}>
-              <h1 className="font-display text-3xl font-black tracking-tight text-cream md:text-5xl lg:text-6xl">
+              <h1 className="font-display text-2xl font-black tracking-tight text-cream md:text-5xl lg:text-6xl">
                 ንቐደም
               </h1>
-              <p className="mt-1 font-sans text-[0.6rem] uppercase tracking-[0.35em] text-cream/60">
+              <p className="mt-1 hidden font-sans text-[0.6rem] uppercase tracking-[0.35em] text-cream/60 md:block">
                 Independent Journalism Since 2024
               </p>
             </Link>
 
-            <div className="flex items-center justify-end gap-3">
-              <DarkModeToggle />
-              <Link
-                to="/login"
-                className="hidden font-sans text-xs font-medium uppercase tracking-wider text-cream/70 transition-colors hover:text-cream md:block"
-                onClick={closeAllPanels}
-              >
-                Sign In
-              </Link>
-              <button
-                onClick={toggleMenu}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-cream/25 text-cream transition-colors hover:border-cream hover:text-white md:hidden"
-                aria-label="Menu"
-                aria-expanded={menuOpen}
-              >
-                {menuOpen ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
-                )}
-              </button>
+            <div className="flex items-center justify-end gap-2">
+              <div className="hidden items-center gap-2 md:flex">
+                {SOCIAL_LINKS.map((social) => (
+                  <a
+                    key={social.name}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-cream/25 bg-paper/10 transition-colors hover:border-cream hover:bg-paper/20"
+                    aria-label={social.name}
+                    title={social.name}
+                  >
+                    <img
+                      src={`https://cdn.simpleicons.org/${social.slug}/ffffff`}
+                      alt=""
+                      className="h-4 w-4"
+                    />
+                  </a>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <DarkModeToggle />
+                <Link
+                  to="/login"
+                  className="hidden font-sans text-xs font-medium uppercase tracking-wider text-cream/70 transition-colors hover:text-cream md:block"
+                  onClick={closeAllPanels}
+                >
+                  Sign In
+                </Link>
+                <button
+                  onClick={toggleMenu}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-cream/25 text-cream transition-colors hover:border-cream hover:text-white md:hidden md:h-11 md:w-11"
+                  aria-label="Menu"
+                  aria-expanded={menuOpen}
+                >
+                  {menuOpen ? (
+                    <X className="h-5 w-5" />
+                  ) : (
+                    <Menu className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

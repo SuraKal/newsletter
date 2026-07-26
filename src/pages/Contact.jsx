@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { BriefcaseBusiness, Mail, MapPin, Phone } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 
@@ -112,6 +112,26 @@ export default function Contact() {
                 United Kingdom
               </p>
             </div>
+            <div className="border border-stone-300/60 bg-vellum overflow-hidden">
+              <div className="px-4 pt-4">
+                <h3 className="font-sans text-xs font-bold tracking-widest uppercase text-ink">
+                  Find Us
+                </h3>
+                <p className="mt-2 font-body text-sm text-redacted">
+                  Open the embedded map for directions and nearby landmarks.
+                </p>
+              </div>
+              <div className="mt-4 aspect-[4/3] w-full">
+                <iframe
+                  title="Google Maps location"
+                  src="https://www.google.com/maps?q=42%20Fleet%20Street%2C%20London%2C%20EC4Y%201AU&output=embed"
+                  className="h-full w-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
+              </div>
+            </div>
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <Mail className="w-5 h-5 text-heritage" />
@@ -140,6 +160,64 @@ export default function Contact() {
             </div>
           </div>
         </div>
+
+        <section className="mt-16 border-t border-stone-300/40 pt-10">
+          <div className="mb-8 max-w-3xl">
+            <div className="flex items-center gap-3">
+              <BriefcaseBusiness className="h-5 w-5 text-heritage" />
+              <h2 className="font-display text-2xl md:text-3xl font-black text-ink uppercase">
+                Business Contact
+              </h2>
+            </div>
+            <p className="mt-3 font-body text-base text-redacted leading-relaxed">
+              For advertising, partnerships, sponsorships, bulk subscriptions,
+              and enterprise newsroom requests, use our dedicated business
+              contact channel below.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="border border-stone-300/60 bg-vellum p-6">
+              <h3 className="font-sans text-xs font-bold tracking-widest uppercase text-ink">
+                Business Email
+              </h3>
+              <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
+                business@ንቐደም.com
+              </p>
+              <p className="mt-4 font-body text-sm text-redacted">
+                Best for proposals, partnerships, and account inquiries.
+              </p>
+            </div>
+
+            <div className="border border-stone-300/60 bg-vellum p-6">
+              <h3 className="font-sans text-xs font-bold tracking-widest uppercase text-ink">
+                Business Phone
+              </h3>
+              <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
+                +44 (0) 20 7946 0958
+              </p>
+              <p className="mt-4 font-body text-sm text-redacted">
+                Available for urgent commercial and subscription support.
+              </p>
+            </div>
+
+            <div className="border border-stone-300/60 bg-vellum p-6">
+              <h3 className="font-sans text-xs font-bold tracking-widest uppercase text-ink">
+                Business Request
+              </h3>
+              <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
+                Tell us about your organization and we will route it to the
+                right team.
+              </p>
+              <a
+                href="mailto:business@ንቐደም.com?subject=Business%20Inquiry"
+                className="mt-5 inline-flex bg-heritage px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
+              >
+                Contact Business Team
+              </a>
+            </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

@@ -7,6 +7,9 @@ import CategoriesSection from "@/components/newspaper/CategoriesSection";
 import SubscriptionSection from "@/components/newspaper/SubscriptionSection";
 import DeliverySection from "@/components/newspaper/DeliverySection";
 import BusinessSection from "@/components/newspaper/BusinessSection";
+import BusinessContactSection from "@/components/newspaper/BusinessContactSection";
+import UserGuideVideoSection from "@/components/newspaper/UserGuideVideoSection";
+import TrustedPartnersSection from "@/components/newspaper/TrustedPartnersSection";
 import MobileAppSection from "@/components/newspaper/MobileAppSection";
 import TestimonialsSection from "@/components/newspaper/TestimonialsSection";
 import EditorialsSection from "@/components/newspaper/EditorialsSection";
@@ -41,6 +44,15 @@ export default function Home() {
         </ScrollReveal>
         <ScrollReveal effect="rise" delay={35} className="section-nightglow">
           <BusinessSection />
+        </ScrollReveal>
+        <ScrollReveal effect="fade" delay={35} className="section-panel">
+          <BusinessContactSection />
+        </ScrollReveal>
+        <ScrollReveal effect="fade" delay={35} className="section-panel">
+          <UserGuideVideoSection />
+        </ScrollReveal>
+        <ScrollReveal effect="fade" delay={35} className="section-panel">
+          <TrustedPartnersSection />
         </ScrollReveal>
         <ScrollReveal effect="zoom" delay={45} className="section-techfloat">
           <MobileAppSection />

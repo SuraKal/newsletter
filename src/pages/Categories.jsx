@@ -7,14 +7,98 @@ import { CATEGORIES, IMAGES } from "@/lib/constants";
 import { categoryArticles, latestNews } from "@/lib/demoData";
 
 const categoryImages = {
-  Politics: IMAGES.politics,
+  News: IMAGES.politics,
+  Community: IMAGES.culture,
   Business: IMAGES.business,
-  Economy: IMAGES.economy,
-  Technology: IMAGES.technology,
-  Sports: IMAGES.sports,
-  Culture: IMAGES.culture,
+  "Jobs & Marketplace": IMAGES.economy,
   Events: IMAGES.events,
+  "Culture & Lifestyle": IMAGES.culture,
+  Technology: IMAGES.technology,
+  "Advice Corner": IMAGES.featured,
+  "Serial Novels": IMAGES.featured,
+  Other: IMAGES.hero,
 };
+
+const categoryGroups = [
+  {
+    title: "News",
+    items: ["Local News", "International", "Community Updates"],
+  },
+  {
+    title: "Community",
+    items: [
+      "Weddings & Love Stories",
+      "Birth Announcements",
+      "Graduations",
+      "Memorials",
+      "Success Stories",
+      "Community Announcements",
+      "Volunteer Opportunities",
+    ],
+  },
+  {
+    title: "Business",
+    items: [
+      "Business News",
+      "Featured Businesses",
+      "Entrepreneur Stories",
+      "Investment",
+      "Sponsored Businesses",
+    ],
+  },
+  {
+    title: "Jobs & Marketplace",
+    items: [
+      "Job Vacancies",
+      "Businesses Hiring",
+      "Buy & Sell",
+      "Cars",
+      "Houses & Apartments",
+      "Services",
+    ],
+  },
+  {
+    title: "Events",
+    items: [
+      "Community Events",
+      "Church Events",
+      "Festivals",
+      "Concerts",
+      "Sports Events",
+    ],
+  },
+  {
+    title: "Culture & Lifestyle",
+    items: ["Culture", "Food", "Health", "Travel", "Fashion", "Entertainment"],
+  },
+  {
+    title: "Technology",
+    items: ["AI", "Apps", "Mobile", "Business Technology", "Digital Tips"],
+  },
+  {
+    title: "Advice Corner",
+    items: [
+      "Anonymous Stories",
+      "Relationships",
+      "Family",
+      "Career Advice",
+      "Immigration & Legal Tips",
+      "Education",
+    ],
+  },
+  {
+    title: "Serial Novels",
+    items: ["Romance", "Mystery", "Historical Fiction", "Children's Stories"],
+  },
+  {
+    title: "Other",
+    items: ["Announcements", "General Interest", "Archive Picks"],
+  },
+];
+
+function slugify(value) {
+  return value.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
 
 export default function CategoriesPage() {
   const params = new URLSearchParams(window.location.search);
@@ -33,23 +117,26 @@ export default function CategoriesPage() {
     return (
       <div className="min-h-screen bg-paper">
         <Masthead />
-        <main className="max-w-7xl mx-auto px-4 py-8">
+        <main className="mx-auto max-w-7xl px-4 py-8">
           <SectionHeader title={catName} />
           {allCatArticles.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-0 lg:divide-x lg:divide-stone-300/50">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-stone-300/50">
               {allCatArticles.map((article) => (
                 <div
                   key={article.id}
-                  className="lg:px-5 first:lg:pl-0 last:lg:pr-0 mb-6"
+                  className="mb-6 lg:px-5 first:lg:pl-0 last:lg:pr-0"
                 >
                   <NewsCard article={article} />
                 </div>
               ))}
             </div>
           ) : (
-            <p className="font-body text-redacted">
-              No articles in this category yet.
-            </p>
+            <div className="max-w-3xl border border-stone-300/60 bg-vellum p-6">
+              <p className="font-body text-redacted">
+                No articles in this category yet. Use the category blocks below
+                to browse the full section map.
+              </p>
+            </div>
           )}
         </main>
         <Footer />
@@ -60,34 +147,71 @@ export default function CategoriesPage() {
   return (
     <div className="min-h-screen bg-paper">
       <Masthead />
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-8">
         <SectionHeader title="All Categories" />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+
+        <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-5">
           {CATEGORIES.map((cat) => (
             <a
               key={cat}
-              href={`/categories?cat=${cat.toLowerCase()}`}
-              className="group relative overflow-hidden aspect-[4/3]"
+              href={`/categories?cat=${slugify(cat)}`}
+              className="group relative aspect-[4/3] overflow-hidden"
             >
               <img
                 src={categoryImages[cat]}
                 alt={cat}
-                className="w-full h-full object-cover editorial-image group-hover:scale-105 transition-transform duration-500"
+                className="h-full w-full object-cover editorial-image transition-transform duration-500 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/30 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-4">
+              <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/30 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-4">
                 <h3 className="font-display text-xl font-bold text-paper">
                   {cat}
                 </h3>
-                <p className="font-sans text-xs text-paper/60 mt-1 tracking-wider uppercase">
-                  {(categoryArticles[cat.toLowerCase()] || []).length +
-                    latestNews.filter((a) => a.category === cat).length}{" "}
-                  articles
-                </p>
               </div>
             </a>
           ))}
         </div>
+
+        <section className="mt-14">
+          <div className="mb-8 max-w-3xl">
+            <h2 className="font-display text-3xl font-black text-ink md:text-4xl">
+              Expanded category guide
+            </h2>
+            <p className="mt-3 font-body text-base leading-relaxed text-redacted">
+              This structure keeps the page organized by broad sections, with
+              the detailed subcategories grouped underneath each one.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {categoryGroups.map((group) => (
+              <article
+                key={group.title}
+                className="border border-stone-300/60 bg-vellum p-6"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <h3 className="font-display text-2xl font-bold text-ink">
+                    {group.title}
+                  </h3>
+                  <span className="font-sans text-[0.6rem] font-bold uppercase tracking-[0.2em] text-redacted">
+                    {group.items.length} items
+                  </span>
+                </div>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  {group.items.map((item) => (
+                    <a
+                      key={item}
+                      href={`/categories?cat=${slugify(group.title)}&sub=${slugify(item)}`}
+                      className="inline-flex border border-stone-300/70 bg-paper px-3 py-2 font-sans text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-ink hover:text-paper"
+                    >
+                      {item}
+                    </a>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

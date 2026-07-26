@@ -25,13 +25,16 @@ export const IMAGES = {
 };
 
 export const CATEGORIES = [
-  "Politics",
+  "News",
+  "Community",
   "Business",
-  "Economy",
-  "Technology",
-  "Sports",
-  "Culture",
+  "Jobs & Marketplace",
   "Events",
+  "Culture & Lifestyle",
+  "Technology",
+  "Advice Corner",
+  "Serial Novels",
+  "Other",
 ];
 
 export const NAV_LINKS = [

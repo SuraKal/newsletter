@@ -1,13 +1,85 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
-  heroArticle,
-  sidebarArticles,
-  rightColumnArticle,
-} from "@/lib/demoData";
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+import { heroArticle, sidebarArticles, rightColumnArticle } from "@/lib/demoData";
 import NewsCard from "@/components/newspaper/NewsCard";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const heroSlides = [
+  {
+    id: "hero-slide-1",
+    image: heroArticle.image,
+    category: heroArticle.category,
+    headline: "Global leaders reach a climate accord",
+    summary: "A compact view of today's lead story.",
+    cta: "Read story",
+    href: `/article/${heroArticle.id}`,
+  },
+  {
+    id: "hero-slide-2",
+    image: rightColumnArticle.image,
+    category: rightColumnArticle.category,
+    headline: "Business and policy in focus",
+    summary: "Quick access to the latest business coverage.",
+    cta: "Explore",
+    href: "/categories",
+  },
+  {
+    id: "hero-slide-3",
+    image: heroArticle.image,
+    category: "Latest Update",
+    headline: "Breaking updates throughout the day",
+    summary: "Fresh headlines without covering the image.",
+    cta: "Browse",
+    href: "/news",
+  },
+];
 
 export default function HeroSection() {
+  const [api, setApi] = React.useState(null);
+  const [selectedIndex, setSelectedIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!api) {
+      return undefined;
+    }
+
+    const onSelect = () => {
+      setSelectedIndex(api.selectedScrollSnap());
+    };
+
+    onSelect();
+    api.on("select", onSelect);
+    api.on("reInit", onSelect);
+
+    return () => {
+      api.off("select", onSelect);
+      api.off("reInit", onSelect);
+    };
+  }, [api]);
+
+  React.useEffect(() => {
+    if (!api) {
+      return undefined;
+    }
+
+    const interval = window.setInterval(() => {
+      if (api.canScrollNext()) {
+        api.scrollNext();
+      } else {
+        api.scrollTo(0);
+      }
+    }, 2000);
+
+    return () => window.clearInterval(interval);
+  }, [api]);
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-6">
       <div className="grid grid-cols-1 gap-0 lg:grid-cols-12">
@@ -20,33 +92,85 @@ export default function HeroSection() {
         </div>
 
         <div className="lg:col-span-6 lg:px-6">
-          <Link to={`/article/${heroArticle.id}`} className="group block">
-            <article>
-              <span className="category-label">{heroArticle.category}</span>
-              <div className="my-3 overflow-hidden">
-                <img
-                  src={heroArticle.image}
-                  alt={heroArticle.headline}
-                  className="editorial-image aspect-[16/9] w-full object-cover transition-transform duration-700 group-hover:scale-[1.01]"
-                />
+          <Carousel setApi={setApi} opts={{ loop: true }} className="group relative">
+            <CarouselContent>
+              {heroSlides.map((slide) => (
+                <CarouselItem key={slide.id}>
+                  <Link to={slide.href} className="group block">
+                    <article className="relative overflow-hidden rounded-none border border-stone-300/50 bg-stone-950 shadow-[0_18px_40px_rgba(0,0,0,0.08)]">
+                      <div className="relative aspect-[16/10] overflow-hidden">
+                        <img
+                          src={slide.image}
+                          alt={slide.headline}
+                          className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5" />
+                      </div>
+
+                      <div className="absolute inset-x-0 bottom-0 max-w-[78%] p-4 text-paper sm:max-w-[70%] sm:p-5 lg:max-w-[62%] lg:p-6">
+                        <span className="inline-flex rounded-full border border-paper/20 bg-paper/10 px-2.5 py-1 font-sans text-[0.6rem] font-bold uppercase tracking-[0.16em] text-paper backdrop-blur-sm">
+                          {slide.category}
+                        </span>
+                        <h2 className="mt-2 font-display text-xl font-black leading-tight text-paper sm:text-2xl lg:text-3xl">
+                          {slide.headline}
+                        </h2>
+                        <p className="mt-1.5 max-w-md font-body text-[0.78rem] leading-relaxed text-paper/80 sm:text-sm">
+                          {slide.summary}
+                        </p>
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                          <span className="hover-lift inline-flex bg-paper px-3.5 py-2 font-sans text-[0.68rem] font-bold uppercase tracking-wider text-ink transition-colors hover:bg-heritage hover:text-paper">
+                            {slide.cta}
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  </Link>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                {heroSlides.map((slide, index) => (
+                  <button
+                    key={slide.id}
+                    type="button"
+                    onClick={() => api?.scrollTo(index)}
+                    className={cn(
+                      "h-2.5 rounded-full transition-all duration-300",
+                      selectedIndex === index
+                        ? "w-8 bg-heritage"
+                        : "w-2.5 bg-stone-400/60 hover:bg-stone-600",
+                    )}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
               </div>
-              <h2 className="font-display text-2xl font-black leading-tight text-ink transition-colors group-hover:text-heritage md:text-3xl lg:text-4xl">
-                {heroArticle.headline}
-              </h2>
-              <p className="mt-3 font-body text-base leading-relaxed text-redacted">
-                {heroArticle.summary}
-              </p>
-              <div className="mt-3 flex items-center gap-2">
-                <span className="meta-text font-semibold">
-                  By {heroArticle.author}
-                </span>
-                <span className="meta-text">·</span>
-                <span className="meta-text">{heroArticle.date}</span>
-                <span className="meta-text">·</span>
-                <span className="meta-text">{heroArticle.readTime}</span>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 rounded-none border-stone-300 bg-paper text-ink hover:bg-ink hover:text-paper"
+                  onClick={() => api?.scrollPrev()}
+                  aria-label="Previous slide"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 rounded-none border-stone-300 bg-paper text-ink hover:bg-ink hover:text-paper"
+                  onClick={() => api?.scrollNext()}
+                  aria-label="Next slide"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               </div>
-            </article>
-          </Link>
+            </div>
+          </Carousel>
 
           <div className="mt-6 flex flex-wrap gap-3 pb-6">
             <Link

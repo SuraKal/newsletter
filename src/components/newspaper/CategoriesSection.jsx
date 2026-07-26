@@ -4,13 +4,16 @@ import { IMAGES, CATEGORIES } from "@/lib/constants";
 import SectionHeader from "@/components/newspaper/SectionHeader";
 
 const categoryImages = {
-  Politics: IMAGES.politics,
+  News: IMAGES.politics,
+  Community: IMAGES.culture,
   Business: IMAGES.business,
-  Economy: IMAGES.economy,
-  Technology: IMAGES.technology,
-  Sports: IMAGES.sports,
-  Culture: IMAGES.culture,
+  "Jobs & Marketplace": IMAGES.economy,
   Events: IMAGES.events,
+  "Culture & Lifestyle": IMAGES.culture,
+  Technology: IMAGES.technology,
+  "Advice Corner": IMAGES.featured,
+  "Serial Novels": IMAGES.featured,
+  Other: IMAGES.hero,
 };
 
 export default function CategoriesSection() {

@@ -11,6 +11,7 @@ import PageNotFound from "./lib/PageNotFound";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 import ScrollToTop from "./components/ScrollToTop";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
 
 // Pages
 import Home from "@/pages/Home";
@@ -97,6 +98,7 @@ function App() {
         <Router>
           <ScrollToTop />
           <AuthenticatedApp />
+          <WhatsAppFloat />
         </Router>
         <Toaster />
       </QueryClientProvider>
