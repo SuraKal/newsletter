@@ -1,16 +1,17 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "@/lib/LanguageContext";
 
 const footerSections = [
   {
     title: "News",
     links: [
-      { label: "Politics", path: "/categories?cat=politics" },
+      { label: "News", path: "/categories?cat=news" },
+      { label: "Community", path: "/categories?cat=community" },
       { label: "Business", path: "/categories?cat=business" },
-      { label: "Economy", path: "/categories?cat=economy" },
       { label: "Technology", path: "/categories?cat=technology" },
-      { label: "Sports", path: "/categories?cat=sports" },
-      { label: "Culture", path: "/categories?cat=culture" },
+      { label: "Events", path: "/categories?cat=events" },
+      { label: "Culture & Lifestyle", path: "/categories?cat=culture-and-lifestyle" },
     ],
   },
   {
@@ -46,10 +47,11 @@ const footerSections = [
 ];
 
 export default function Footer() {
+  const { t } = useLanguage();
+
   return (
     <footer className="bg-night text-cream/80">
       <div className="max-w-7xl mx-auto px-4 pt-16 pb-8">
-        {/* Wordmark */}
         <div className="text-center mb-12">
           <Link
             to="/"
@@ -58,16 +60,15 @@ export default function Footer() {
             ንቐደም
           </Link>
           <p className="font-sans text-xs tracking-widest uppercase text-cream/40 mt-2">
-            Independent Journalism · Since 2024
+            {t("Independent Journalism Since 2024")}
           </p>
         </div>
 
-        {/* Footer Links */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           {footerSections.map((section) => (
             <div key={section.title}>
               <h4 className="font-sans text-xs font-bold tracking-widest uppercase text-cream/60 mb-4">
-                {section.title}
+                {t(section.title)}
               </h4>
               <ul className="space-y-2.5">
                 {section.links.map((link) => (
@@ -76,7 +77,7 @@ export default function Footer() {
                       to={link.path}
                       className="font-body text-sm text-cream/60 hover:text-cream transition-colors"
                     >
-                      {link.label}
+                      {t(link.label)}
                     </Link>
                   </li>
                 ))}
@@ -85,13 +86,12 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Bottom Bar */}
         <div className="border-t border-cream/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="font-sans text-xs text-cream/40">
-            © {new Date().getFullYear()} ንቐደም Publishing. All rights reserved.
+            © {new Date().getFullYear()} ንቐደም Publishing. {t("All rights reserved.")}
           </p>
           <div className="flex items-center gap-6">
-            {["Twitter", "LinkedIn", "Facebook", "Instagram"].map((social) => (
+            {["X", "LinkedIn", "Facebook", "Instagram"].map((social) => (
               <a
                 key={social}
                 href={`https://${social.toLowerCase()}.com`}

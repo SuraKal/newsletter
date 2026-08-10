@@ -2,8 +2,11 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { featuredStory } from "@/lib/demoData";
 import SectionHeader from "@/components/newspaper/SectionHeader";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function FeaturedStorySection() {
+  const { t } = useLanguage();
+
   return (
     <section
       className="py-12 text-cream"
@@ -21,31 +24,31 @@ export default function FeaturedStorySection() {
             <div className="overflow-hidden rounded-sm">
               <img
                 src={featuredStory.image}
-                alt={featuredStory.headline}
+                alt={t(featuredStory.headline)}
                 className="aspect-[3/2] w-full object-cover editorial-image transition-transform duration-700 group-hover:scale-[1.02]"
               />
             </div>
             <div className="flex flex-col justify-center">
               <span className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-cream/70">
-                {featuredStory.category}
+                {t(featuredStory.category)}
               </span>
               <h2 className="mt-2 font-display text-2xl font-black leading-tight text-cream transition-colors group-hover:text-white md:text-3xl lg:text-4xl">
-                {featuredStory.headline}
+                {t(featuredStory.headline)}
               </h2>
               <p className="drop-cap mt-4 font-body text-base leading-relaxed text-cream/80">
-                {featuredStory.summary}
+                {t(featuredStory.summary)}
               </p>
               <div className="mt-4 flex items-center gap-2">
                 <span className="font-sans text-xs font-semibold uppercase tracking-[0.14em] text-cream/85">
-                  By {featuredStory.author}
+                  {t("By")} {t(featuredStory.author)}
                 </span>
                 <span className="text-cream/45">·</span>
                 <span className="font-sans text-xs uppercase tracking-[0.14em] text-cream/65">
-                  {featuredStory.date}
+                  {t(featuredStory.date)}
                 </span>
                 <span className="text-cream/45">·</span>
                 <span className="font-sans text-xs uppercase tracking-[0.14em] text-cream/65">
-                  {featuredStory.readTime}
+                  {t(featuredStory.readTime)}
                 </span>
               </div>
             </div>

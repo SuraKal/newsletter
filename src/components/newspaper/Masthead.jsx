@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { NAV_LINKS, CATEGORIES } from "@/lib/constants";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import { useLanguage } from "@/lib/LanguageContext";
 
 const SEARCH_SUGGESTIONS = ["Politics", "Business", "Technology", "Markets"];
 const SOCIAL_LINKS = [
@@ -21,6 +22,7 @@ const SOCIAL_LINKS = [
 ];
 
 export default function Masthead() {
+  const { strings, language, toggleLanguage, t } = useLanguage();
   const [compactHeader, setCompactHeader] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -157,14 +159,14 @@ export default function Masthead() {
             compactHeader ? "max-h-0 opacity-0" : "max-h-16 opacity-100"
           }`}
         >
-          <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center justify-between gap-3 px-4 py-2">
             <div className="hidden items-center gap-4 md:flex">
-              <span className="meta-text">Today: {today}</span>
+              <span className="meta-text">{strings.today}: {today}</span>
               <span className="meta-text hidden sm:inline">
-                Edition: International
+                {strings.edition}
               </span>
             </div>
-            <div className="flex items-center gap-2 md:hidden">
+            <div className="flex items-center gap-1.5 md:hidden">
               {SOCIAL_LINKS.map((social) => (
                 <a
                   key={social.name}
@@ -183,16 +185,41 @@ export default function Masthead() {
                 </a>
               ))}
             </div>
-            <div className="flex items-center gap-3">
-              <button className="meta-text flex items-center gap-1 transition-colors hover:text-heritage">
-                <Globe className="h-3.5 w-3.5" />
-                <span>EN</span>
-              </button>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleLanguage}
+                  className="inline-flex items-center gap-1 rounded-full border border-stone-300/60 px-3 py-1.5 font-sans text-[0.65rem] font-bold uppercase tracking-wider text-ink transition-colors hover:border-heritage hover:text-heritage"
+                  aria-label={`Switch to ${language === "en" ? "Tigrigna" : "English"}`}
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  <span>{language === "en" ? "Tigrigna" : "English"}</span>
+                </button>
+                <div className="hidden items-center gap-2 md:flex">
+                  {SOCIAL_LINKS.map((social) => (
+                    <a
+                      key={social.name}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-stone-300/60 bg-paper transition-colors hover:border-heritage hover:bg-vellum"
+                      aria-label={social.name}
+                      title={social.name}
+                    >
+                      <img
+                        src={`https://cdn.simpleicons.org/${social.slug}`}
+                        alt=""
+                        className="h-3.5 w-3.5"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
               <Link
                 to="/subscriptions"
                 className="bg-heritage px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
               >
-                Subscribe
+                {strings.subscribe}
               </Link>
             </div>
           </div>
@@ -257,7 +284,7 @@ export default function Masthead() {
                   className="hidden font-sans text-xs font-medium uppercase tracking-wider text-cream/70 transition-colors hover:text-cream md:block"
                   onClick={closeAllPanels}
                 >
-                  Sign In
+                  {strings.signIn}
                 </Link>
                 <button
                   onClick={toggleMenu}
@@ -343,7 +370,7 @@ export default function Masthead() {
                 <div className="mt-5 flex items-center gap-2 text-redacted">
                   <Clock3 className="h-4 w-4" />
                   <p className="font-sans text-[0.7rem] uppercase tracking-[0.2em]">
-                    Search opens as a quick browse panel
+                    {strings.searchHint}
                   </p>
                 </div>
               </div>
@@ -362,7 +389,7 @@ export default function Masthead() {
                     onClick={closeAllPanels}
                     className="flex min-h-[44px] items-center px-5 py-3 font-sans text-xs font-semibold uppercase tracking-widest text-ink transition-colors hover:text-heritage"
                   >
-                    {link.label}
+                    {t(link.label)}
                   </Link>
                 </li>
               ))}
@@ -371,7 +398,7 @@ export default function Masthead() {
                   onClick={toggleCategories}
                   className="flex min-h-[44px] items-center gap-1 px-5 py-3 font-sans text-xs font-semibold uppercase tracking-widest text-ink transition-colors hover:text-heritage"
                 >
-                  Categories
+                  {strings.categories}
                   <ChevronDown
                     className={`h-3 w-3 transition-transform ${
                       catOpen ? "rotate-180" : ""
@@ -387,7 +414,7 @@ export default function Masthead() {
                         onClick={() => setCatOpen(false)}
                         className="flex min-h-[44px] items-center px-5 py-2.5 font-sans text-xs font-medium uppercase tracking-wider text-ink transition-colors hover:bg-vellum hover:text-heritage"
                       >
-                        {cat}
+                        {t(cat)}
                       </Link>
                     ))}
                   </div>
@@ -408,7 +435,7 @@ export default function Masthead() {
                   onClick={() => setMenuOpen(false)}
                   className="block border-b border-stone-300/30 py-3 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:text-heritage"
                 >
-                  {link.label}
+                  {t(link.label)}
                 </Link>
               ))}
               <Link
@@ -416,7 +443,7 @@ export default function Masthead() {
                 onClick={() => setMenuOpen(false)}
                 className="block py-3 font-sans text-sm font-medium uppercase tracking-wider text-redacted transition-colors hover:text-heritage"
               >
-                Sign In
+                {strings.signIn}
               </Link>
             </div>
           </div>

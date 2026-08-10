@@ -10,6 +10,7 @@ import { heroArticle, sidebarArticles, rightColumnArticle } from "@/lib/demoData
 import NewsCard from "@/components/newspaper/NewsCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/LanguageContext";
 
 const heroSlides = [
   {
@@ -42,6 +43,7 @@ const heroSlides = [
 ];
 
 export default function HeroSection() {
+  const { t } = useLanguage();
   const [api, setApi] = React.useState(null);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
@@ -75,7 +77,7 @@ export default function HeroSection() {
       } else {
         api.scrollTo(0);
       }
-    }, 2000);
+    }, 5000);
 
     return () => window.clearInterval(interval);
   }, [api]);
@@ -101,7 +103,7 @@ export default function HeroSection() {
                       <div className="relative aspect-[16/10] overflow-hidden">
                         <img
                           src={slide.image}
-                          alt={slide.headline}
+                          alt={t(slide.headline)}
                           className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5" />
@@ -109,17 +111,17 @@ export default function HeroSection() {
 
                       <div className="absolute inset-x-0 bottom-0 max-w-[78%] p-4 text-paper sm:max-w-[70%] sm:p-5 lg:max-w-[62%] lg:p-6">
                         <span className="inline-flex rounded-full border border-paper/20 bg-paper/10 px-2.5 py-1 font-sans text-[0.6rem] font-bold uppercase tracking-[0.16em] text-paper backdrop-blur-sm">
-                          {slide.category}
+                          {t(slide.category)}
                         </span>
                         <h2 className="mt-2 font-display text-xl font-black leading-tight text-paper sm:text-2xl lg:text-3xl">
-                          {slide.headline}
+                          {t(slide.headline)}
                         </h2>
                         <p className="mt-1.5 max-w-md font-body text-[0.78rem] leading-relaxed text-paper/80 sm:text-sm">
-                          {slide.summary}
+                          {t(slide.summary)}
                         </p>
                         <div className="mt-3 flex flex-wrap items-center gap-3">
                           <span className="hover-lift inline-flex bg-paper px-3.5 py-2 font-sans text-[0.68rem] font-bold uppercase tracking-wider text-ink transition-colors hover:bg-heritage hover:text-paper">
-                            {slide.cta}
+                            {t(slide.cta)}
                           </span>
                         </div>
                       </div>
@@ -177,13 +179,13 @@ export default function HeroSection() {
               to="/subscriptions"
               className="hover-lift bg-heritage px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
             >
-              Subscribe Now
+              {t("Subscribe Now")}
             </Link>
             <Link
               to="/news"
               className="hover-lift border-2 border-ink px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-ink hover:text-paper"
             >
-              Read Today's Edition
+              {t("Read Today's Edition")}
             </Link>
           </div>
         </div>
@@ -193,19 +195,19 @@ export default function HeroSection() {
             <article className="section-sheen">
               <img
                 src={rightColumnArticle.image}
-                alt={rightColumnArticle.headline}
+                alt={t(rightColumnArticle.headline)}
                 className="editorial-image mb-4 aspect-[5/4] w-full object-cover transition-transform duration-700 group-hover:scale-[1.01]"
               />
               <span className="category-label">
-                {rightColumnArticle.category}
+                {t(rightColumnArticle.category)}
               </span>
               <h3 className="mt-2 font-heading text-lg font-bold leading-snug text-ink transition-colors group-hover:text-heritage">
-                {rightColumnArticle.headline}
+                {t(rightColumnArticle.headline)}
               </h3>
               <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
-                {rightColumnArticle.summary}
+                {t(rightColumnArticle.summary)}
               </p>
-              <p className="meta-text mt-3">By {rightColumnArticle.author}</p>
+              <p className="meta-text mt-3">{t("By")} {t(rightColumnArticle.author)}</p>
             </article>
           </Link>
         </div>

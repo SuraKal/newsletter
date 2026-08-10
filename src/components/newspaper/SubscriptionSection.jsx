@@ -3,8 +3,11 @@ import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
 import { subscriptionPlans } from "@/lib/demoData";
 import SectionHeader from "@/components/newspaper/SectionHeader";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function SubscriptionSection() {
+  const { t } = useLanguage();
+
   return (
     <section className="bg-vellum py-16">
       <div className="max-w-7xl mx-auto px-4">
@@ -13,8 +16,7 @@ export default function SubscriptionSection() {
           viewAllLink="/subscriptions"
         />
         <p className="font-body text-base text-redacted max-w-2xl mb-10">
-          Join thousands of discerning readers who trust ንቐደም for their daily
-          news. Choose the plan that suits your reading habits.
+          {t("Join thousands of discerning readers who trust ንቐደም for their daily news. Choose the plan that suits your reading habits.")}
         </p>
 
         <div className="grid grid-cols-1 gap-7 md:grid-cols-3 lg:gap-6">
@@ -25,21 +27,21 @@ export default function SubscriptionSection() {
               >
                 {plan.highlighted && (
                   <span className="font-sans text-[0.6rem] font-bold tracking-widest uppercase text-heritage bg-heritage/10 px-3 py-1 mb-4 inline-block">
-                    Most Popular
+                    {t("Most Popular")}
                   </span>
                 )}
                 <h3 className="font-display text-2xl font-bold text-ink">
-                  {plan.name}
+                  {t(plan.name)}
                 </h3>
                 <p className="font-body text-sm text-redacted mt-1">
-                  {plan.description}
+                  {t(plan.description)}
                 </p>
                 <div className="mt-4 mb-6">
                   <span className="font-display text-4xl font-black text-ink">
                     ${plan.price}
                   </span>
                   <span className="font-sans text-sm text-redacted">
-                    {plan.period}
+                    {t(plan.period)}
                   </span>
                 </div>
                 <ul className="space-y-2.5 mb-8">
@@ -47,7 +49,7 @@ export default function SubscriptionSection() {
                     <li key={feature} className="flex items-start gap-2">
                       <Check className="w-4 h-4 text-heritage mt-0.5 flex-shrink-0" />
                       <span className="font-body text-sm text-ink">
-                        {feature}
+                        {t(feature)}
                       </span>
                     </li>
                   ))}
@@ -60,7 +62,7 @@ export default function SubscriptionSection() {
                       : "border-2 border-ink text-ink hover:bg-ink hover:text-paper"
                   }`}
                 >
-                  Subscribe
+                  {t("Subscribe")}
                 </Link>
               </div>
             </div>

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { BriefcaseBusiness, Mail, Phone, Sparkles } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 const contactCards = [
   {
@@ -30,6 +31,8 @@ const contactCards = [
 ];
 
 export default function BusinessContactSection() {
+  const { t } = useLanguage();
+
   return (
     <section className="bg-vellum py-16">
       <div className="mx-auto max-w-7xl px-4">
@@ -37,14 +40,11 @@ export default function BusinessContactSection() {
           <div className="flex items-center gap-3">
             <BriefcaseBusiness className="h-5 w-5 text-heritage" />
             <h2 className="font-display text-2xl font-black uppercase text-ink md:text-3xl">
-              Dedicated Business Contact
+              {t("Dedicated Business Contact")}
             </h2>
           </div>
           <p className="mt-3 font-body text-base leading-relaxed text-redacted">
-            This section is for organizations that need advertising, bulk
-            subscriptions, sponsorships, or partnership support. It sits
-            alongside the main contact area so business inquiries have a clear
-            dedicated path.
+            {t("This section is for organizations that need advertising, bulk subscriptions, sponsorships, or partnership support. It sits alongside the main contact area so business inquiries have a clear dedicated path.")}
           </p>
         </div>
 
@@ -56,13 +56,13 @@ export default function BusinessContactSection() {
             >
               <card.icon className="h-5 w-5 text-heritage" />
               <h3 className="mt-4 font-sans text-xs font-bold uppercase tracking-widest text-ink">
-                {card.title}
+                {t(card.title)}
               </h3>
               <p className="mt-3 font-display text-xl font-bold text-ink">
-                {card.detail}
+                {t(card.detail)}
               </p>
               <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
-                {card.note}
+                {t(card.note)}
               </p>
               {card.href.startsWith("http") ||
               card.href.startsWith("mailto:") ||
@@ -71,14 +71,14 @@ export default function BusinessContactSection() {
                   href={card.href}
                   className="hover-lift mt-5 inline-flex bg-heritage px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
                 >
-                  {card.action}
+                  {t(card.action)}
                 </a>
               ) : (
                 <Link
                   to={card.href}
                   className="hover-lift mt-5 inline-flex bg-heritage px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
                 >
-                  {card.action}
+                  {t(card.action)}
                 </Link>
               )}
             </article>
