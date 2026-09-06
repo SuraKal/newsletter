@@ -131,7 +131,7 @@ export default function TopSlider() {
           ))}
         </CarouselContent>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-center justify-between px-4 pb-4 sm:px-6">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center pb-4">
           <div className="flex items-center gap-2">
             {topSliderSlides.map((slide, index) => (
               <button
@@ -148,7 +148,9 @@ export default function TopSlider() {
               />
             ))}
           </div>
+        </div>
 
+        <div className="pointer-events-none absolute right-3 top-1/2 z-20 flex max-w-[calc(100%-6rem)] -translate-y-1/2 flex-col items-center gap-2 sm:right-4">
           <div className="flex items-center gap-2">
             <Button
               type="button"
