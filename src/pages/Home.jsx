@@ -1,5 +1,6 @@
 import React from "react";
 import Masthead from "@/components/newspaper/Masthead";
+import TopSlider from "@/components/newspaper/TopSlider";
 import HeroSection from "@/components/newspaper/HeroSection";
 import LatestNewsSection from "@/components/newspaper/LatestNewsSection";
 import FeaturedStorySection from "@/components/newspaper/FeaturedStorySection";
@@ -18,6 +19,8 @@ export default function Home() {
     <div className="min-h-screen bg-paper">
       <Masthead />
       <main className="overflow-hidden">
+        <TopSlider />
+        <div className="newspaper-rule max-w-7xl mx-auto" />
         <ScrollReveal effect="wipe" className="section-sheen section-drift">
           <HeroSection />
         </ScrollReveal>

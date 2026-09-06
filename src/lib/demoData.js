@@ -159,6 +159,49 @@ export const homepageHeroSlides = [
   },
 ];
 
+export const topSliderSlides = [
+  {
+    id: "top-1",
+    image: IMAGES.politics,
+    category: "Breaking News",
+    headline: "Federal Council Votes on Landmark Infrastructure Bill Affecting National Transport Grid",
+    summary:
+      "Lawmakers convene for a decisive session as the proposed legislation promises to reshape freight corridors and public transit funding across Belgium and Germany.",
+    cta: "Read full coverage",
+    href: "/news/politics-infrastructure-bill",
+  },
+  {
+    id: "top-2",
+    image: IMAGES.sports,
+    category: "Weekend Preview",
+    headline: "Championship Fixtures Set as Clubs Finalize Lineups for Season Opener",
+    summary:
+      "Pre-season conclusions and transfer deadlines collide this weekend with six marquee matches headlining the opening round of competitive play.",
+    cta: "See match schedule",
+    href: "/news/sports-weekend-preview",
+  },
+  {
+    id: "top-3",
+    image: IMAGES.economy,
+    category: "Market Report",
+    headline: "Eurozone Inflation Data Points to Shift in Central Bank Rate Strategy",
+    summary:
+      "New consumer price indices released this morning suggest policymakers may accelerate easing timelines as retail demand softens in core economies.",
+    cta: "View market analysis",
+    href: "/news/eurozone-inflation-report",
+  },
+  {
+    id: "top-4",
+    image: IMAGES.culture,
+    category: "Culture & Events",
+    headline: "Summer Festival Season Peaks with Record Attendance Across Major European Cities",
+    summary:
+      "From Brussels to Berlin, cultural institutions report surge in visitors as outdoor programming and live events draw pre-pandemic crowds.",
+    cta: "Explore events guide",
+    href: "/news/summer-festival-coverage",
+  },
+];
+
 export const homepagePromisePoints = [
   {
     label: "Recent access",
