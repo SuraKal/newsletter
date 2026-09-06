@@ -1,6 +1,5 @@
 import React from "react";
 import Masthead from "@/components/newspaper/Masthead";
-import TopSlider from "@/components/newspaper/TopSlider";
 import HeroSection from "@/components/newspaper/HeroSection";
 import LatestNewsSection from "@/components/newspaper/LatestNewsSection";
 import FeaturedStorySection from "@/components/newspaper/FeaturedStorySection";
@@ -13,22 +12,20 @@ import EditorialsSection from "@/components/newspaper/EditorialsSection";
 import NewsletterSection from "@/components/newspaper/NewsletterSection";
 import Footer from "@/components/newspaper/Footer";
 import ScrollReveal from "@/components/newspaper/ScrollReveal";
+import HeritageOrnament from "@/components/newspaper/HeritageOrnament";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-paper">
+    <div className="min-h-screen bg-paper newspaper-page">
       <Masthead />
       <main className="overflow-hidden">
-        <TopSlider />
-        <div className="newspaper-rule max-w-7xl mx-auto" />
         <ScrollReveal effect="wipe" className="section-sheen section-drift">
           <HeroSection />
         </ScrollReveal>
-        <div className="newspaper-rule max-w-7xl mx-auto" />
+        <HeritageOrnament className="mx-auto max-w-[720px] h-5" />
         <ScrollReveal effect="float" delay={40} className="section-spark">
           <LatestNewsSection />
         </ScrollReveal>
-        <div className="newspaper-rule max-w-7xl mx-auto" />
         <FeaturedStorySection />
         <ScrollReveal effect="fade" delay={35} className="section-panel">
           <SubscriptionSection />

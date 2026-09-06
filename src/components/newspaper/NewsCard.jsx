@@ -29,7 +29,7 @@ export default function NewsCard({
   if (variant === "compact") {
     return (
       <Link to={`/article/${id}`} className="group block">
-        <article className="hover-lift flex gap-4 rounded-[1rem] border border-stone-300/50 bg-paper p-4 shadow-[0_10px_26px_rgba(0,0,0,0.04)]">
+        <article className="hover-lift flex gap-3 border-b border-stone-400/60 bg-transparent px-3 py-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="category-label">{t(category)}</span>
@@ -55,7 +55,7 @@ export default function NewsCard({
             <img
               src={image}
               alt={t(headline)}
-              className="editorial-image h-14 w-14 flex-shrink-0 rounded-[0.75rem] object-cover sm:h-16 sm:w-16"
+              className="editorial-image h-14 w-14 flex-shrink-0 object-cover sm:h-16 sm:w-16"
             />
           )}
         </article>
@@ -65,9 +65,9 @@ export default function NewsCard({
 
   return (
     <Link to={`/article/${id}`} className="group block">
-      <article className="hover-lift rounded-[1.25rem] border border-stone-300/60 bg-paper p-5 shadow-[0_14px_34px_rgba(0,0,0,0.05)]">
+      <article className="hover-lift border border-stone-400/60 bg-paper p-4">
         {image && (
-          <div className="mb-4 overflow-hidden rounded-[0.9rem]">
+          <div className="mb-4 overflow-hidden">
             <img
               src={image}
               alt={headline}
@@ -94,7 +94,7 @@ export default function NewsCard({
           </p>
         ) : null}
         {showAccessState ? (
-          <p className="mt-3 rounded-[0.95rem] border border-stone-300/40 bg-vellum/70 px-3 py-2 font-body text-xs leading-relaxed text-redacted">
+          <p className="mt-3 border-l-2 border-heritage bg-vellum/70 px-3 py-2 font-body text-xs leading-relaxed text-redacted">
             {t(access.detail)}
           </p>
         ) : null}

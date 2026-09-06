@@ -203,6 +203,30 @@
   border-top: 1px solid rgba(120, 113, 108, 0.3);
 }
 
+.heritage-ornament {
+  height: 2.25rem;
+  border-top: 0.22rem solid #4c2b08;
+  border-bottom: 0.22rem solid #4c2b08;
+  background-color: #4c2b08;
+  background-image: url("./assets/style.png");
+  background-position: center;
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+}
+
+.newspaper-page {
+  background:
+    linear-gradient(rgba(247, 243, 235, 0.88), rgba(247, 243, 235, 0.88)),
+    repeating-linear-gradient(0deg, rgba(76, 43, 8, 0.025) 0 1px, transparent 1px 4px);
+}
+
+.newspaper-sheet {
+  background:
+    linear-gradient(rgba(252, 249, 241, 0.96), rgba(252, 249, 241, 0.96)),
+    repeating-linear-gradient(90deg, rgba(76, 43, 8, 0.035) 0 1px, transparent 1px 5px);
+  box-shadow: 0 12px 30px rgba(76, 43, 8, 0.08);
+}
+
 .newspaper-rule-thick {
   border-top: 2px solid hsl(var(--ink));
 }

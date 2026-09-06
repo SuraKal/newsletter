@@ -15,8 +15,8 @@ export default function FeaturedStorySection() {
       <div className="mx-auto max-w-7xl px-4">
         <SectionHeader
           title="Featured"
-          titleClassName="text-cream"
-          linkClassName="text-cream/75 hover:text-cream"
+          titleClassName="!text-cream"
+          linkClassName="!text-cream/75 hover:!text-cream"
           ruleClassName="border-cream/40"
         />
         <Link to={`/article/${featuredStory.id}`} className="group block">

@@ -12,6 +12,7 @@ import {
 import { NAV_LINKS, CATEGORIES } from "@/lib/constants";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { useLanguage } from "@/lib/LanguageContext";
+import HeritageOrnament from "@/components/newspaper/HeritageOrnament";
 
 const SEARCH_SUGGESTIONS = ["Politics", "Business", "Technology", "Markets"];
 const SOCIAL_LINKS = [
@@ -198,25 +199,6 @@ export default function Masthead() {
                 {strings.edition}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 md:hidden">
-              {SOCIAL_LINKS.map((social) => (
-                <a
-                  key={social.name}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-stone-300/60 bg-paper transition-colors hover:border-heritage hover:bg-vellum"
-                  aria-label={social.name}
-                  title={social.name}
-                >
-                  <img
-                    src={`https://cdn.simpleicons.org/${social.slug}`}
-                    alt=""
-                    className="h-3.5 w-3.5"
-                  />
-                </a>
-              ))}
-            </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2">
                 <button
@@ -227,25 +209,6 @@ export default function Masthead() {
                   <Globe className="h-3.5 w-3.5" />
                   <span>{strings.switchTo}</span>
                 </button>
-                <div className="hidden items-center gap-2 md:flex">
-                  {SOCIAL_LINKS.map((social) => (
-                    <a
-                      key={social.name}
-                      href={social.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-stone-300/60 bg-paper transition-colors hover:border-heritage hover:bg-vellum"
-                      aria-label={social.name}
-                      title={social.name}
-                    >
-                      <img
-                        src={`https://cdn.simpleicons.org/${social.slug}`}
-                        alt=""
-                        className="h-3.5 w-3.5"
-                      />
-                    </a>
-                  ))}
-                </div>
               </div>
               <Link
                 to="/subscriptions"
@@ -258,7 +221,7 @@ export default function Masthead() {
         </div>
 
         <div
-          className={`bg-heritage px-4 text-cream transition-all duration-300 rounded-2xl ${
+          className={`border-y-2 border-ink bg-paper px-4 text-ink transition-all duration-300 ${
             compactHeader ? "py-3" : "py-5"
           }`}
         >
@@ -267,8 +230,8 @@ export default function Masthead() {
               onClick={toggleSearch}
               className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-all md:h-11 md:w-11 ${
                 searchOpen
-                  ? "border-cream bg-cream text-heritage"
-                  : "border-cream/25 text-cream hover:border-cream hover:text-white"
+                  ? "border-heritage bg-heritage text-paper"
+                  : "border-stone-400 text-ink hover:border-heritage hover:text-heritage"
               }`}
               aria-label="Search"
               aria-expanded={searchOpen}
@@ -280,11 +243,11 @@ export default function Masthead() {
               )}
             </button>
 
-            <Link to="/" className="text-center" onClick={closeAllPanels}>
-              <h1 className="font-display text-2xl font-black tracking-tight text-cream md:text-5xl lg:text-6xl">
+            <Link to="/" className="flex items-center justify-center gap-3 text-center" onClick={closeAllPanels}>
+              <h1 className="font-display text-3xl font-black tracking-tight text-ink md:text-6xl lg:text-7xl">
                 ንቐደም
               </h1>
-              <p className="mt-1 hidden font-sans text-[0.6rem] uppercase tracking-[0.35em] text-cream/60 md:block">
+              <p className="mt-1 hidden font-sans text-[0.6rem] uppercase tracking-[0.35em] text-redacted md:block">
                 Independent Journalism Since 2024
               </p>
             </Link>
@@ -297,12 +260,12 @@ export default function Masthead() {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-cream/25 bg-paper/10 transition-colors hover:border-cream hover:bg-paper/20"
+                    className="inline-flex h-9 w-9 items-center justify-center border border-stone-300/70 bg-vellum transition-colors hover:border-heritage hover:bg-paper"
                     aria-label={social.name}
                     title={social.name}
                   >
                     <img
-                      src={`https://cdn.simpleicons.org/${social.slug}/ffffff`}
+                    src={`https://cdn.simpleicons.org/${social.slug}`}
                       alt=""
                       className="h-4 w-4"
                     />
@@ -313,14 +276,14 @@ export default function Masthead() {
                 <DarkModeToggle />
                 <Link
                   to="/login"
-                  className="hidden font-sans text-xs font-medium uppercase tracking-wider text-cream/70 transition-colors hover:text-cream md:block"
+                  className="hidden font-sans text-xs font-medium uppercase tracking-wider text-redacted transition-colors hover:text-heritage md:block"
                   onClick={closeAllPanels}
                 >
                   {strings.signIn}
                 </Link>
                 <button
                   onClick={toggleMenu}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-cream/25 text-cream transition-colors hover:border-cream hover:text-white md:hidden md:h-11 md:w-11"
+                   className="inline-flex h-10 w-10 items-center justify-center border border-stone-400 text-ink transition-colors hover:border-heritage hover:text-heritage md:hidden md:h-11 md:w-11"
                   aria-label="Menu"
                   aria-expanded={menuOpen}
                 >
@@ -411,15 +374,15 @@ export default function Masthead() {
         </div>
 
         {/* <div className="newspaper-rule-thick" /> */}
-        <nav className="hidden md:block">
+        <nav className="hidden border-y border-paper/20 bg-heritage text-paper md:block">
           <div className="px-4">
-            <ul className="flex items-center justify-center gap-0 divide-x divide-stone-300/50">
+            <ul className="flex items-center justify-center gap-0 divide-x divide-paper/20">
               {NAV_LINKS.map((link) => (
                 <li key={link.path}>
                   <Link
                     to={link.path}
                     onClick={closeAllPanels}
-                    className="flex min-h-[44px] items-center px-5 py-3 font-sans text-xs font-semibold uppercase tracking-widest text-ink transition-colors hover:text-heritage"
+                    className="flex min-h-[44px] items-center px-5 py-3 font-sans text-xs font-semibold uppercase tracking-widest text-paper transition-colors hover:bg-paper hover:text-heritage"
                   >
                     {t(link.label)}
                   </Link>
@@ -428,7 +391,7 @@ export default function Masthead() {
               <li className="relative">
                 <button
                   onClick={toggleCategories}
-                  className="flex min-h-[44px] items-center gap-1 px-5 py-3 font-sans text-xs font-semibold uppercase tracking-widest text-ink transition-colors hover:text-heritage"
+                    className="flex min-h-[44px] items-center gap-1 px-5 py-3 font-sans text-xs font-semibold uppercase tracking-widest text-paper transition-colors hover:bg-paper hover:text-heritage"
                 >
                   {strings.categories}
                   <ChevronDown
@@ -455,17 +418,18 @@ export default function Masthead() {
             </ul>
           </div>
         </nav>
+        <HeritageOrnament className="h-8 w-full" />
         <div className="newspaper-rule" />
 
         {menuOpen && (
-          <div className="border-t border-stone-300/50 bg-paper md:hidden">
+          <div className="border-t border-paper/20 bg-heritage md:hidden">
             <div className="px-4 py-4">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
                   onClick={() => setMenuOpen(false)}
-                  className="block border-b border-stone-300/30 py-3 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:text-heritage"
+                  className="block border-b border-paper/20 py-3 font-sans text-sm font-semibold uppercase tracking-wider text-paper transition-colors hover:bg-paper hover:text-heritage"
                 >
                   {t(link.label)}
                 </Link>
@@ -473,7 +437,7 @@ export default function Masthead() {
               <Link
                 to="/login"
                 onClick={() => setMenuOpen(false)}
-                className="block py-3 font-sans text-sm font-medium uppercase tracking-wider text-redacted transition-colors hover:text-heritage"
+                className="block py-3 font-sans text-sm font-medium uppercase tracking-wider text-paper/75 transition-colors hover:text-paper"
               >
                 {strings.signIn}
               </Link>
