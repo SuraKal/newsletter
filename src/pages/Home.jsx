@@ -8,10 +8,6 @@ import SubscriptionSection from "@/components/newspaper/SubscriptionSection";
 import DeliverySection from "@/components/newspaper/DeliverySection";
 import BusinessSection from "@/components/newspaper/BusinessSection";
 import BusinessContactSection from "@/components/newspaper/BusinessContactSection";
-import UserGuideVideoSection from "@/components/newspaper/UserGuideVideoSection";
-import TrustedPartnersSection from "@/components/newspaper/TrustedPartnersSection";
-import MobileAppSection from "@/components/newspaper/MobileAppSection";
-import TestimonialsSection from "@/components/newspaper/TestimonialsSection";
 import EditorialsSection from "@/components/newspaper/EditorialsSection";
 import NewsletterSection from "@/components/newspaper/NewsletterSection";
 import Footer from "@/components/newspaper/Footer";
@@ -31,10 +27,6 @@ export default function Home() {
         </ScrollReveal>
         <div className="newspaper-rule max-w-7xl mx-auto" />
         <FeaturedStorySection />
-        <div className="newspaper-rule max-w-7xl mx-auto" />
-        <ScrollReveal effect="rise" delay={40} className="section-wave">
-          <CategoriesSection />
-        </ScrollReveal>
         <ScrollReveal effect="fade" delay={35} className="section-panel">
           <SubscriptionSection />
         </ScrollReveal>
@@ -45,21 +37,12 @@ export default function Home() {
         <ScrollReveal effect="rise" delay={35} className="section-nightglow">
           <BusinessSection />
         </ScrollReveal>
+        <div className="newspaper-rule max-w-7xl mx-auto" />
+        <ScrollReveal effect="rise" delay={40} className="section-wave">
+          <CategoriesSection />
+        </ScrollReveal>
         <ScrollReveal effect="fade" delay={35} className="section-panel">
           <BusinessContactSection />
-        </ScrollReveal>
-        <ScrollReveal effect="fade" delay={35} className="section-panel">
-          <UserGuideVideoSection />
-        </ScrollReveal>
-        <ScrollReveal effect="fade" delay={35} className="section-panel">
-          <TrustedPartnersSection />
-        </ScrollReveal>
-        <ScrollReveal effect="zoom" delay={45} className="section-techfloat">
-          <MobileAppSection />
-        </ScrollReveal>
-        <div className="newspaper-rule max-w-7xl mx-auto" />
-        <ScrollReveal effect="fade" delay={35} className="section-echo">
-          <TestimonialsSection />
         </ScrollReveal>
         <div className="newspaper-rule max-w-7xl mx-auto" />
         <ScrollReveal effect="rise" delay={35} className="section-inkflow">

@@ -11,11 +11,32 @@ const getHashId = (hash) => {
   }
 };
 
+const ensureMainTarget = () => {
+  const main =
+    document.querySelector("main") || document.querySelector("[role='main']");
+
+  if (!(main instanceof HTMLElement)) {
+    return null;
+  }
+
+  if (!main.id) {
+    main.id = "main-content";
+  }
+
+  if (!main.hasAttribute("tabindex")) {
+    main.setAttribute("tabindex", "-1");
+  }
+
+  return main;
+};
+
 export default function ScrollToTop() {
   const { pathname, hash } = useLocation();
   const navigationType = useNavigationType();
 
   useEffect(() => {
+    const main = ensureMainTarget();
+
     if (navigationType === "POP") return;
 
     if (hash) {
@@ -27,6 +48,9 @@ export default function ScrollToTop() {
     }
 
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    window.requestAnimationFrame(() => {
+      main?.focus({ preventScroll: true });
+    });
   }, [pathname, hash, navigationType]);
 
   return null;

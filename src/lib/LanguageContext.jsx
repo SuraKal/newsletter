@@ -1,6 +1,16 @@
 import React from "react";
 
 const STORAGE_KEY = "newsletter-language";
+const languageConfig = {
+  en: {
+    lang: "en",
+    locale: "en-US",
+  },
+  ti: {
+    lang: "ti",
+    locale: "ti-ER",
+  },
+};
 
 const translations = {
   en: {
@@ -495,6 +505,21 @@ function translateDomText(language) {
   translateDomAttributes(language);
 }
 
+function formatLocalizedDate(language, value, options = {}) {
+  const config = languageConfig[language] || languageConfig.en;
+  const nextValue = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(nextValue.getTime())) {
+    return "";
+  }
+
+  try {
+    return new Intl.DateTimeFormat(config.locale, options).format(nextValue);
+  } catch {
+    return new Intl.DateTimeFormat(languageConfig.en.locale, options).format(nextValue);
+  }
+}
+
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = React.useState(() => {
     if (typeof window === "undefined") {
@@ -506,6 +531,14 @@ export function LanguageProvider({ children }) {
 
   React.useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, language);
+
+    if (typeof document !== "undefined") {
+      const config = languageConfig[language] || languageConfig.en;
+      document.documentElement.lang = config.lang;
+      document.documentElement.dir = "ltr";
+      document.documentElement.dataset.language = language;
+    }
+
     window.setTimeout(() => translateDomText(language), 0);
   }, [language]);
 
@@ -532,7 +565,9 @@ export function LanguageProvider({ children }) {
       setLanguage,
       isTigrigna: language === "ti",
       strings: translations[language],
+      locale: (languageConfig[language] || languageConfig.en).locale,
       t: (text) => contentTranslations[language]?.[text] || text,
+      formatDate: (value, options) => formatLocalizedDate(language, value, options),
       toggleLanguage: () => setLanguage((current) => (current === "en" ? "ti" : "en")),
     }),
     [language],

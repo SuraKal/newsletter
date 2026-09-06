@@ -5,6 +5,7 @@ const storage = isBrowser ? window.localStorage : null;
 const usersKey = `${appParams.storagePrefix}_users`;
 const sessionKey = `${appParams.storagePrefix}_session`;
 const resetTokensKey = `${appParams.storagePrefix}_reset_tokens`;
+const governanceRequestsKey = `${appParams.storagePrefix}_governance_requests`;
 
 const defaultUsers = [
   {
@@ -13,6 +14,7 @@ const defaultUsers = [
     email: appParams.adminEmail,
     password: appParams.adminPassword,
     role: "admin",
+    accountType: "admin",
   },
   {
     id: "reader-1",
@@ -20,6 +22,16 @@ const defaultUsers = [
     email: appParams.readerEmail,
     password: appParams.readerPassword,
     role: "reader",
+    accountType: "individual",
+  },
+  {
+    id: "business-1",
+    name: `${appParams.appName} Operations`,
+    email: appParams.businessEmail,
+    password: appParams.businessPassword,
+    role: "business",
+    accountType: "business",
+    companyName: `${appParams.appName} Distribution Group`,
   },
 ];
 
@@ -64,13 +76,20 @@ const ensureSeedData = () => {
 
   const existingUsers = readJson(usersKey, []);
   const preservedUsers = existingUsers.filter(
-    (user) => user.id !== "admin-1" && user.id !== "reader-1",
+    (user) =>
+      user.id !== "admin-1" &&
+      user.id !== "reader-1" &&
+      user.id !== "business-1",
   );
 
   writeJson(usersKey, [...defaultUsers, ...preservedUsers]);
 
   if (!storage.getItem(resetTokensKey)) {
     writeJson(resetTokensKey, {});
+  }
+
+  if (!storage.getItem(governanceRequestsKey)) {
+    writeJson(governanceRequestsKey, []);
   }
 };
 
@@ -109,6 +128,33 @@ const getUserById = (userId) => {
   return users.find((user) => user.id === userId) ?? null;
 };
 
+const getCurrentSessionUser = () => {
+  const session = readSession();
+  return session ? getUserById(session.userId) : null;
+};
+
+const updateStoredUser = (userId, updates) => {
+  const users = readUsers();
+  const nextUsers = users.map((user) =>
+    user.id === userId ? { ...user, ...updates } : user,
+  );
+  writeUsers(nextUsers);
+  return getUserById(userId);
+};
+
+const readGovernanceRequests = () => readJson(governanceRequestsKey, []);
+
+const writeGovernanceRequests = (requests) => {
+  writeJson(governanceRequestsKey, requests);
+};
+
+const formatRequestDate = (date) =>
+  new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+
 const buildLoginUrl = (fromUrl) => {
   const loginUrl = new URL("/login", window.location.origin);
 
@@ -146,9 +192,20 @@ export const appClient = {
       return sanitizeUser(user);
     },
 
-    async register({ name, email, password, role = "reader" }) {
+    async register({
+      name,
+      email,
+      password,
+      role = "reader",
+      accountType,
+      companyName = "",
+      contactPhone = "",
+      deliveryAddress = "",
+    }) {
       const normalizedEmail = normalizeEmail(email);
       const users = readUsers();
+      const resolvedAccountType =
+        accountType || (role === "business" ? "business" : "individual");
 
       if (users.some((user) => user.email === normalizedEmail)) {
         throw createAuthError("An account with that email already exists", 409);
@@ -160,6 +217,10 @@ export const appClient = {
         email: normalizedEmail,
         password,
         role,
+        accountType: resolvedAccountType,
+        companyName: companyName.trim() || null,
+        contactPhone: contactPhone.trim() || null,
+        deliveryAddress: deliveryAddress.trim() || null,
       };
 
       writeUsers([...users, newUser]);
@@ -201,6 +262,32 @@ export const appClient = {
       return { ok: true };
     },
 
+    async updateProfile({
+      name,
+      contactPhone = "",
+      deliveryAddress = "",
+      city = "",
+      postalCode = "",
+      country = "",
+    }) {
+      const currentUser = getCurrentSessionUser();
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      const updatedUser = updateStoredUser(currentUser.id, {
+        name: name.trim(),
+        contactPhone: contactPhone.trim() || null,
+        deliveryAddress: deliveryAddress.trim() || null,
+        city: city.trim() || null,
+        postalCode: postalCode.trim() || null,
+        country: country.trim() || null,
+      });
+
+      return sanitizeUser(updatedUser);
+    },
+
     logout(redirectTo) {
       clearSession();
 
@@ -215,6 +302,212 @@ export const appClient = {
       }
 
       window.location.assign(buildLoginUrl(fromUrl));
+    },
+  },
+  account: {
+    async getConsentSettings() {
+      const currentUser = getCurrentSessionUser();
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      return {
+        newsletterOptIn: Boolean(currentUser.newsletterOptIn),
+        privacyUpdatesOptIn:
+          currentUser.privacyUpdatesOptIn === undefined
+            ? true
+            : Boolean(currentUser.privacyUpdatesOptIn),
+        deliveryDataConsent:
+          currentUser.deliveryDataConsent === undefined
+            ? true
+            : Boolean(currentUser.deliveryDataConsent),
+      };
+    },
+
+    async saveConsentSettings({
+      newsletterOptIn,
+      privacyUpdatesOptIn,
+      deliveryDataConsent,
+    }) {
+      const currentUser = getCurrentSessionUser();
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      updateStoredUser(currentUser.id, {
+        newsletterOptIn: Boolean(newsletterOptIn),
+        privacyUpdatesOptIn: Boolean(privacyUpdatesOptIn),
+        deliveryDataConsent: Boolean(deliveryDataConsent),
+      });
+
+      return {
+        newsletterOptIn: Boolean(newsletterOptIn),
+        privacyUpdatesOptIn: Boolean(privacyUpdatesOptIn),
+        deliveryDataConsent: Boolean(deliveryDataConsent),
+      };
+    },
+
+    async listGovernanceRequests() {
+      const currentUser = getCurrentSessionUser();
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      return readGovernanceRequests().filter(
+        (request) =>
+          request.userId === currentUser.id && request.scope !== "company",
+      );
+    },
+
+    async requestDataExport({ notes = "" } = {}) {
+      const currentUser = getCurrentSessionUser();
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      const request = {
+        id: `export-${Date.now()}`,
+        userId: currentUser.id,
+        scope: "reader",
+        type: "Data export",
+        status: "Queued",
+        date: formatRequestDate(new Date()),
+        notes: notes.trim() || "Full account and subscription export requested.",
+      };
+
+      writeGovernanceRequests([...readGovernanceRequests(), request]);
+      return request;
+    },
+
+    async requestDeletion({ reason = "" } = {}) {
+      const currentUser = getCurrentSessionUser();
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      const request = {
+        id: `deletion-${Date.now()}`,
+        userId: currentUser.id,
+        scope: "reader",
+        type: "Deletion review",
+        status: "Review required",
+        date: formatRequestDate(new Date()),
+        notes:
+          reason.trim() ||
+          "Account deletion review requested under the privacy workflow.",
+      };
+
+      writeGovernanceRequests([...readGovernanceRequests(), request]);
+      return request;
+    },
+  },
+  company: {
+    async getPrivacySettings() {
+      const currentUser = getCurrentSessionUser();
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      return {
+        commercialUpdatesOptIn: Boolean(currentUser.commercialUpdatesOptIn),
+        privacyUpdatesOptIn:
+          currentUser.privacyUpdatesOptIn === undefined
+            ? true
+            : Boolean(currentUser.privacyUpdatesOptIn),
+        deliveryDataConsent:
+          currentUser.deliveryDataConsent === undefined
+            ? true
+            : Boolean(currentUser.deliveryDataConsent),
+      };
+    },
+
+    async savePrivacySettings({
+      commercialUpdatesOptIn,
+      privacyUpdatesOptIn,
+      deliveryDataConsent,
+    }) {
+      const currentUser = getCurrentSessionUser();
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      updateStoredUser(currentUser.id, {
+        commercialUpdatesOptIn: Boolean(commercialUpdatesOptIn),
+        privacyUpdatesOptIn: Boolean(privacyUpdatesOptIn),
+        deliveryDataConsent: Boolean(deliveryDataConsent),
+      });
+
+      return {
+        commercialUpdatesOptIn: Boolean(commercialUpdatesOptIn),
+        privacyUpdatesOptIn: Boolean(privacyUpdatesOptIn),
+        deliveryDataConsent: Boolean(deliveryDataConsent),
+      };
+    },
+
+    async listGovernanceRequests() {
+      const currentUser = getCurrentSessionUser();
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      return readGovernanceRequests().filter(
+        (request) =>
+          request.userId === currentUser.id && request.scope === "company",
+      );
+    },
+
+    async requestDataExport({ notes = "" } = {}) {
+      const currentUser = getCurrentSessionUser();
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      const request = {
+        id: `company-export-${Date.now()}`,
+        userId: currentUser.id,
+        scope: "company",
+        type: "Company data export",
+        status: "Queued",
+        date: formatRequestDate(new Date()),
+        notes:
+          notes.trim() ||
+          "Business account export requested for contacts, locations, and invoice-linked records.",
+      };
+
+      writeGovernanceRequests([...readGovernanceRequests(), request]);
+      return request;
+    },
+
+    async requestDeletion({ reason = "" } = {}) {
+      const currentUser = getCurrentSessionUser();
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      const request = {
+        id: `company-deletion-${Date.now()}`,
+        userId: currentUser.id,
+        scope: "company",
+        type: "Company deletion review",
+        status: "Review required",
+        date: formatRequestDate(new Date()),
+        notes:
+          reason.trim() ||
+          "Business account deletion or retention review requested under the company privacy workflow.",
+      };
+
+      writeGovernanceRequests([...readGovernanceRequests(), request]);
+      return request;
     },
   },
 };

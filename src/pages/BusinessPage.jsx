@@ -1,300 +1,369 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  Users,
-  BarChart3,
+  ArrowRight,
+  Building2,
   FileText,
+  Globe2,
+  MapPinned,
+  ReceiptText,
   Truck,
-  Shield,
-  Headphones,
+  Users,
 } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
+import BusinessContactSection from "@/components/newspaper/BusinessContactSection";
 import { IMAGES } from "@/lib/constants";
+import {
+  businessDeliveryLocations,
+  businessLandingFeatures,
+  businessLandingStats,
+  businessOnboardingSteps,
+  businessPricingFramework,
+  businessPricingNotes,
+} from "@/lib/demoData";
 
-const features = [
-  {
-    icon: Users,
-    title: "Team Management",
-    desc: "Add up to 100 team members with individual login credentials and reading profiles.",
-  },
-  {
-    icon: FileText,
-    title: "Bulk Newspaper Orders",
-    desc: "Order physical newspapers in volume with automated recurring delivery schedules.",
-  },
-  {
-    icon: BarChart3,
-    title: "Analytics Dashboard",
-    desc: "Track readership patterns, most-read articles, and team engagement metrics.",
-  },
-  {
-    icon: Truck,
-    title: "Consolidated Delivery",
-    desc: "Manage all newspaper deliveries across multiple offices from a single dashboard.",
-  },
-  {
-    icon: Shield,
-    title: "Enterprise Security",
-    desc: "SSO integration, audit logs, and compliance-ready data handling.",
-  },
-  {
-    icon: Headphones,
-    title: "Dedicated Support",
-    desc: "Priority support with a dedicated account manager for your organization.",
-  },
-];
+const featureIconMap = {
+  "Bulk copy planning": FileText,
+  "Consolidated invoicing": ReceiptText,
+  "Location management": MapPinned,
+  "Operational shipment visibility": Truck,
+  "Volume pricing logic": Globe2,
+  "Company workspace": Users,
+};
+
+const locationIconMap = {
+  "Head office delivery": Building2,
+  "Multi-branch rollout": MapPinned,
+  "Hospitality and partner sites": Truck,
+};
 
 export default function BusinessPage() {
   return (
     <div className="min-h-screen bg-paper">
       <Masthead />
       <main>
-        {/* Hero */}
-        <section className="relative">
+        <section className="relative overflow-hidden">
           <img
             src={IMAGES.boardroom}
-            alt="Business setting"
-            className="w-full h-[400px] md:h-[500px] object-cover"
+            alt="Business team planning newspaper distribution"
+            className="h-[360px] w-full object-cover sm:h-[420px] md:h-[520px]"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-night/90 via-night/70 to-night/40" />
-          <div className="absolute inset-0 flex items-center">
-            <div className="max-w-7xl mx-auto px-4">
-              <span className="font-sans text-[0.6rem] font-bold tracking-widest uppercase text-cream/50">
-                For Organizations
-              </span>
-              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-black text-cream leading-tight mt-2 max-w-2xl">
-                Premium Journalism for Your Enterprise
-              </h1>
-              <p className="font-body text-lg text-cream/70 mt-4 max-w-xl leading-relaxed">
-                Keep your team informed with ንቐደም's business subscription.
-                Volume pricing, consolidated billing, and enterprise-grade
-                management tools.
-              </p>
-              <div className="flex gap-4 mt-8">
-                <Link
-                  to="/contact"
-                  className="font-sans text-xs font-bold tracking-wider uppercase bg-cream text-night px-6 py-3 hover:bg-warmbeige transition-colors"
-                >
-                  Contact Sales
-                </Link>
-                <Link
-                  to="/subscriptions"
-                  className="font-sans text-xs font-bold tracking-wider uppercase border-2 border-cream text-cream px-6 py-3 hover:bg-cream hover:text-night transition-colors"
-                >
-                  View Plans
-                </Link>
+          <div className="absolute inset-0 bg-gradient-to-r from-night/95 via-night/78 to-night/45" />
+          <div className="absolute inset-0">
+            <div className="mx-auto flex h-full max-w-7xl items-center px-4">
+              <div className="max-w-3xl">
+                <span className="font-sans text-[0.6rem] font-bold uppercase tracking-widest text-cream/55">
+                  Company subscriptions and distribution
+                </span>
+                <h1 className="mt-3 font-display text-4xl font-black leading-tight text-cream md:text-5xl lg:text-6xl">
+                  Bulk newspaper ordering, invoicing, and delivery planning for organizations.
+                </h1>
+                <p className="mt-4 max-w-2xl font-body text-base leading-relaxed text-cream/75 sm:text-lg">
+                  Business accounts should not feel like oversized reader plans.
+                  They need copy-volume logic, multi-location routing,
+                  invoice-ready billing, and a company workspace designed around
+                  operational fulfillment.
+                </p>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
+                  <Link
+                    to="/business/apply"
+                    className="inline-flex items-center justify-center gap-2 bg-cream px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-night transition-colors hover:bg-warmbeige sm:w-auto"
+                  >
+                    Start business onboarding
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <a
+                    href="mailto:business@newsletter.local?subject=Business%20Inquiry"
+                    className="inline-flex items-center justify-center border-2 border-cream px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-cream transition-colors hover:bg-cream hover:text-night sm:w-auto"
+                  >
+                    Contact commercial team
+                  </a>
+                  <Link
+                    to="/subscriptions"
+                    className="inline-flex items-center justify-center border border-cream/50 px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-cream transition-colors hover:border-cream hover:bg-cream/10 sm:w-auto"
+                  >
+                    Compare reader plans
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Features */}
-        <section className="max-w-7xl mx-auto px-4 py-16">
-          <h2 className="font-display text-3xl font-black text-ink text-center mb-12">
-            Built for Organizations
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((f) => (
-              <div key={f.title} className="border border-stone-300/50 p-6">
-                <f.icon className="w-6 h-6 text-heritage mb-3" />
-                <h3 className="font-sans text-sm font-bold tracking-wider uppercase text-ink">
-                  {f.title}
-                </h3>
-                <p className="font-body text-sm text-redacted mt-2 leading-relaxed">
-                  {f.desc}
+        <section className="mx-auto max-w-7xl px-4 py-14">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {businessLandingStats.map((item) => (
+              <article
+                key={item.label}
+                className="rounded-[1.15rem] border border-stone-300/60 bg-vellum p-5 shadow-[0_12px_30px_rgba(0,0,0,0.04)]"
+              >
+                <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
+                  {item.label}
                 </p>
-              </div>
+                <h2 className="mt-3 font-heading text-xl font-bold leading-tight text-ink">
+                  {item.value}
+                </h2>
+                <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
+                  {item.detail}
+                </p>
+              </article>
             ))}
           </div>
         </section>
 
-        {/* Pricing */}
-        <section className="bg-vellum py-16">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h2 className="font-display text-3xl font-black text-ink mb-4">
-              Volume Pricing
+        <section className="mx-auto max-w-7xl px-4 py-10">
+          <div className="mb-10 max-w-3xl">
+            <span className="category-label">Business operating model</span>
+            <h2 className="mt-2 font-display text-3xl font-black text-ink md:text-4xl">
+              The business offer is built around fulfillment, not only access.
             </h2>
-            <p className="font-body text-base text-redacted mb-10">
-              Discounted rates for organizations of all sizes.
+            <p className="mt-4 font-body text-base leading-relaxed text-redacted">
+              The proposal separates individual readers from company buyers for a
+              reason. Business accounts need operational control over copy
+              counts, invoice structure, site delivery, and shipment visibility
+              before they ever care about a dashboard login.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  tier: "Small Team",
-                  seats: "5–25 seats",
-                  price: "$69",
-                  per: "/seat/month",
-                },
-                {
-                  tier: "Department",
-                  seats: "26–100 seats",
-                  price: "$49",
-                  per: "/seat/month",
-                },
-                {
-                  tier: "Enterprise",
-                  seats: "100+ seats",
-                  price: "Custom",
-                  per: "pricing",
-                },
-              ].map((t) => (
-                <div
-                  key={t.tier}
-                  className="bg-paper border border-stone-300/50 p-6"
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {businessLandingFeatures.map((feature) => {
+              const Icon = featureIconMap[feature.title] || FileText;
+
+              return (
+                <article
+                  key={feature.title}
+                  className="rounded-[1.15rem] border border-stone-300/60 bg-paper p-6 shadow-[0_12px_28px_rgba(0,0,0,0.04)]"
                 >
-                  <h3 className="font-sans text-xs font-bold tracking-widest uppercase text-heritage">
-                    {t.tier}
+                  <Icon className="h-6 w-6 text-heritage" />
+                  <h3 className="mt-4 font-sans text-sm font-bold uppercase tracking-wider text-ink">
+                    {feature.title}
                   </h3>
-                  <p className="meta-text mt-1">{t.seats}</p>
-                  <p className="font-display text-3xl font-black text-ink mt-4">
-                    {t.price}
+                  <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
+                    {feature.desc}
                   </p>
-                  <p className="meta-text">{t.per}</p>
-                </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="bg-vellum py-16">
+          <div className="mx-auto max-w-7xl px-4">
+            <div className="mb-10 max-w-3xl">
+              <span className="category-label">Pricing framework</span>
+              <h2 className="mt-2 font-display text-3xl font-black text-ink md:text-4xl">
+                Volume pricing should scale with distribution complexity.
+              </h2>
+              <p className="mt-4 font-body text-base leading-relaxed text-redacted">
+                The business page should explain pricing-tier logic even before
+                exact discount bands are finalized. Organizations need to know
+                that copy volume, number of locations, and invoice structure all
+                influence the quote.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {businessPricingFramework.map((tier) => (
+                <article
+                  key={tier.tier}
+                  className="rounded-[1.2rem] border border-stone-300/60 bg-paper p-6 shadow-[0_12px_28px_rgba(0,0,0,0.04)]"
+                >
+                  <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
+                    {tier.tier}
+                  </p>
+                  <h3 className="mt-3 font-heading text-2xl font-bold text-ink">
+                    {tier.pricing}
+                  </h3>
+                  <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-redacted">
+                    {tier.volume}
+                  </p>
+                  <p className="mt-4 font-body text-sm leading-relaxed text-redacted">
+                    {tier.billing}
+                  </p>
+                  <p className="mt-4 rounded-[1rem] bg-vellum px-4 py-3 font-body text-sm leading-relaxed text-redacted">
+                    {tier.note}
+                  </p>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-8 grid gap-4 lg:grid-cols-3">
+              {businessPricingNotes.map((note) => (
+                <article
+                  key={note}
+                  className="rounded-[1rem] border border-stone-300/50 bg-vellum/65 p-4"
+                >
+                  <p className="font-body text-sm leading-relaxed text-redacted">
+                    {note}
+                  </p>
+                </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="max-w-7xl mx-auto px-4 py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-10 lg:gap-14">
+        <section className="mx-auto max-w-7xl px-4 py-16">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
             <div>
-              <span className="font-sans text-[0.6rem] font-bold tracking-widest uppercase text-heritage">
-                Business Inquiry
-              </span>
+              <span className="category-label">Delivery locations and invoicing</span>
               <h2 className="mt-2 font-display text-3xl font-black text-ink md:text-4xl">
-                Send a business request
+                Delivery planning has to work across one office or many.
               </h2>
-              <p className="mt-4 max-w-2xl font-body text-base leading-relaxed text-redacted">
-                Use this form for sponsorships, advertising, bulk subscriptions,
-                enterprise partnerships, or newsroom collaboration requests.
-                We will route it to the right commercial contact.
+              <p className="mt-4 font-body text-base leading-relaxed text-redacted">
+                Business fulfillment can mean one headquarters, a cluster of
+                branches, or partner-facing sites like hotels and lounges. The
+                landing page should make that operational flexibility visible
+                before onboarding starts.
               </p>
 
-              <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div className="border border-stone-300/60 bg-vellum p-6">
-                  <h3 className="font-sans text-xs font-bold uppercase tracking-widest text-ink">
-                    Response Time
-                  </h3>
+              <div className="mt-8 space-y-4">
+                {businessDeliveryLocations.map((location) => {
+                  const Icon = locationIconMap[location.title] || Building2;
+
+                  return (
+                    <article
+                      key={location.title}
+                      className="rounded-[1.1rem] border border-stone-300/60 bg-vellum p-5"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-heritage/30 bg-paper">
+                          <Icon className="h-5 w-5 text-heritage" />
+                        </div>
+                        <div>
+                          <h3 className="font-heading text-lg font-bold text-ink">
+                            {location.title}
+                          </h3>
+                          <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
+                            {location.detail}
+                          </p>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-[1.25rem] border border-stone-300/60 bg-paper p-6 shadow-[0_18px_40px_rgba(0,0,0,0.06)]">
+              <p className="category-label">Invoice expectations</p>
+              <h3 className="mt-3 font-heading text-2xl font-bold text-ink">
+                Commercial billing needs more structure than a normal reader checkout.
+              </h3>
+              <div className="mt-5 space-y-4">
+                <div className="rounded-[1rem] border border-stone-300/50 bg-vellum p-4">
+                  <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
+                    Monthly or quarterly invoices
+                  </p>
                   <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                    Most business inquiries receive a reply within 1 business
-                    day.
+                    Some teams will want a simple recurring invoice tied to one
+                    primary billing contact and one delivery group.
                   </p>
                 </div>
-                <div className="border border-stone-300/60 bg-vellum p-6">
-                  <h3 className="font-sans text-xs font-bold uppercase tracking-widest text-ink">
-                    Best For
-                  </h3>
+                <div className="rounded-[1rem] border border-stone-300/50 bg-vellum p-4">
+                  <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
+                    Contract billing for larger rollouts
+                  </p>
                   <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                    Advertising, partnerships, sponsorships, and enterprise
-                    access.
+                    Larger organizations may need negotiated billing schedules,
+                    internal purchase order references, or rollout phases.
+                  </p>
+                </div>
+                <div className="rounded-[1rem] border border-stone-300/50 bg-vellum p-4">
+                  <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
+                    Belgium and Germany considerations
+                  </p>
+                  <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
+                    Commercial setup may require VAT-aware invoicing and country
+                    coverage details before the business account is activated.
                   </p>
                 </div>
               </div>
             </div>
+          </div>
+        </section>
 
-            <div className="border border-stone-300/60 bg-paper p-6 shadow-[0_18px_40px_rgba(0,0,0,0.06)]">
-              <h3 className="font-display text-2xl font-black text-ink">
-                Business Contact Form
-              </h3>
-              <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                Tell us about your organization and we’ll follow up with the
-                right plan or contact person.
-              </p>
+        <section className="bg-vellum py-16">
+          <div className="mx-auto max-w-7xl px-4">
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+              <div>
+                <span className="category-label">Dedicated business path</span>
+                <h2 className="mt-2 font-display text-3xl font-black text-ink md:text-4xl">
+                  The public landing page now hands off into a dedicated quote-request flow.
+                </h2>
+                <p className="mt-4 font-body text-base leading-relaxed text-redacted">
+                  Instead of burying a long company intake inside the marketing page, the next step is now a separate onboarding route that captures organization details, expected volume, delivery footprint, and invoicing preferences in one place.
+                </p>
 
-              <form className="mt-6 space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
-                      Work Email
-                    </label>
-                    <input
-                      type="email"
-                      className="w-full border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage"
-                    />
-                  </div>
+                <div className="mt-8 space-y-4">
+                  {businessOnboardingSteps.map((step, index) => (
+                    <article
+                      key={step.title}
+                      className="rounded-[1.05rem] border border-stone-300/60 bg-paper p-5 shadow-[0_10px_24px_rgba(0,0,0,0.04)]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-heritage font-sans text-xs font-bold text-paper">
+                          {index + 1}
+                        </span>
+                        <h3 className="font-heading text-lg font-bold text-ink">
+                          {step.title}
+                        </h3>
+                      </div>
+                      <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
+                        {step.detail}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[1.3rem] border border-stone-300/60 bg-paper p-6 shadow-[0_18px_40px_rgba(0,0,0,0.06)]">
+                <h3 className="font-display text-2xl font-black text-ink">
+                  Business onboarding route
+                </h3>
+                <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
+                  The dedicated route captures:
+                </p>
+
+                <div className="mt-6 space-y-4">
+                  {[
+                    "Organization profile, request type, and operating scope",
+                    "Expected copies per delivery cycle and location count",
+                    "Billing preference, VAT context, and invoice notes",
+                    "Operational notes and consent needed for commercial follow-up",
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      className="rounded-[1rem] border border-stone-300/50 bg-vellum p-4"
+                    >
+                      <p className="font-body text-sm leading-relaxed text-redacted">
+                        {item}
+                      </p>
+                    </div>
+                  ))}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
-                      Company
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
-                      Request Type
-                    </label>
-                    <select className="w-full border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage">
-                      <option>Advertising</option>
-                      <option>Bulk Subscription</option>
-                      <option>Partnership</option>
-                      <option>Sponsorship</option>
-                      <option>Enterprise Access</option>
-                      <option>Other</option>
-                    </select>
-                  </div>
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    to="/business/apply"
+                    className="inline-flex items-center justify-center gap-2 bg-heritage px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
+                  >
+                    Start business onboarding
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <a
+                    href="mailto:business@newsletter.local?subject=Business%20Inquiry"
+                    className="inline-flex items-center justify-center border-2 border-ink px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-ink hover:text-paper"
+                  >
+                    Email commercial team
+                  </a>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
-                      Company Size
-                    </label>
-                    <select className="w-full border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage">
-                      <option>1-10</option>
-                      <option>11-50</option>
-                      <option>51-200</option>
-                      <option>200+</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
-                      Preferred Contact
-                    </label>
-                    <select className="w-full border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage">
-                      <option>Email</option>
-                      <option>Phone</option>
-                      <option>WhatsApp</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block font-sans text-xs font-bold uppercase tracking-wider text-ink">
-                    Message
-                  </label>
-                  <textarea
-                    rows={6}
-                    className="w-full resize-none border border-stone-300/60 bg-transparent p-3 font-body text-sm text-ink outline-none focus:border-heritage"
-                    placeholder="Tell us about your company, goals, and what you need from us."
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  className="inline-flex bg-heritage px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
-                >
-                  Send Business Request
-                </button>
-              </form>
+              </div>
             </div>
           </div>
         </section>
+
+        <BusinessContactSection />
       </main>
       <Footer />
     </div>

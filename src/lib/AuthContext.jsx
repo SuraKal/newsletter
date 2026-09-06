@@ -10,6 +10,60 @@ import { appParams } from "@/lib/app-params";
 
 const AuthContext = createContext(null);
 
+export const authJourneyContent = {
+  individual: {
+    key: "individual",
+    role: "reader",
+    label: "Individual reader",
+    shortLabel: "Reader",
+    eyebrow: "Personal subscription",
+    description:
+      "Manage one subscriber account with reading history, payment records, and the next physical delivery from a single personal workspace.",
+  },
+  business: {
+    key: "business",
+    role: "business",
+    label: "Company account",
+    shortLabel: "Business",
+    eyebrow: "Bulk orders and invoicing",
+    description:
+      "Set up a company account for multi-copy delivery, invoice-friendly billing, and shared shipment visibility across locations.",
+  },
+  admin: {
+    key: "admin",
+    role: "admin",
+    label: "Admin operator",
+    shortLabel: "Admin",
+    eyebrow: "Internal operations",
+    description:
+      "Editorial and operational staff use the admin workspace to manage publishing, subscribers, companies, and active routes.",
+  },
+};
+
+export const getJourneyFromRole = (role) => {
+  if (role === "admin") {
+    return "admin";
+  }
+
+  if (role === "business") {
+    return "business";
+  }
+
+  return "individual";
+};
+
+export const getRoleFromJourney = (journey) => {
+  if (journey === "admin") {
+    return "admin";
+  }
+
+  if (journey === "business") {
+    return "business";
+  }
+
+  return "reader";
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -89,6 +143,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
+        userJourney: user ? getJourneyFromRole(user.role) : null,
         isAuthenticated,
         isLoadingAuth,
         isLoadingPublicSettings,
@@ -99,6 +154,8 @@ export const AuthProvider = ({ children }) => {
         navigateToLogin,
         checkUserAuth,
         checkAppState,
+        getJourneyFromRole,
+        getRoleFromJourney,
       }}
     >
       {children}

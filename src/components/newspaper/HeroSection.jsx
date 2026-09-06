@@ -6,41 +6,16 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
-import { heroArticle, sidebarArticles, rightColumnArticle } from "@/lib/demoData";
+import {
+  homepageHeroSlides,
+  homepagePromisePoints,
+  rightColumnArticle,
+  sidebarArticles,
+} from "@/lib/demoData";
 import NewsCard from "@/components/newspaper/NewsCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/LanguageContext";
-
-const heroSlides = [
-  {
-    id: "hero-slide-1",
-    image: heroArticle.image,
-    category: heroArticle.category,
-    headline: "Global leaders reach a climate accord",
-    summary: "A compact view of today's lead story.",
-    cta: "Read story",
-    href: `/article/${heroArticle.id}`,
-  },
-  {
-    id: "hero-slide-2",
-    image: rightColumnArticle.image,
-    category: rightColumnArticle.category,
-    headline: "Business and policy in focus",
-    summary: "Quick access to the latest business coverage.",
-    cta: "Explore",
-    href: "/categories",
-  },
-  {
-    id: "hero-slide-3",
-    image: heroArticle.image,
-    category: "Latest Update",
-    headline: "Breaking updates throughout the day",
-    summary: "Fresh headlines without covering the image.",
-    cta: "Browse",
-    href: "/news",
-  },
-];
 
 export default function HeroSection() {
   const { t } = useLanguage();
@@ -71,6 +46,10 @@ export default function HeroSection() {
       return undefined;
     }
 
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return undefined;
+    }
+
     const interval = window.setInterval(() => {
       if (api.canScrollNext()) {
         api.scrollNext();
@@ -86,6 +65,12 @@ export default function HeroSection() {
     <section className="mx-auto max-w-7xl px-4 py-6">
       <div className="grid grid-cols-1 gap-0 lg:grid-cols-12 lg:gap-6 xl:gap-8">
         <div className="hidden lg:col-span-3 lg:block lg:pr-4 newspaper-rule-vertical">
+          <div className="mb-5">
+            <p className="category-label">{t("Top Stories")}</p>
+            <h2 className="mt-2 font-display text-2xl font-black leading-tight text-ink">
+              {t("Today's lead reporting")}
+            </h2>
+          </div>
           <div className="space-y-3">
             {sidebarArticles.map((article) => (
               <NewsCard key={article.id} article={article} variant="compact" />
@@ -94,9 +79,14 @@ export default function HeroSection() {
         </div>
 
         <div className="lg:col-span-6 lg:px-2 xl:px-4">
-          <Carousel setApi={setApi} opts={{ loop: true }} className="group relative">
+          <Carousel
+            setApi={setApi}
+            opts={{ loop: true }}
+            className="group relative"
+            aria-label="Homepage lead story carousel"
+          >
             <CarouselContent>
-              {heroSlides.map((slide) => (
+              {homepageHeroSlides.map((slide) => (
                 <CarouselItem key={slide.id}>
                   <Link to={slide.href} className="group block">
                     <article className="relative overflow-hidden rounded-none border border-stone-300/50 bg-stone-950 shadow-[0_18px_40px_rgba(0,0,0,0.08)]">
@@ -106,17 +96,17 @@ export default function HeroSection() {
                           alt={t(slide.headline)}
                           className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/10" />
                       </div>
 
-                      <div className="absolute inset-x-0 bottom-0 max-w-[78%] p-4 text-paper sm:max-w-[70%] sm:p-5 lg:max-w-[62%] lg:p-6">
+                      <div className="absolute inset-x-0 bottom-0 max-w-[86%] p-4 text-paper sm:max-w-[78%] sm:p-5 lg:max-w-[72%] lg:p-6">
                         <span className="inline-flex rounded-full border border-paper/20 bg-paper/10 px-2.5 py-1 font-sans text-[0.6rem] font-bold uppercase tracking-[0.16em] text-paper backdrop-blur-sm">
                           {t(slide.category)}
                         </span>
-                        <h2 className="mt-2 font-display text-xl font-black leading-tight text-paper sm:text-2xl lg:text-3xl">
+                        <h1 className="mt-2 overflow-hidden font-display text-lg font-black leading-tight text-paper [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] sm:text-xl lg:text-2xl">
                           {t(slide.headline)}
-                        </h2>
-                        <p className="mt-1.5 max-w-md font-body text-[0.78rem] leading-relaxed text-paper/80 sm:text-sm">
+                        </h1>
+                        <p className="mt-1.5 max-w-xl overflow-hidden font-body text-[0.72rem] leading-relaxed text-paper/85 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] sm:text-[0.8rem] lg:text-[0.88rem]">
                           {t(slide.summary)}
                         </p>
                         <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -133,7 +123,7 @@ export default function HeroSection() {
 
             <div className="mt-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                {heroSlides.map((slide, index) => (
+                {homepageHeroSlides.map((slide, index) => (
                   <button
                     key={slide.id}
                     type="button"
@@ -174,24 +164,56 @@ export default function HeroSection() {
             </div>
           </Carousel>
 
-          <div className="mt-6 flex flex-wrap gap-3 pb-6">
+          <div className="mt-6 flex flex-wrap gap-3">
             <Link
               to="/subscriptions"
               className="hover-lift bg-heritage px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
             >
-              {t("Subscribe Now")}
+              {t("Compare Plans")}
             </Link>
             <Link
-              to="/news"
+              to="/delivery"
               className="hover-lift border-2 border-ink px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-ink hover:text-paper"
             >
-              {t("Read Today's Edition")}
+              {t("See Delivery Tracking")}
             </Link>
+            <Link
+              to="/business"
+              className="hover-lift border border-stone-400 px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:border-ink hover:bg-paper"
+            >
+              {t("Business Ordering")}
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            {homepagePromisePoints.map((point) => (
+              <article
+                key={point.label}
+                className="rounded-[1.1rem] border border-stone-300/60 bg-paper p-4 shadow-[0_10px_24px_rgba(0,0,0,0.04)]"
+              >
+                <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
+                  {t(point.label)}
+                </p>
+                <h3 className="mt-2 font-heading text-lg font-bold leading-tight text-ink">
+                  {t(point.value)}
+                </h3>
+                <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
+                  {t(point.detail)}
+                </p>
+              </article>
+            ))}
           </div>
         </div>
 
         <div className="hidden border-l border-stone-300/50 lg:col-span-3 lg:block lg:pl-6">
-          <Link to={`/article/${rightColumnArticle.id}`} className="group block">
+          <div className="rounded-[1.2rem] border border-stone-300/60 bg-vellum p-4 shadow-[0_10px_26px_rgba(0,0,0,0.04)]">
+            <p className="category-label">{t("Access Rule")}</p>
+            <p className="mt-2 font-heading text-lg font-bold leading-snug text-ink">
+              {t("Fresh reporting first. Public archive after 30 days.")}
+            </p>
+          </div>
+
+          <Link to={`/article/${rightColumnArticle.id}`} className="group mt-6 block">
             <article className="section-sheen">
               <img
                 src={rightColumnArticle.image}
@@ -207,7 +229,9 @@ export default function HeroSection() {
               <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
                 {t(rightColumnArticle.summary)}
               </p>
-              <p className="meta-text mt-3">{t("By")} {t(rightColumnArticle.author)}</p>
+              <p className="meta-text mt-3">
+                {t("By")} {t(rightColumnArticle.author)}
+              </p>
             </article>
           </Link>
         </div>

@@ -27,7 +27,11 @@ export default function NewsletterSection() {
         </p>
 
         {submitted ? (
-          <p className="font-body text-base text-heritage mt-6 font-medium">
+          <p
+            role="status"
+            aria-live="polite"
+            className="font-body text-base text-heritage mt-6 font-medium"
+          >
             {t("Thank you for subscribing. Your first briefing arrives tomorrow morning.")}
           </p>
         ) : (
@@ -35,7 +39,11 @@ export default function NewsletterSection() {
             onSubmit={handleSubmit}
             className="mt-8 flex flex-col gap-3 max-w-lg mx-auto sm:flex-row"
           >
+            <label htmlFor="newsletter-email" className="sr-only">
+              Newsletter email address
+            </label>
             <input
+              id="newsletter-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

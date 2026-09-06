@@ -10,15 +10,17 @@ const toBoolean = (value, fallback = false) => {
 };
 
 export const appParams = {
-  appName: env.VITE_APP_NAME || "ንቐደም",
-  storagePrefix: env.VITE_STORAGE_PREFIX || "ንቐደም",
+  appName: env.VITE_APP_NAME || "Nekedem",
+  storagePrefix: env.VITE_STORAGE_PREFIX || "nekedem",
   authRequired: toBoolean(env.VITE_AUTH_REQUIRED, false),
-  adminEmail: env.VITE_ADMIN_EMAIL || "admin@ንቐደም.local",
+  adminEmail: env.VITE_ADMIN_EMAIL || "admin@nekedem.local",
   adminPassword: env.VITE_ADMIN_PASSWORD || "admin12345",
-  readerEmail: env.VITE_READER_EMAIL || "reader@ንቐደም.local",
+  readerEmail: env.VITE_READER_EMAIL || "reader@nekedem.local",
   readerPassword: env.VITE_READER_PASSWORD || "reader12345",
-  supportEmail: env.VITE_SUPPORT_EMAIL || "support@ንቐደም.local",
+  businessEmail: env.VITE_BUSINESS_EMAIL || "operations@nekedem.local",
+  businessPassword: env.VITE_BUSINESS_PASSWORD || "business12345",
+  supportEmail: env.VITE_SUPPORT_EMAIL || "support@nekedem.local",
   contactPhone: env.VITE_CONTACT_PHONE || "+000000000000",
-  googleDemoEmail: env.VITE_GOOGLE_DEMO_EMAIL || "google.user@ንቐደም.local",
+  googleDemoEmail: env.VITE_GOOGLE_DEMO_EMAIL || "google.user@nekedem.local",
   fromUrl: isBrowser ? window.location.href : "/",
 };

@@ -1,7 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
-import { subscriptionPlans } from "@/lib/demoData";
+import {
+  subscriptionPlanFacts,
+  subscriptionPlans,
+} from "@/lib/demoData";
 import SectionHeader from "@/components/newspaper/SectionHeader";
 import { useLanguage } from "@/lib/LanguageContext";
 
@@ -10,44 +13,74 @@ export default function SubscriptionSection() {
 
   return (
     <section className="bg-vellum py-16">
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="mx-auto max-w-7xl px-4">
         <SectionHeader
           title="Subscription Plans"
           viewAllLink="/subscriptions"
         />
-        <p className="font-body text-base text-redacted max-w-2xl mb-10">
-          {t("Join thousands of discerning readers who trust ንቐደም for their daily news. Choose the plan that suits your reading habits.")}
-        </p>
+
+        <div className="mb-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {subscriptionPlanFacts.map((fact) => (
+            <article
+              key={fact.title}
+              className="rounded-[1.1rem] border border-stone-300/50 bg-paper p-5 shadow-[0_12px_30px_rgba(0,0,0,0.04)]"
+            >
+              <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
+                {t(fact.title)}
+              </p>
+              <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
+                {t(fact.detail)}
+              </p>
+            </article>
+          ))}
+        </div>
 
         <div className="grid grid-cols-1 gap-7 md:grid-cols-3 lg:gap-6">
           {subscriptionPlans.map((plan) => (
             <div key={plan.name} className="h-full">
               <div
-                className={`h-full rounded-[1.25rem] border p-7 shadow-[0_12px_30px_rgba(0,0,0,0.04)] ${plan.highlighted ? "bg-paper border-heritage/20" : "bg-vellum border-stone-300/50"}`}
+                className={`h-full rounded-[1.25rem] border p-7 shadow-[0_12px_30px_rgba(0,0,0,0.04)] ${
+                  plan.highlighted
+                    ? "bg-paper border-heritage/20"
+                    : "bg-vellum border-stone-300/50"
+                }`}
               >
                 {plan.highlighted && (
-                  <span className="font-sans text-[0.6rem] font-bold tracking-widest uppercase text-heritage bg-heritage/10 px-3 py-1 mb-4 inline-block">
+                  <span className="mb-4 inline-block bg-heritage/10 px-3 py-1 font-sans text-[0.6rem] font-bold uppercase tracking-widest text-heritage">
                     {t("Most Popular")}
                   </span>
                 )}
-                <h3 className="font-display text-2xl font-bold text-ink">
+                <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-redacted">
+                  {t(plan.audience || "Subscribers")}
+                </p>
+                <h3 className="mt-2 font-display text-2xl font-bold text-ink">
                   {t(plan.name)}
                 </h3>
-                <p className="font-body text-sm text-redacted mt-1">
-                  {t(plan.description)}
+                <p className="mt-1 font-body text-sm text-redacted">
+                  {t(
+                    plan.name === "Print + Digital"
+                      ? "Digital access plus a printed edition every two weeks"
+                      : plan.description,
+                  )}
                 </p>
-                <div className="mt-4 mb-6">
+                <div className="mb-6 mt-4">
                   <span className="font-display text-4xl font-black text-ink">
-                    ${plan.price}
+                    {plan.pricePrefix === "" ? "" : "$"}
+                    {plan.price}
                   </span>
                   <span className="font-sans text-sm text-redacted">
                     {t(plan.period)}
                   </span>
                 </div>
-                <ul className="space-y-2.5 mb-8">
+                <div className="mb-5 rounded-[0.95rem] border border-stone-300/40 bg-stone-50/70 p-4">
+                  <p className="font-body text-sm text-redacted">
+                    {t(plan.deliveryNote)}
+                  </p>
+                </div>
+                <ul className="mb-8 space-y-2.5">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-heritage mt-0.5 flex-shrink-0" />
+                      <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-heritage" />
                       <span className="font-body text-sm text-ink">
                         {t(feature)}
                       </span>
@@ -56,13 +89,13 @@ export default function SubscriptionSection() {
                 </ul>
                 <Link
                   to="/subscriptions"
-                  className={`block text-center font-sans text-xs font-bold tracking-wider uppercase px-6 py-3 transition-colors ${
+                  className={`block px-6 py-3 text-center font-sans text-xs font-bold uppercase tracking-wider transition-colors ${
                     plan.highlighted
                       ? "bg-heritage text-paper hover:bg-ink"
                       : "border-2 border-ink text-ink hover:bg-ink hover:text-paper"
                   }`}
                 >
-                  {t("Subscribe")}
+                  {t(plan.name === "Business" ? "Request Business Plan" : "Choose Plan")}
                 </Link>
               </div>
             </div>

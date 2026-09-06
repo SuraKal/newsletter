@@ -22,7 +22,7 @@ const SOCIAL_LINKS = [
 ];
 
 export default function Masthead() {
-  const { strings, language, toggleLanguage, t } = useLanguage();
+  const { strings, toggleLanguage, t, formatDate } = useLanguage();
   const [compactHeader, setCompactHeader] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -31,32 +31,49 @@ export default function Masthead() {
   const lastScrollY = useRef(0);
   const scrollAnchorY = useRef(0);
   const compactHeaderRef = useRef(false);
+  const animationFrameRef = useRef(0);
+  const toggleLockUntilRef = useRef(0);
 
   useEffect(() => {
-    const applyCompactHeader = (nextValue) => {
+    const applyCompactHeader = (nextValue, currentScrollY) => {
+      if (compactHeaderRef.current === nextValue) {
+        return;
+      }
+
       compactHeaderRef.current = nextValue;
       setCompactHeader(nextValue);
+      toggleLockUntilRef.current = window.performance.now() + 260;
+      scrollAnchorY.current = currentScrollY;
+      lastScrollY.current = currentScrollY;
     };
 
-    const onScroll = () => {
-      const currentScrollY = window.scrollY;
+    const evaluateScroll = () => {
+      animationFrameRef.current = 0;
+      const currentScrollY = Math.max(window.scrollY, 0);
       const delta = currentScrollY - lastScrollY.current;
-      const nearTop = currentScrollY < 24;
-      const hasPassedHeader = currentScrollY > 140;
+      const nearTop = currentScrollY < 48;
+      const restoreZone = currentScrollY < 108;
+      const hasPassedHeader = currentScrollY > 172;
       const viewportBottom = currentScrollY + window.innerHeight;
       const documentBottom = document.documentElement.scrollHeight - 4;
       const atPageBottom = viewportBottom >= documentBottom;
+      const now = window.performance.now();
 
       if (searchOpen || menuOpen || catOpen) {
-        applyCompactHeader(false);
+        applyCompactHeader(false, currentScrollY);
         scrollAnchorY.current = currentScrollY;
         lastScrollY.current = currentScrollY;
         return;
       }
 
       if (nearTop) {
-        applyCompactHeader(false);
+        applyCompactHeader(false, currentScrollY);
         scrollAnchorY.current = currentScrollY;
+        lastScrollY.current = currentScrollY;
+        return;
+      }
+
+      if (toggleLockUntilRef.current > now) {
         lastScrollY.current = currentScrollY;
         return;
       }
@@ -66,7 +83,7 @@ export default function Masthead() {
         return;
       }
 
-      if (Math.abs(delta) < 8) {
+      if (Math.abs(delta) < 12) {
         lastScrollY.current = currentScrollY;
         return;
       }
@@ -77,25 +94,37 @@ export default function Masthead() {
         !compactHeaderRef.current &&
         delta > 0 &&
         hasPassedHeader &&
-        distanceFromAnchor > 20
+        distanceFromAnchor > 44
       ) {
-        applyCompactHeader(true);
-        scrollAnchorY.current = currentScrollY;
+        applyCompactHeader(true, currentScrollY);
       } else if (
         compactHeaderRef.current &&
-        delta < 0 &&
-        distanceFromAnchor > 28
+        (restoreZone || (delta < 0 && distanceFromAnchor > 52))
       ) {
-        applyCompactHeader(false);
+        applyCompactHeader(false, currentScrollY);
+      } else if (distanceFromAnchor > 72) {
         scrollAnchorY.current = currentScrollY;
       }
 
       lastScrollY.current = currentScrollY;
     };
 
-    onScroll();
+    const onScroll = () => {
+      if (animationFrameRef.current) {
+        return;
+      }
+
+      animationFrameRef.current = window.requestAnimationFrame(evaluateScroll);
+    };
+
+    evaluateScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (animationFrameRef.current) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
   }, [catOpen, menuOpen, searchOpen]);
 
   useEffect(() => {
@@ -144,7 +173,7 @@ export default function Masthead() {
     setCatOpen(false);
   };
 
-  const today = new Date().toLocaleDateString("en-US", {
+  const today = formatDate(new Date(), {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -190,10 +219,10 @@ export default function Masthead() {
                 <button
                   onClick={toggleLanguage}
                   className="inline-flex items-center gap-1 rounded-full border border-stone-300/60 px-3 py-1.5 font-sans text-[0.65rem] font-bold uppercase tracking-wider text-ink transition-colors hover:border-heritage hover:text-heritage"
-                  aria-label={`Switch to ${language === "en" ? "Tigrigna" : "English"}`}
+                  aria-label={`Switch language to ${strings.switchTo}`}
                 >
                   <Globe className="h-3.5 w-3.5" />
-                  <span>{language === "en" ? "Tigrigna" : "English"}</span>
+                  <span>{strings.switchTo}</span>
                 </button>
                 <div className="hidden items-center gap-2 md:flex">
                   {SOCIAL_LINKS.map((social) => (

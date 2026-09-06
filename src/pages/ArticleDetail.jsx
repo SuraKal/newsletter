@@ -1,16 +1,19 @@
 import React from "react";
 import { Link, useParams } from "react-router-dom";
-import { Share2, Bookmark, Clock, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Bookmark, Clock, Share2 } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import NewsCard from "@/components/newspaper/NewsCard";
+import { useAuth } from "@/lib/AuthContext";
+import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
 import {
+  categoryArticles,
+  editorials,
+  featuredStory,
+  getArticleAccessState,
   heroArticle,
   latestNews,
-  editorials,
   sidebarArticles,
-  featuredStory,
-  categoryArticles,
 } from "@/lib/demoData";
 
 const allArticles = [
@@ -24,8 +27,13 @@ const allArticles = [
 
 export default function ArticleDetail() {
   const { id } = useParams();
-  const article = allArticles.find((a) => a.id === id) || heroArticle;
-  const related = latestNews.filter((a) => a.id !== id).slice(0, 3);
+  const { user } = useAuth();
+  const article = allArticles.find((item) => item.id === id) || heroArticle;
+  const related = latestNews.filter((item) => item.id !== id).slice(0, 3);
+  const access = getArticleAccessState(
+    article,
+    hasActiveReaderSubscription(user),
+  );
   const articleBody = article.body || [];
   const comments = [
     {
@@ -48,6 +56,11 @@ export default function ArticleDetail() {
     },
   ];
 
+  const fallbackParagraphs = [
+    "The newsroom continues to track the story as officials, residents, and stakeholders respond to the latest developments.",
+    "Our correspondents are speaking with local voices and reviewing the full implications for families, businesses, and public services.",
+  ];
+
   return (
     <div className="min-h-screen bg-paper">
       <Masthead />
@@ -59,7 +72,7 @@ export default function ArticleDetail() {
               to="/news"
               className="inline-flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-[0.2em] text-redacted transition-colors hover:text-heritage"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="h-4 w-4" />
               Back to Newsroom
             </Link>
             <div className="flex items-center gap-3">
@@ -67,22 +80,35 @@ export default function ArticleDetail() {
                 className="p-2 transition-colors hover:text-heritage"
                 aria-label="Share"
               >
-                <Share2 className="w-4 h-4" />
+                <Share2 className="h-4 w-4" />
               </button>
               <button
                 className="p-2 transition-colors hover:text-heritage"
                 aria-label="Bookmark"
               >
-                <Bookmark className="w-4 h-4" />
+                <Bookmark className="h-4 w-4" />
               </button>
             </div>
           </div>
         </section>
 
-        <article className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-8 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.85fr)]">
-          <div className="border-r border-stone-300/40 pr-0 lg:pr-8">
+        <article className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-8 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.9fr)]">
+          <div className="min-w-0 lg:border-r lg:border-stone-300/40 lg:pr-8">
             <div className="max-w-4xl">
-              <span className="category-label">{article.category}</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="category-label">{article.category}</span>
+                <span
+                  className={`rounded-full border px-2.5 py-1 font-sans text-[0.6rem] font-bold uppercase tracking-[0.14em] ${
+                    access.key === "locked"
+                      ? "border-amber-200 bg-amber-50 text-amber-700"
+                      : access.key === "subscriber"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-stone-300 bg-vellum text-ink"
+                  }`}
+                >
+                  {access.shortLabel}
+                </span>
+              </div>
               <h1 className="mt-3 font-display text-4xl font-black leading-[1.05] text-ink md:text-5xl lg:text-6xl">
                 {article.headline}
               </h1>
@@ -90,21 +116,53 @@ export default function ArticleDetail() {
                 {article.summary}
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-3 border-y border-stone-300/50 py-3">
-                {article.author && (
+                {article.author ? (
                   <span className="font-sans text-sm font-semibold uppercase tracking-wider text-ink">
                     By {article.author}
                   </span>
-                )}
+                ) : null}
                 <span className="meta-text">{article.date}</span>
-                {article.readTime && (
-                  <span className="flex items-center gap-1 meta-text">
-                    <Clock className="w-3 h-3" /> {article.readTime}
+                {article.readTime ? (
+                  <span className="meta-text flex items-center gap-1">
+                    <Clock className="h-3 w-3" /> {article.readTime}
                   </span>
-                )}
+                ) : null}
+              </div>
+              <div
+                className={`mt-5 rounded-[1.1rem] border px-5 py-4 ${
+                  access.key === "locked"
+                    ? "border-amber-200 bg-amber-50/80"
+                    : access.key === "subscriber"
+                      ? "border-emerald-200 bg-emerald-50/80"
+                      : "border-stone-300/60 bg-vellum"
+                }`}
+              >
+                <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
+                  Reading access
+                </p>
+                <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
+                  {access.detail}
+                </p>
+                {access.isLocked ? (
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <Link
+                      to="/subscriptions"
+                      className="bg-heritage px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
+                    >
+                      View subscription plans
+                    </Link>
+                    <Link
+                      to="/login"
+                      className="border border-ink px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-ink hover:text-paper"
+                    >
+                      Sign in to read now
+                    </Link>
+                  </div>
+                ) : null}
               </div>
             </div>
 
-            {article.image && (
+            {article.image ? (
               <figure className="mt-8">
                 <img
                   src={article.image}
@@ -115,7 +173,7 @@ export default function ArticleDetail() {
                   Photo: {article.author || "Staff"} / Newspaper Desk
                 </figcaption>
               </figure>
-            )}
+            ) : null}
 
             <div className="mt-10 grid grid-cols-1 gap-8 xl:grid-cols-[1fr_minmax(220px,280px)]">
               <div className="font-body text-[1.05rem] leading-[1.95] text-ink">
@@ -123,26 +181,49 @@ export default function ArticleDetail() {
                   {article.summary ||
                     "In a world where the pace of change continues to accelerate, careful reporting remains more important than ever."}
                 </p>
-                {(articleBody.length > 0
-                  ? articleBody
-                  : [
-                      "The newsroom continues to track the story as officials, residents, and stakeholders respond to the latest developments.",
-                      "Our correspondents are speaking with local voices and reviewing the full implications for families, businesses, and public services.",
-                    ]
-                ).map((paragraph) => (
-                  <p key={paragraph} className="mt-6">
-                    {paragraph}
-                  </p>
-                ))}
-                <p className="mt-6 border-l-4 border-heritage bg-vellum px-4 py-3 font-display text-xl italic text-ink">
-                  “The details matter, and the public deserves the full record.”
-                </p>
-                <p className="mt-6">
-                  The article will continue to be updated as new information
-                  becomes available, with editors placing emphasis on verified
-                  sourcing and readable context rather than a generic blog
-                  format.
-                </p>
+
+                {access.canReadFull ? (
+                  <>
+                    {(articleBody.length > 0 ? articleBody : fallbackParagraphs).map(
+                      (paragraph) => (
+                        <p key={paragraph} className="mt-6">
+                          {paragraph}
+                        </p>
+                      ),
+                    )}
+                    <p className="mt-6 border-l-4 border-heritage bg-vellum px-4 py-3 font-display text-xl italic text-ink">
+                      “The details matter, and the public deserves the full record.”
+                    </p>
+                    <p className="mt-6">
+                      The article will continue to be updated as new information
+                      becomes available, with editors placing emphasis on
+                      verified sourcing and readable context rather than a
+                      generic blog format.
+                    </p>
+                  </>
+                ) : (
+                  <div className="mt-8 rounded-[1.25rem] border border-dashed border-amber-300 bg-amber-50/75 p-6">
+                    <h2 className="font-display text-2xl font-black text-ink">
+                      Full article stays locked until {access.publicAccessDate}.
+                    </h2>
+                    <p className="mt-4 font-body text-base leading-relaxed text-redacted">
+                      You are still on the live article route, but this August
+                      2026 reporting remains part of the subscriber-only window.
+                      Guests can read the summary now and return once the public
+                      archive opens, or sign in immediately for the full story.
+                    </p>
+                    <div className="mt-5 rounded-[1rem] border border-stone-300/50 bg-paper p-4">
+                      <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.18em] text-heritage">
+                        What opens later
+                      </p>
+                      <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
+                        The full body, sidebar context, and comment tools remain
+                        part of the same route once the public archive date
+                        arrives on {access.publicAccessDate}.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-12 border-t-4 border-double border-stone-300/60 pt-8">
                   <div className="flex items-center justify-between gap-4">
@@ -154,8 +235,9 @@ export default function ArticleDetail() {
                     </span>
                   </div>
                   <p className="mt-2 max-w-2xl font-body text-sm leading-relaxed text-redacted">
-                    A short reader panel sits under every story so the page
-                    feels like an active newsroom, not a generic article card.
+                    {access.canReadFull
+                      ? "A short reader panel sits under every story so the page feels like an active newsroom, not a generic article card."
+                      : "Comment tools open alongside full article access. Guests can still preview the discussion style before the archive opens."}
                   </p>
 
                   <form className="mt-6 border border-stone-300/60 bg-vellum p-5">
@@ -164,16 +246,24 @@ export default function ArticleDetail() {
                     </label>
                     <textarea
                       rows={4}
-                      placeholder="Share your thoughts on this story..."
-                      className="mt-3 w-full resize-none border border-stone-300/60 bg-paper p-3 font-body text-sm text-ink outline-none placeholder:text-redacted/60 focus:border-heritage"
+                      placeholder={
+                        access.canReadFull
+                          ? "Share your thoughts on this story..."
+                          : `Comments unlock with full access until ${access.publicAccessDate}.`
+                      }
+                      disabled={!access.canReadFull}
+                      className="mt-3 w-full resize-none border border-stone-300/60 bg-paper p-3 font-body text-sm text-ink outline-none placeholder:text-redacted/60 focus:border-heritage disabled:cursor-not-allowed disabled:opacity-70"
                     />
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                       <p className="font-sans text-[0.7rem] uppercase tracking-[0.18em] text-redacted">
-                        Please keep comments respectful and relevant.
+                        {access.canReadFull
+                          ? "Please keep comments respectful and relevant."
+                          : "Sign in or wait for the archive-open date to comment."}
                       </p>
                       <button
                         type="button"
-                        className="bg-heritage px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
+                        disabled={!access.canReadFull}
+                        className="bg-heritage px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         Post Comment
                       </button>
@@ -226,26 +316,37 @@ export default function ArticleDetail() {
                       {article.readTime || "4 min read"}
                     </p>
                   </div>
+                  <div>
+                    <p className="meta-text">Access</p>
+                    <p className="font-semibold text-ink">{access.label}</p>
+                  </div>
+                  <div>
+                    <p className="meta-text">Public Open Date</p>
+                    <p className="font-semibold text-ink">
+                      {access.publicAccessDate || "Already open"}
+                    </p>
+                  </div>
                 </div>
                 <div className="mt-6 border-t border-stone-300/60 pt-4">
                   <p className="font-body text-sm leading-relaxed text-redacted">
-                    This sidebar gives the story a more printed-paper feel and
-                    keeps the page from reading like a standard card layout.
+                    {access.canReadFull
+                      ? "This article is readable in full on the current route, either because subscriber access is active or the archive window has already opened."
+                      : `This route remains available for discovery, but the full story stays subscriber-only until ${access.publicAccessDate}.`}
                   </p>
                 </div>
               </aside>
             </div>
           </div>
 
-          <aside className="lg:pl-2">
+          <aside className="min-w-0 lg:pl-2">
             <div className="sticky top-6 space-y-6">
               <div className="border border-stone-300/60 bg-paper p-5 shadow-[0_12px_30px_rgba(0,0,0,0.04)]">
                 <h2 className="font-display text-2xl font-black text-ink">
                   Related Stories
                 </h2>
                 <div className="mt-5 grid grid-cols-1 gap-4">
-                  {related.map((a) => (
-                    <NewsCard key={a.id} article={a} />
+                  {related.map((item) => (
+                    <NewsCard key={item.id} article={item} />
                   ))}
                 </div>
               </div>
@@ -259,9 +360,9 @@ export default function ArticleDetail() {
             More From The Paper
           </h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-stone-300/50">
-            {related.map((a) => (
-              <div key={a.id} className="first:lg:pl-0 last:lg:pr-0 lg:px-5">
-                <NewsCard article={a} />
+            {related.map((item) => (
+              <div key={item.id} className="first:lg:pl-0 last:lg:pr-0 lg:px-5">
+                <NewsCard article={item} />
               </div>
             ))}
           </div>

@@ -55,7 +55,11 @@ export default function ScrollReveal({
       ref={ref}
       className={`scroll-reveal ${isActive ? "is-active" : ""} ${className}`.trim()}
       data-effect={effect}
-      style={{ "--reveal-delay": `${Math.min(delay, 180)}ms` }}
+      style={
+        /** @type {React.CSSProperties & Record<"--reveal-delay", string>} */ ({
+          "--reveal-delay": `${Math.min(delay, 180)}ms`,
+        })
+      }
     >
       {children}
     </div>

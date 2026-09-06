@@ -3,14 +3,14 @@ import { IMAGES } from "@/lib/constants";
 export const heroArticle = {
   id: "hero-1",
   image: IMAGES.hero,
-  category: "World",
-  date: "July 4, 2026",
+  category: "Politics",
+  date: "August 10, 2026",
   headline:
-    "Global Leaders Convene for Historic Climate Accord as Nations Pledge Carbon Neutrality by 2040",
+    "Election Calendar, Freight Capacity, and Weekend Fixtures Drive Today's Cross-Sector Edition",
   summary:
-    "In a landmark summit that drew representatives from over 140 nations, world leaders signed an unprecedented agreement committing to aggressive carbon reduction targets. The accord, negotiated over four intense days in Geneva, represents the most ambitious climate framework since the Paris Agreement.",
-  author: "Sarah Whitfield",
-  readTime: "8 min read",
+    "Today's front page blends public affairs, logistics, business, and sport into one subscriber edition designed for readers who need both fast updates and deeper print context.",
+  author: "Nael Desk",
+  readTime: "7 min read",
 };
 
 export const sidebarArticles = [
@@ -18,51 +18,53 @@ export const sidebarArticles = [
     id: "side-1",
     image: IMAGES.politics,
     category: "Politics",
-    date: "July 4, 2026",
+    date: "August 10, 2026",
     headline:
-      "Senate Approves Sweeping Infrastructure Bill After Months of Bipartisan Negotiations",
+      "Regional Editors Prepare Tonight's Politics Brief Ahead of Council and Parliament Sessions",
     summary:
-      "The $2.3 trillion package includes funding for roads, bridges, broadband, and clean energy initiatives.",
+      "Subscriber editions package the decisions shaping transport, public spending, and local business confidence.",
   },
   {
     id: "side-2",
     image: IMAGES.business,
     category: "Business",
-    date: "July 3, 2026",
+    date: "August 9, 2026",
     headline:
-      "Major Tech Firms Report Record Quarterly Earnings Amid AI Investment Surge",
+      "Business Desk Tracks Port Throughput and Retail Demand Across Belgium and Germany",
     summary:
-      "Silicon Valley's largest companies exceeded analyst expectations.",
+      "Operational reporting now shares the same platform as print planning and delivery tracking.",
   },
   {
     id: "side-3",
     image: null,
-    category: "Economy",
-    date: "July 3, 2026",
+    category: "Events",
+    date: "August 9, 2026",
     headline:
-      "Central Banks Signal Coordinated Interest Rate Strategy for Second Half",
-    summary: "",
+      "Events Editors Schedule Weekend Listings with Venue Dates, Locations, and Sponsor Notes",
+    summary:
+      "Sector-specific publishing templates keep listings structured before they go live or to print.",
   },
   {
     id: "side-4",
     image: null,
-    category: "World",
-    date: "July 2, 2026",
+    category: "Sports",
+    date: "August 8, 2026",
     headline:
-      "Historic Peace Agreement Reached in East African Territorial Dispute",
-    summary: "",
+      "Sports Coverage Moves From Match Recap to Morning Print Summary Without Leaving the Same Workflow",
+    summary:
+      "Live digital coverage and the next physical edition now tell one continuous story.",
   },
 ];
 
 export const rightColumnArticle = {
   id: "right-1",
   image: IMAGES.economy,
-  category: "Opinion",
-  date: "July 4, 2026",
-  headline: "The Future of Global Trade Demands a New Kind of Diplomacy",
+  category: "Reader Guide",
+  date: "August 10, 2026",
+  headline: "Why Recent Reporting Is Reserved for Subscribers and Opens Publicly 30 Days Later",
   summary:
-    "Our veteran correspondent examines how shifting alliances are reshaping the economic landscape.",
-  author: "Dr. Martin Caldwell",
+    "The platform protects the value of fresh reporting for active subscribers while still opening a delayed archive for public readers one month later.",
+  author: "Editorial Operations",
 };
 
 export const latestNews = [
@@ -70,45 +72,127 @@ export const latestNews = [
     id: "ln-1",
     image: IMAGES.politics,
     category: "Politics",
-    date: "July 4, 2026",
+    date: "August 10, 2026",
     headline:
-      "Electoral Reform Commission Publishes Final Recommendations After Year-Long Study",
+      "City and federal policy desks align today's morning briefing around transport, regulation, and labor votes",
     summary:
-      "The independent body calls for modernized voting systems, expanded early voting, and enhanced transparency measures across federal elections.",
+      "The politics desk publishes now for subscribers and schedules the same reporting for public archive access on September 10, 2026.",
     author: "James Harrington",
+    accessLabel: "Subscribers now",
+    publicAccessDate: "September 10, 2026",
+    sector: "Policy desk",
   },
   {
     id: "ln-2",
     image: IMAGES.sports,
     category: "Sports",
-    date: "July 3, 2026",
+    date: "August 9, 2026",
     headline:
-      "Olympic Committee Unveils Host City Selection for 2036 Summer Games",
+      "Weekend fixtures move from live alerts to the next print run with match tables and analysis intact",
     summary:
-      "After a competitive bidding process, the committee announced that five finalist cities will present their final proposals next month.",
+      "Subscriber coverage is already live, while public readers unlock this edition on September 9, 2026.",
     author: "Maria Santos",
+    accessLabel: "Archive opens September 9, 2026",
+    publicAccessDate: "September 9, 2026",
+    sector: "Sport desk",
   },
   {
     id: "ln-3",
     image: IMAGES.business,
     category: "Business",
-    date: "July 3, 2026",
+    date: "August 9, 2026",
     headline:
-      "Global Supply Chain Transformation Accelerates Under New Trade Agreements",
+      "Freight, pricing, and retail coverage now feeds both reader editions and business account ordering decisions",
     summary:
-      "Manufacturing hubs shift as companies restructure operations to meet sustainability requirements and reduce geopolitical risk.",
+      "The same newsroom data that informs articles also supports bulk-order planning and route visibility.",
     author: "Thomas Chen",
+    accessLabel: "Subscriber release",
+    publicAccessDate: "September 9, 2026",
+    sector: "Business desk",
   },
   {
     id: "ln-4",
-    image: IMAGES.technology,
-    category: "Technology",
-    date: "July 2, 2026",
+    image: IMAGES.events,
+    category: "Events",
+    date: "August 8, 2026",
     headline:
-      "Quantum Computing Breakthrough Promises Revolution in Drug Discovery Timeline",
+      "Events listings publish with venue fields, dates, and regional logistics notes for the next physical drop",
     summary:
-      "Researchers demonstrate a quantum advantage in molecular simulation, potentially reducing pharmaceutical development cycles by years.",
+      "Structured event publishing keeps digital readers and print subscribers aligned before the next delivery cycle.",
     author: "Dr. Emily Rossini",
+    accessLabel: "Public September 8, 2026",
+    publicAccessDate: "September 8, 2026",
+    sector: "Events desk",
+  },
+];
+
+export const homepageHeroSlides = [
+  {
+    id: "promise-1",
+    image: IMAGES.hero,
+    category: "Subscription Newspaper Platform",
+    headline: "Sector reporting, subscriber access, and print delivery built into one newsroom.",
+    summary:
+      "Read fresh politics, sport, business, and events coverage online right away, then receive the same reporting as a physical edition on the next two-week delivery cycle.",
+    cta: "Start a subscription",
+    href: "/subscriptions",
+  },
+  {
+    id: "promise-2",
+    image: IMAGES.business,
+    category: "Business Accounts",
+    headline: "Bulk orders, consolidated billing, and company-level delivery visibility for teams.",
+    summary:
+      "Organizations can order newspapers in volume, manage locations, and follow shipments through a dedicated business workspace instead of patching together manual invoicing.",
+    cta: "Explore business plans",
+    href: "/business",
+  },
+  {
+    id: "promise-3",
+    image: IMAGES.delivery,
+    category: "Fleet-Linked Tracking",
+    headline: "Every print run can be tracked from press time to doorstep using the client's existing route system.",
+    summary:
+      "Subscribers and operations teams share one delivery truth, with live shipment states feeding reader, business, and admin experiences.",
+    cta: "See delivery tracking",
+    href: "/delivery",
+  },
+];
+
+export const homepagePromisePoints = [
+  {
+    label: "Recent access",
+    value: "Subscribers read first",
+    detail: "Public readers unlock each edition 30 days after publication.",
+  },
+  {
+    label: "Print cadence",
+    value: "Every two weeks",
+    detail: "Billing frequency stays separate from the delivery cycle.",
+  },
+  {
+    label: "Operating region",
+    value: "Belgium and Germany",
+    detail: "Built for multi-country publishing, billing, and routing.",
+  },
+];
+
+export const homepageSectorBriefs = [
+  {
+    title: "Politics desk",
+    description: "Structured coverage for public policy, institutions, and regional decisions.",
+  },
+  {
+    title: "Sport desk",
+    description: "Fast match reporting online with deeper context preserved for the next edition.",
+  },
+  {
+    title: "Business desk",
+    description: "Company, logistics, and pricing coverage that also informs operational decisions.",
+  },
+  {
+    title: "Events desk",
+    description: "Template-driven listings with dates, venues, and local publication timing.",
   },
 ];
 
@@ -166,6 +250,16 @@ export const categoryArticles = {
         "Industry analysts noted that small logistics providers are increasingly benefiting from businesses seeking more flexible regional distribution partners.",
       ],
     },
+    {
+      id: "biz-1",
+      image: IMAGES.business,
+      category: "Business",
+      date: "July 2, 2026",
+      headline:
+        "Sustainable Finance Reaches Record Volumes as ESG Standards Mature",
+      summary:
+        "Green bonds and sustainability-linked loans surpass $5 trillion globally.",
+    },
   ],
   technology: [
     {
@@ -177,18 +271,6 @@ export const categoryArticles = {
         "Open-Source AI Models Challenge Corporate Dominance in Machine Learning",
       summary:
         "Community-driven development produces models rivaling those from major tech companies.",
-    },
-  ],
-  business: [
-    {
-      id: "biz-1",
-      image: IMAGES.business,
-      category: "Business",
-      date: "July 2, 2026",
-      headline:
-        "Sustainable Finance Reaches Record Volumes as ESG Standards Mature",
-      summary:
-        "Green bonds and sustainability-linked loans surpass $5 trillion globally.",
     },
   ],
   culture: [
@@ -288,51 +370,2737 @@ export const editorials = [
 
 export const subscriptionPlans = [
   {
+    id: "digital",
     name: "Digital",
     price: "9.99",
+    monthlyPrice: 9.99,
     period: "/month",
-    description: "Unlimited digital access",
+    description: "Immediate digital access for individual readers",
     features: [
-      "Unlimited article access",
-      "Daily digital edition",
-      "Breaking news alerts",
-      "Archive access (10 years)",
-      "Mobile & tablet apps",
-      "Newsletter selection",
+      "Subscriber-only access to recent reporting",
+      "Daily digital edition across all desks",
+      "Archive access once public windows open",
+      "Mobile and tablet reading",
+      "Breaking news and newsletter updates",
+      "Monthly billing with no print delivery",
     ],
     highlighted: false,
+    audience: "Individual readers",
+    deliveryNote: "Digital only",
+    paymentNote: "PayPal, Visa, or Mastercard",
   },
   {
+    id: "print-digital",
     name: "Print + Digital",
     price: "24.99",
+    monthlyPrice: 24.99,
     period: "/month",
     description: "The complete ንቐደም experience",
     features: [
       "Everything in Digital",
       "Physical newspaper every two weeks",
-      "Premium long-form content",
-      "Member-only articles",
-      "Exclusive subscriber events",
       "Real-time delivery tracking",
-      "Full archive access",
+      "Subscriber-only recent articles",
+      "Premium long-form and weekend editions",
+      "Address and delivery management",
+      "Monthly or yearly billing options",
     ],
     highlighted: true,
+    audience: "Households and dedicated readers",
+    deliveryNote: "Biweekly print delivery",
+    paymentNote: "PayPal, Visa, or Mastercard",
   },
   {
+    id: "business",
     name: "Business",
-    price: "89.99",
-    period: "/month",
-    description: "For teams and organizations",
+    price: "Custom",
+    pricePrefix: "",
+    period: "",
+    description: "Volume-priced newspaper access for teams and organizations",
     features: [
-      "Everything in Print + Digital",
-      "Up to 25 team members",
-      "Bulk newspaper orders",
-      "Company dashboard",
-      "Consolidated billing",
-      "Volume pricing",
-      "Dedicated account manager",
-      "API access",
+      "Bulk print orders by location or team",
+      "Consolidated invoicing and contract billing",
+      "Company dashboard with shipment visibility",
+      "Multi-location delivery coordination",
+      "Volume pricing tiers",
+      "Dedicated onboarding and account support",
     ],
     highlighted: false,
+    audience: "Companies and institutions",
+    deliveryNote: "Bulk delivery scheduling",
+    paymentNote: "Invoice and contract billing",
   },
 ];
+
+export const readerCheckoutPlans = subscriptionPlans.filter(
+  (plan) => plan.id !== "business",
+);
+
+export const readerCheckoutSteps = [
+  {
+    id: "plan",
+    label: "Plan",
+    detail: "Choose digital or print access and confirm the billing cycle.",
+  },
+  {
+    id: "delivery",
+    label: "Delivery",
+    detail: "Capture the address and contact details needed for routing.",
+  },
+  {
+    id: "payment",
+    label: "Payment",
+    detail: "Select a supported payment method and confirm recurring billing.",
+  },
+  {
+    id: "confirm",
+    label: "Confirm",
+    detail: "Review the quote and complete the mocked checkout return.",
+  },
+];
+
+export const readerPaymentMethods = [
+  {
+    id: "paypal",
+    label: "PayPal",
+    detail: "Redirect-style checkout for wallet approval and billing consent.",
+  },
+  {
+    id: "visa",
+    label: "Visa",
+    detail: "Card payment captured through a PCI-compliant processor reference.",
+  },
+  {
+    id: "mastercard",
+    label: "Mastercard",
+    detail: "Card payment captured through a PCI-compliant processor reference.",
+  },
+];
+
+export const readerCheckoutBenefits = [
+  "Monthly or yearly billing without changing the fixed two-week print cadence.",
+  "Fresh reporting unlocks immediately for active subscribers while public readers wait 30 days.",
+  "Delivery and account data are collected together so billing and routing stay aligned.",
+];
+
+export const readerCheckoutSuccessSteps = [
+  {
+    title: "Subscription created",
+    detail:
+      "The selected reader plan is recorded with its billing cycle and payment method.",
+  },
+  {
+    title: "Delivery profile prepared",
+    detail:
+      "Address and contact details are ready for shipment routing when the next eligible print cycle opens.",
+  },
+  {
+    title: "Access expectations set",
+    detail:
+      "Recent digital reporting stays available to active subscribers immediately after activation.",
+  },
+];
+
+export const readerDashboardFallbackOverview = {
+  subscriptionStatus: "Trial-ready workspace",
+  planName: "Print + Digital",
+  nextBillingDate: "September 11, 2026",
+  nextDeliveryDate: "August 25, 2026",
+  accessState: "Subscriber archive unlocked",
+  paymentMethod: "PayPal",
+  deliveryMode: "Biweekly print + digital",
+  deliveryWindow: "Next delivery window opens August 25, 2026",
+};
+
+export const readerDashboardMetricNotes = {
+  subscriptionStatus:
+    "Billing stays separate from the print cadence, so renewal status should stay visible at a glance.",
+  nextBilling:
+    "Monthly or yearly charges should be obvious without forcing the user into a billing table first.",
+  nextDelivery:
+    "Physical delivery timing should read as operationally trustworthy, even before the deeper logistics modules land.",
+  accessState:
+    "Recent reporting remains part of the active-subscriber promise while older stories move into the public archive later.",
+};
+
+export const readerDashboardReadingBars = [
+  { label: "Mon", value: 32, tone: "default" },
+  { label: "Tue", value: 44, tone: "accent" },
+  { label: "Wed", value: 37, tone: "default" },
+  { label: "Thu", value: 52, tone: "accent" },
+  { label: "Fri", value: 41, tone: "default" },
+  { label: "Sat", value: 48, tone: "accent" },
+  { label: "Sun", value: 29, tone: "default" },
+];
+
+export const readerDashboardActivityRows = [
+  {
+    id: "reader-overview-1",
+    item: "Renewal notice issued",
+    status: "Upcoming",
+    tone: "warning",
+    date: "August 18, 2026",
+  },
+  {
+    id: "reader-overview-2",
+    item: "Delivery route assigned",
+    status: "On track",
+    tone: "success",
+    date: "August 12, 2026",
+  },
+  {
+    id: "reader-overview-3",
+    item: "Saved article collection synced",
+    status: "Updated",
+    tone: "info",
+    date: "August 10, 2026",
+  },
+  {
+    id: "reader-overview-4",
+    item: "Archive access reminder",
+    status: "Ready",
+    tone: "neutral",
+    date: "August 9, 2026",
+  },
+];
+
+export const readerDashboardDeliveryTimeline = [
+  {
+    label: "Editorial lock",
+    description:
+      "The subscriber edition closes and the print batch is prepared for the next eligible route.",
+    completed: true,
+    badge: "Completed",
+  },
+  {
+    label: "Packing and route match",
+    description:
+      "Copies are grouped by region and matched to your active delivery address before dispatch.",
+    completed: true,
+    badge: "Prepared",
+  },
+  {
+    label: "Fleet dispatch",
+    description:
+      "Shipment status begins to move through the route health workflow the reader delivery module will expose next.",
+    completed: false,
+    badge: "Pending",
+  },
+  {
+    label: "Doorstep arrival",
+    description:
+      "Final ETA and drop confirmation will appear once the shared logistics components are connected.",
+    completed: false,
+    badge: "Scheduled",
+  },
+];
+
+export const readerDashboardReadingList = [
+  {
+    id: "reader-reading-1",
+    title: "Logistics reform debate enters committee review",
+    detail:
+      "Saved from Politics. Still inside the subscriber-first window and available in full.",
+    route: "/article/news-1",
+    status: "Subscriber access",
+    tone: "success",
+  },
+  {
+    id: "reader-reading-2",
+    title: "Regional rail upgrade expands delivery confidence",
+    detail:
+      "Marked to continue later. Useful context for the next print cycle and route coverage.",
+    route: "/article/business-1",
+    status: "Continue reading",
+    tone: "info",
+  },
+  {
+    id: "reader-reading-3",
+    title: "Weekend analysis on media habits",
+    detail:
+      "Moved into the delayed public archive soon, but still featured in your recent reading queue.",
+    route: "/article/feat-1",
+    status: "Archive soon",
+    tone: "warning",
+  },
+];
+
+export const readerDashboardQuickActions = [
+  {
+    label: "Open deliveries",
+    detail: "Check shipment timing and upcoming print status.",
+    route: "/dashboard/deliveries",
+  },
+  {
+    label: "Manage billing",
+    detail: "Review renewal timing and plan details.",
+    route: "/dashboard/billing",
+  },
+  {
+    label: "Reading history",
+    detail: "Continue saved stories and recent reads.",
+    route: "/dashboard/history",
+  },
+];
+
+export const readerDeliveryCurrent = {
+  edition: "August 25, 2026 Edition",
+  trackingId: "NQ-20260825",
+  status: "Route preparing",
+  tone: "info",
+  eta: "August 25, 2026 · 8:00-9:00 AM",
+  destination: "Brussels North route cluster",
+  note:
+    "The next print cycle is scheduled and the address has already been matched to an active regional route.",
+};
+
+export const readerDeliveryTimeline = [
+  {
+    label: "Editorial lock",
+    description:
+      "The August 25 subscriber edition is closed and queued for print preparation.",
+    badge: "Completed",
+    status: "completed",
+    icon: "Clock",
+  },
+  {
+    label: "Print and packaging",
+    description:
+      "Copies are grouped by route and verified against active subscriber addresses.",
+    badge: "In queue",
+    status: "active",
+    icon: "Package",
+  },
+  {
+    label: "Fleet dispatch",
+    description:
+      "Truck assignment and dispatch confirmation will appear here once the route is released.",
+    badge: "Pending",
+    status: "pending",
+    icon: "Truck",
+  },
+  {
+    label: "Doorstep confirmation",
+    description:
+      "ETA and final drop confirmation will update after dispatch begins.",
+    badge: "Pending",
+    status: "pending",
+    icon: "MapPin",
+  },
+];
+
+export const readerDeliveryHistoryRows = [
+  {
+    id: "delivery-history-1",
+    edition: "August 11, 2026 Edition",
+    trackingId: "NQ-20260811",
+    status: "Delivered",
+    tone: "success",
+    date: "August 11, 2026 · 8:24 AM",
+  },
+  {
+    id: "delivery-history-2",
+    edition: "July 28, 2026 Edition",
+    trackingId: "NQ-20260728",
+    status: "Delivered",
+    tone: "success",
+    date: "July 28, 2026 · 8:11 AM",
+  },
+  {
+    id: "delivery-history-3",
+    edition: "July 14, 2026 Edition",
+    trackingId: "NQ-20260714",
+    status: "Delivered",
+    tone: "success",
+    date: "July 14, 2026 · 8:29 AM",
+  },
+  {
+    id: "delivery-history-4",
+    edition: "June 30, 2026 Edition",
+    trackingId: "NQ-20260630",
+    status: "Delivered",
+    tone: "success",
+    date: "June 30, 2026 · 8:18 AM",
+  },
+];
+
+export const readerDeliveryKpis = [
+  {
+    label: "Cadence",
+    value: "Every 2 weeks",
+    detail: "Print timing stays fixed even when billing changes from monthly to yearly.",
+    icon: "CalendarClock",
+  },
+  {
+    label: "Last successful drop",
+    value: "August 11, 2026",
+    detail: "Most recent subscriber edition reached the saved delivery profile.",
+    icon: "CheckCircle2",
+    accent: true,
+  },
+  {
+    label: "Current issue state",
+    value: "No active exceptions",
+    detail: "The next shipment is on track without reroute or support flags.",
+    icon: "ShieldCheck",
+  },
+];
+
+export const readerDeliveryIssueStates = [
+  {
+    id: "reader-delivery-issue-1",
+    label: "Route health",
+    summary: "The August 25 shipment is still moving without delay or reroute flags.",
+    status: "Healthy",
+    tone: "success",
+    icon: "ShieldCheck",
+    detail:
+      "If the fleet integration reports a late dispatch or delivery exception later, this same panel can surface it without changing the route layout.",
+  },
+  {
+    id: "reader-delivery-issue-2",
+    label: "Address verification",
+    summary: "The Brussels delivery profile is matched to the current regional cluster.",
+    status: "Verified",
+    tone: "info",
+    icon: "MapPinned",
+    detail:
+      "Route grouping still depends on the saved address, so profile edits should happen before editorial lock when possible.",
+  },
+  {
+    id: "reader-delivery-issue-3",
+    label: "Support path",
+    summary: "No support case is open for the latest subscriber edition.",
+    status: "Standby",
+    tone: "neutral",
+    icon: "LifeBuoy",
+    detail:
+      "Missed-drop, damage, and doorstep confirmation issues can attach to this same shared component once real ticket states arrive.",
+  },
+];
+
+export const businessShipmentKpis = [
+  {
+    label: "Active shipments",
+    value: "4",
+    detail: "Consolidated business runs can cover several sites without fragmenting the dashboard view.",
+    icon: "Package",
+  },
+  {
+    label: "Delivery points",
+    value: "9",
+    detail: "Current contract footprint across Brussels, Antwerp, Cologne, and Berlin receiving points.",
+    icon: "CalendarClock",
+    accent: true,
+  },
+  {
+    label: "Issue state",
+    value: "1 receiving note",
+    detail: "Only one branch has a handling note ahead of the next consolidated drop.",
+    icon: "ShieldCheck",
+  },
+];
+
+export const businessShipmentRows = [
+  {
+    id: "business-shipment-1",
+    shipmentId: "BIZ-20260811-A",
+    label: "Atlas Hotels Belgium",
+    route: "Belgium North cluster",
+    scope: "3 sites / 180 copies",
+    status: "In dispatch",
+    tone: "info",
+    eta: "August 11, 2026 · 8:10 AM",
+  },
+  {
+    id: "business-shipment-2",
+    shipmentId: "BIZ-20260811-B",
+    label: "Meridian Trade Offices",
+    route: "Brussels central corridor",
+    scope: "2 sites / 95 copies",
+    status: "Delivered",
+    tone: "success",
+    eta: "August 11, 2026 · 8:02 AM",
+  },
+  {
+    id: "business-shipment-3",
+    shipmentId: "BIZ-20260825-A",
+    label: "Rhine Partner Lounges",
+    route: "Germany West corridor",
+    scope: "2 sites / 140 copies",
+    status: "Preparing",
+    tone: "neutral",
+    eta: "August 25, 2026 · 7:45 AM",
+  },
+  {
+    id: "business-shipment-4",
+    shipmentId: "BIZ-20260825-B",
+    label: "Embassy reception network",
+    route: "Belgium embassy route",
+    scope: "2 sites / 60 copies",
+    status: "Address review",
+    tone: "warning",
+    eta: "August 25, 2026 · Pending confirmation",
+  },
+];
+
+export const businessShipmentRouteSummaries = [
+  {
+    id: "business-route-1",
+    route: "Belgium North cluster",
+    window: "August 11, 2026 · Morning dispatch",
+    shipments: "2 active runs",
+    destinations: "5 receiving points",
+    status: "On track",
+    tone: "success",
+    note: "Hotel and headquarters deliveries share one regional release so invoice and receiving teams stay aligned.",
+  },
+  {
+    id: "business-route-2",
+    route: "Germany West corridor",
+    window: "August 25, 2026 · Next cycle",
+    shipments: "1 queued run",
+    destinations: "2 receiving points",
+    status: "Queued",
+    tone: "neutral",
+    note: "The next cross-border branch run is already grouped, but the receiving manifest stays editable before print lock.",
+  },
+  {
+    id: "business-route-3",
+    route: "Belgium embassy route",
+    window: "August 25, 2026 · Address review",
+    shipments: "1 review state",
+    destinations: "2 receiving points",
+    status: "Attention",
+    tone: "warning",
+    note: "One destination still needs a final receiving-contact confirmation before the shared route is released.",
+  },
+];
+
+export const businessShipmentLocationRows = [
+  {
+    id: "business-location-1",
+    location: "Brussels head office",
+    region: "Belgium",
+    copies: "70 copies",
+    contact: "Facilities desk",
+    status: "Delivered",
+    tone: "success",
+  },
+  {
+    id: "business-location-2",
+    location: "Antwerp hotel lobby",
+    region: "Belgium",
+    copies: "55 copies",
+    contact: "Morning concierge",
+    status: "Receiving",
+    tone: "info",
+  },
+  {
+    id: "business-location-3",
+    location: "Cologne branch office",
+    region: "Germany",
+    copies: "80 copies",
+    contact: "Operations lead",
+    status: "Queued",
+    tone: "neutral",
+  },
+  {
+    id: "business-location-4",
+    location: "Embassy reception desk",
+    region: "Belgium",
+    copies: "30 copies",
+    contact: "Reception review",
+    status: "Confirm contact",
+    tone: "warning",
+  },
+];
+
+export const businessShipmentIssueStates = [
+  {
+    id: "business-shipment-issue-1",
+    label: "Receiving readiness",
+    summary: "One embassy reception point still needs a named receiving contact.",
+    status: "Review",
+    tone: "warning",
+    icon: "MapPinned",
+    detail:
+      "The rest of the business footprint is already grouped into the next delivery cycle, so only that one branch blocks a fully clean release.",
+  },
+  {
+    id: "business-shipment-issue-2",
+    label: "Commercial routing",
+    summary: "Invoice-linked shipments are still aligned to the current branch allocation plan.",
+    status: "Aligned",
+    tone: "success",
+    icon: "ShieldCheck",
+    detail:
+      "Copy volume, route grouping, and invoice ownership remain synchronized across the shared business shipment view.",
+  },
+  {
+    id: "business-shipment-issue-3",
+    label: "Support path",
+    summary: "No missed-drop dispute is open for the latest completed business run.",
+    status: "Standby",
+    tone: "neutral",
+    icon: "LifeBuoy",
+    detail:
+      "If one site reports a missing bundle later, the issue can be attached to this same shared logistics surface without splitting the route layout.",
+  },
+];
+
+export const businessShipmentActivityRows = [
+  {
+    id: "business-shipment-activity-1",
+    event: "Antwerp hotel receiving confirmed",
+    shipment: "BIZ-20260811-A",
+    status: "Confirmed",
+    tone: "success",
+    date: "August 11, 2026 · 8:18 AM",
+  },
+  {
+    id: "business-shipment-activity-2",
+    event: "Embassy reception contact check requested",
+    shipment: "BIZ-20260825-B",
+    status: "Review",
+    tone: "warning",
+    date: "August 10, 2026 · 4:20 PM",
+  },
+  {
+    id: "business-shipment-activity-3",
+    event: "Cologne branch manifest updated",
+    shipment: "BIZ-20260825-A",
+    status: "Updated",
+    tone: "info",
+    date: "August 9, 2026 · 2:05 PM",
+  },
+  {
+    id: "business-shipment-activity-4",
+    event: "Next business route grouped for regional release",
+    shipment: "BIZ-20260825-A",
+    status: "Queued",
+    tone: "neutral",
+    date: "August 8, 2026 · 10:40 AM",
+  },
+];
+
+export const businessShipmentWorkspaceNotes = [
+  "Business shipment monitoring should stay grouped by contract run and destination set instead of mimicking a reader's one-copy delivery view.",
+  "Receiving-contact readiness matters because one unresolved site can delay a shared regional release without changing the rest of the invoice cycle.",
+  "Recent logistics activity belongs here so the business account can track follow-up work without depending on the admin operations workspace.",
+];
+
+export const businessOverviewMetrics = [
+  {
+    label: "Contract state",
+    value: "Regional Team",
+    detail: "Discounted multi-location agreement is active and invoice-ready.",
+  },
+  {
+    label: "Copy volume",
+    value: "475 copies",
+    detail: "Current recurring volume across headquarters, branches, and partner desks.",
+  },
+  {
+    label: "Next bulk delivery",
+    value: "Aug 25",
+    detail: "Next consolidated business release is already grouped for the upcoming cycle.",
+    accent: true,
+  },
+  {
+    label: "Invoice status",
+    value: "Current",
+    detail: "The latest consolidated invoice is paid and the next billing window is scheduled.",
+  },
+  {
+    label: "Shipment health",
+    value: "1 review note",
+    detail: "Only one receiving-contact confirmation is blocking a fully clean route release.",
+  },
+];
+
+export const businessOverviewDeliveryFootprint = [
+  {
+    label: "Active locations",
+    value: "9 sites",
+    detail: "Brussels, Antwerp, Cologne, and Berlin coverage remains inside one account.",
+  },
+  {
+    label: "Primary contact",
+    value: "Ops + finance",
+    detail: "Receiving coordination and invoice ownership stay visible as separate functions.",
+  },
+  {
+    label: "Next receiving window",
+    value: "Morning route",
+    detail: "The next consolidated drop targets the August 25, 2026 morning dispatch cycle.",
+  },
+];
+
+export const businessOverviewCopyBars = [
+  { label: "HQ", value: 140, tone: "accent" },
+  { label: "Antwerp", value: 95, tone: "default" },
+  { label: "Cologne", value: 110, tone: "accent" },
+  { label: "Berlin", value: 80, tone: "default" },
+  { label: "Partner", value: 50, tone: "default" },
+];
+
+export const businessOverviewActivityRows = [
+  {
+    id: "business-overview-1",
+    item: "Invoice INV-BIZ-2026-08 confirmed",
+    status: "Paid",
+    tone: "success",
+    date: "August 11, 2026",
+  },
+  {
+    id: "business-overview-2",
+    item: "Embassy receiving contact review opened",
+    status: "Review",
+    tone: "warning",
+    date: "August 10, 2026",
+  },
+  {
+    id: "business-overview-3",
+    item: "Cologne branch copy allocation updated",
+    status: "Updated",
+    tone: "info",
+    date: "August 8, 2026",
+  },
+  {
+    id: "business-overview-4",
+    item: "Next bulk release grouped for August 25 cycle",
+    status: "Queued",
+    tone: "neutral",
+    date: "August 7, 2026",
+  },
+];
+
+export const businessOverviewQuickActions = [
+  {
+    id: "team",
+    label: "Team",
+    detail: "Manage seats, roles, and invitation readiness for commercial and receiving users.",
+    route: "/business-dashboard/team",
+  },
+  {
+    id: "orders",
+    label: "Orders",
+    detail: "Adjust recurring volume and review bulk-copy assumptions by location.",
+    route: "/business-dashboard/orders",
+  },
+  {
+    id: "invoices",
+    label: "Invoices",
+    detail: "Review consolidated billing, invoice history, and payment follow-up.",
+    route: "/business-dashboard/invoices",
+  },
+  {
+    id: "locations",
+    label: "Locations",
+    detail: "Inspect branch coverage, receiving contacts, and delivery destination health.",
+    route: "/business-dashboard/locations",
+  },
+  {
+    id: "shipments",
+    label: "Shipments",
+    detail: "Open the dedicated logistics workspace for route summaries and location-level status.",
+    route: "/business-dashboard/shipments",
+  },
+];
+
+export const businessOverviewReminders = [
+  "Business pricing depends on copy volume, location footprint, and invoice structure rather than reader-style self-service plan rules.",
+  "Delivery cadence stays operationally separate from billing cadence, so contract invoicing does not change the shared print-release rhythm.",
+  "The overview stays concise by design; team, orders, invoices, locations, and shipments now have their own routed destinations.",
+];
+
+export const businessTeamMetrics = [
+  {
+    label: "Active seats",
+    value: "12 users",
+    detail: "Commercial, finance, and receiving roles are split across the active workspace.",
+  },
+  {
+    label: "Billing approvers",
+    value: "2",
+    detail: "Two finance owners can confirm invoice follow-up and payment expectations.",
+  },
+  {
+    label: "Receiving leads",
+    value: "4",
+    detail: "Each branch cluster has a named receiving owner ahead of the next print cycle.",
+    accent: true,
+  },
+  {
+    label: "Pending invites",
+    value: "1",
+    detail: "One embassy desk seat still needs activation before the next route release.",
+  },
+];
+
+export const businessTeamRows = [
+  {
+    id: "business-team-1",
+    name: "Sajibur Rahman",
+    role: "Account owner",
+    scope: "Commercial + oversight",
+    status: "Active",
+    tone: "success",
+    updated: "August 11, 2026",
+  },
+  {
+    id: "business-team-2",
+    name: "Lina Van Hove",
+    role: "Finance lead",
+    scope: "Invoices + VAT follow-up",
+    status: "Active",
+    tone: "success",
+    updated: "August 10, 2026",
+  },
+  {
+    id: "business-team-3",
+    name: "Marco Stein",
+    role: "Receiving coordinator",
+    scope: "Belgium North cluster",
+    status: "Active",
+    tone: "info",
+    updated: "August 9, 2026",
+  },
+  {
+    id: "business-team-4",
+    name: "Embassy desk invite",
+    role: "Receiving contact",
+    scope: "Embassy reception route",
+    status: "Pending",
+    tone: "warning",
+    updated: "August 8, 2026",
+  },
+];
+
+export const businessTeamInviteCards = [
+  {
+    title: "Commercial ownership",
+    detail: "Keep at least one account owner and one finance approver active so contract and invoice actions do not bottleneck on a single person.",
+    icon: "team",
+  },
+  {
+    title: "Receiving coordination",
+    detail: "Sites with physical drops should always have a named receiving lead before the next regional dispatch window opens.",
+    icon: "receiving",
+  },
+  {
+    title: "Invite readiness",
+    detail: "Pending invites should stay visible when a new branch, concierge desk, or reception team needs access before rollout expands.",
+    icon: "team",
+  },
+];
+
+export const businessTeamRules = [
+  "Commercial ownership, billing approval, and receiving coordination should remain distinct roles where possible.",
+  "Invoice questions should route to finance contacts, while destination issues should route to the assigned receiving lead.",
+  "Seat growth should follow the business footprint instead of mirroring every staff member who reads the publication.",
+];
+
+export const businessOrderMetrics = [
+  {
+    label: "Recurring volume",
+    value: "475 copies",
+    detail: "Current allocation across headquarters, branches, hospitality, and partner points.",
+  },
+  {
+    label: "Active order plans",
+    value: "4",
+    detail: "Each order plan groups one repeat pattern instead of forcing all locations into one flat order.",
+  },
+  {
+    label: "Next release",
+    value: "August 25",
+    detail: "The next business print cycle is already grouped and ready for final volume review.",
+    accent: true,
+  },
+  {
+    label: "Pricing tier",
+    value: "Regional Team",
+    detail: "Volume and site count still sit inside the discounted multi-location band.",
+  },
+];
+
+export const businessOrderRows = [
+  {
+    id: "business-order-1",
+    order: "Belgium headquarters pack",
+    copies: "140 copies",
+    cadence: "Biweekly",
+    sites: "2 sites",
+    status: "Active",
+    tone: "success",
+    nextWindow: "August 25, 2026",
+  },
+  {
+    id: "business-order-2",
+    order: "Germany branch circulation",
+    copies: "190 copies",
+    cadence: "Biweekly",
+    sites: "3 sites",
+    status: "Adjusted",
+    tone: "info",
+    nextWindow: "August 25, 2026",
+  },
+  {
+    id: "business-order-3",
+    order: "Hospitality reception bundle",
+    copies: "95 copies",
+    cadence: "Biweekly",
+    sites: "2 sites",
+    status: "Review",
+    tone: "warning",
+    nextWindow: "Awaiting contact confirmation",
+  },
+  {
+    id: "business-order-4",
+    order: "Embassy partner drop",
+    copies: "50 copies",
+    cadence: "Biweekly",
+    sites: "2 sites",
+    status: "Queued",
+    tone: "neutral",
+    nextWindow: "Next cycle after review",
+  },
+];
+
+export const businessOrderVolumeBars = [
+  { label: "HQ", value: 140, tone: "accent" },
+  { label: "Branch", value: 190, tone: "default" },
+  { label: "Hotel", value: 95, tone: "default" },
+  { label: "Partner", value: 50, tone: "default" },
+];
+
+export const businessInvoiceMetrics = [
+  {
+    label: "Invoice health",
+    value: "Current",
+    detail: "The latest consolidated invoice is paid and no overdue balance is active.",
+  },
+  {
+    label: "Next invoice",
+    value: "Sept 1",
+    detail: "The next monthly invoice remains aligned to the current Regional Team contract.",
+    accent: true,
+  },
+  {
+    label: "Payment path",
+    value: "Monthly invoice",
+    detail: "The account uses invoice handling instead of reader-style self-serve renewals.",
+  },
+  {
+    label: "Open follow-ups",
+    value: "1 note",
+    detail: "One VAT-routing note still needs confirmation before the next invoice is issued.",
+  },
+];
+
+export const businessInvoiceRows = [
+  {
+    id: "business-invoice-1",
+    invoice: "INV-BIZ-2026-08",
+    scope: "August business circulation",
+    amount: "EUR 8,950",
+    status: "Paid",
+    tone: "success",
+    date: "August 11, 2026",
+  },
+  {
+    id: "business-invoice-2",
+    invoice: "INV-BIZ-2026-07",
+    scope: "July business circulation",
+    amount: "EUR 8,630",
+    status: "Paid",
+    tone: "success",
+    date: "July 11, 2026",
+  },
+  {
+    id: "business-invoice-3",
+    invoice: "VAT note review",
+    scope: "Germany branch allocation",
+    amount: "Pending",
+    status: "Review",
+    tone: "warning",
+    date: "August 8, 2026",
+  },
+  {
+    id: "business-invoice-4",
+    invoice: "INV-BIZ-2026-09",
+    scope: "Projected September cycle",
+    amount: "EUR 9,120",
+    status: "Upcoming",
+    tone: "neutral",
+    date: "September 1, 2026",
+  },
+];
+
+export const businessLocationMetrics = [
+  {
+    label: "Active sites",
+    value: "9 locations",
+    detail: "The business footprint spans offices, hospitality, and partner-facing desks.",
+  },
+  {
+    label: "Countries",
+    value: "2",
+    detail: "Belgium and Germany remain active in the current delivery footprint.",
+  },
+  {
+    label: "Receiving contacts",
+    value: "8 assigned",
+    detail: "Most destinations already have a named receiving owner tied to the active route plan.",
+    accent: true,
+  },
+  {
+    label: "Needs review",
+    value: "1 site",
+    detail: "One embassy reception point still needs final contact confirmation.",
+  },
+];
+
+export const businessLocationRows = [
+  {
+    id: "business-site-1",
+    location: "Brussels head office",
+    region: "Belgium",
+    copies: "70 copies",
+    contact: "Facilities desk",
+    status: "Ready",
+    tone: "success",
+  },
+  {
+    id: "business-site-2",
+    location: "Antwerp hotel lobby",
+    region: "Belgium",
+    copies: "55 copies",
+    contact: "Morning concierge",
+    status: "Ready",
+    tone: "success",
+  },
+  {
+    id: "business-site-3",
+    location: "Cologne branch office",
+    region: "Germany",
+    copies: "80 copies",
+    contact: "Operations lead",
+    status: "Updated",
+    tone: "info",
+  },
+  {
+    id: "business-site-4",
+    location: "Berlin partner lounge",
+    region: "Germany",
+    copies: "45 copies",
+    contact: "Site host",
+    status: "Ready",
+    tone: "success",
+  },
+  {
+    id: "business-site-5",
+    location: "Embassy reception desk",
+    region: "Belgium",
+    copies: "30 copies",
+    contact: "Reception review",
+    status: "Review",
+    tone: "warning",
+  },
+];
+
+export const adminOverviewMetrics = [
+  {
+    label: "Published today",
+    value: "12 stories",
+    detail: "Morning and midday releases are already live across the sector desks.",
+  },
+  {
+    label: "Scheduled queue",
+    value: "8 items",
+    detail: "The current schedule includes later releases and print-linked publishing work.",
+  },
+  {
+    label: "Subscriber watchlist",
+    value: "37 accounts",
+    detail: "A small set of renewals, delivery eligibility checks, and support reviews need attention.",
+  },
+  {
+    label: "Company accounts",
+    value: "46 active",
+    detail: "Business onboarding and active contracts are currently spread across Belgium and Germany.",
+  },
+  {
+    label: "Routes delayed",
+    value: "2 corridors",
+    detail: "Only two outbound route groups need escalation before the current window closes.",
+    accent: true,
+  },
+];
+
+export const adminOverviewAccountHealth = [
+  {
+    label: "Active subscribers",
+    value: "24.3k",
+    detail: "Most individual accounts remain active, with only a narrow review set tied to billing or delivery state.",
+  },
+  {
+    label: "Business contracts",
+    value: "46",
+    detail: "Company accounts span one-site, regional-team, and enterprise-route pricing structures.",
+  },
+  {
+    label: "Renewal risk",
+    value: "14 due today",
+    detail: "A compact renewal and support watchlist keeps front-desk and billing work visible before it grows noisy.",
+  },
+];
+
+export const adminOverviewPublishingBars = [
+  { label: "Mon", value: 9, tone: "default" },
+  { label: "Tue", value: 12, tone: "accent" },
+  { label: "Wed", value: 8, tone: "default" },
+  { label: "Thu", value: 11, tone: "accent" },
+  { label: "Fri", value: 10, tone: "default" },
+];
+
+export const adminOverviewActivityRows = [
+  {
+    id: "admin-overview-1",
+    item: "Morning politics queue published",
+    status: "Published",
+    tone: "success",
+    date: "August 11, 2026 · 9:05 AM",
+  },
+  {
+    id: "admin-overview-2",
+    item: "Subscriber renewal review batch opened",
+    status: "In progress",
+    tone: "info",
+    date: "August 11, 2026 · 8:20 AM",
+  },
+  {
+    id: "admin-overview-3",
+    item: "Germany West route delay escalated",
+    status: "Needs review",
+    tone: "warning",
+    date: "August 11, 2026 · 7:55 AM",
+  },
+  {
+    id: "admin-overview-4",
+    item: "Two new business onboarding requests logged",
+    status: "Queued",
+    tone: "neutral",
+    date: "August 10, 2026 · 5:10 PM",
+  },
+];
+
+export const adminOverviewQuickActions = [
+  {
+    id: "content",
+    label: "Content",
+    detail: "Review the publishing queue, article states, and editorial records.",
+    route: "/admin/content",
+  },
+  {
+    id: "schedule",
+    label: "Schedule",
+    detail: "Open the scheduled publishing workspace for timed releases and print coordination.",
+    route: "/admin/schedule",
+  },
+  {
+    id: "subscribers",
+    label: "Subscribers",
+    detail: "Inspect subscriber status, renewals, delivery eligibility, and support cases.",
+    route: "/admin/subscribers",
+  },
+  {
+    id: "companies",
+    label: "Companies",
+    detail: "Review business accounts, onboarding state, and contract summaries.",
+    route: "/admin/companies",
+  },
+  {
+    id: "shipments",
+    label: "Shipments",
+    detail: "Monitor outbound route health, escalations, and fulfillment readiness.",
+    route: "/admin/shipments",
+  },
+  {
+    id: "pricing",
+    label: "Pricing",
+    detail: "Open business pricing tiers and contract-band management when needed.",
+    route: "/admin/pricing",
+  },
+];
+
+export const adminOverviewReminders = [
+  "The admin overview stays summary-first on purpose; heavier record management belongs in the dedicated content, subscriber, company, shipment, and pricing workspaces.",
+  "Publishing cadence, renewal state, and route health should be visible together here because the operational day crosses editorial, customer, and logistics boundaries.",
+  "Public reading, subscription, and delivery routes stay untouched while admin-only management surfaces deepen inside the authenticated shell.",
+];
+
+export const adminContentMetrics = [
+  {
+    label: "Drafts",
+    value: "5",
+    detail: "Draft pieces are waiting on editor review or sector-specific field completion.",
+  },
+  {
+    label: "Scheduled",
+    value: "8",
+    detail: "The publishing queue already contains several later releases and print-linked items.",
+    accent: true,
+  },
+  {
+    label: "Published today",
+    value: "12",
+    detail: "Morning and midday newsroom releases are already live for subscribers.",
+  },
+  {
+    label: "Template desks",
+    value: "4",
+    detail: "Politics, business, sports, and events all follow structured editorial templates.",
+  },
+];
+
+export const adminContentRows = [
+  {
+    id: "admin-content-1",
+    headline: "Policy desk briefs transport and labor votes for the midday edition",
+    sector: "Politics",
+    editor: "Nadia Okello",
+    status: "Published",
+    tone: "success",
+    publishWindow: "August 11, 2026 · 11:00 AM",
+  },
+  {
+    id: "admin-content-2",
+    headline: "Freight and retail outlook queued for the evening business release",
+    sector: "Business",
+    editor: "Thomas Chen",
+    status: "Scheduled",
+    tone: "info",
+    publishWindow: "August 11, 2026 · 6:00 PM",
+  },
+  {
+    id: "admin-content-3",
+    headline: "Weekend fixtures package waiting on final injury notes",
+    sector: "Sports",
+    editor: "Maria Santos",
+    status: "Draft",
+    tone: "neutral",
+    publishWindow: "Awaiting editor sign-off",
+  },
+  {
+    id: "admin-content-4",
+    headline: "Events listing bundle held for venue confirmation",
+    sector: "Events",
+    editor: "Emily Rossini",
+    status: "Scheduled",
+    tone: "warning",
+    publishWindow: "August 12, 2026 · 8:00 AM",
+  },
+];
+
+export const adminContentTemplates = [
+  {
+    id: "politics",
+    label: "Politics template",
+    detail: "Supports institution, vote timing, and public-impact context for policy-driven stories.",
+    sampleId: "admin-politics-1",
+  },
+  {
+    id: "business",
+    label: "Business template",
+    detail: "Captures market angle, logistics effect, and pricing relevance for commercial coverage.",
+    sampleId: "admin-business-1",
+  },
+  {
+    id: "sports",
+    label: "Sports template",
+    detail: "Keeps fixture, result, and analysis fields aligned between live coverage and print summaries.",
+    sampleId: "admin-sports-1",
+  },
+  {
+    id: "events",
+    label: "Events template",
+    detail: "Adds venue, date, and regional detail fields so listings remain structured before publish.",
+    sampleId: "admin-events-1",
+  },
+];
+
+export const adminEditorArticles = [
+  {
+    id: "admin-politics-1",
+    headline: "Policy desk briefs transport and labor votes for the midday edition",
+    sector: "Politics",
+    editor: "Nadia Okello",
+    status: "Published",
+    tone: "success",
+    summary:
+      "The politics desk is packaging transport, labor, and council developments into one structured midday subscriber release.",
+    author: "Nadia Okello",
+    publicAccessDate: "September 10, 2026",
+    publishDate: "August 11, 2026",
+    publishTime: "11:00 AM",
+    body:
+      "Regional editors are consolidating policy votes, committee changes, and labor reactions into a single subscriber edition before the public archive window opens next month.",
+    councilSession: "Federal transport and labor committee",
+    location: "Brussels",
+  },
+  {
+    id: "admin-business-1",
+    headline: "Freight and retail outlook queued for the evening business release",
+    sector: "Business",
+    editor: "Thomas Chen",
+    status: "Scheduled",
+    tone: "info",
+    summary:
+      "The business desk is linking freight throughput, retail demand, and distribution cost signals into the evening release.",
+    author: "Thomas Chen",
+    publicAccessDate: "September 11, 2026",
+    publishDate: "August 11, 2026",
+    publishTime: "6:00 PM",
+    body:
+      "Analysts are aligning port throughput, warehouse cadence, and retail planning so the evening story supports both subscriber reading and internal business planning context.",
+    marketImpact: "Port throughput and retail demand",
+    location: "Antwerp and Cologne",
+  },
+  {
+    id: "admin-sports-1",
+    headline: "Weekend fixtures package waiting on final injury notes",
+    sector: "Sports",
+    editor: "Maria Santos",
+    status: "Draft",
+    tone: "neutral",
+    summary:
+      "The sports desk still needs final squad and injury context before the next fixtures package can be scheduled.",
+    author: "Maria Santos",
+    publicAccessDate: "September 12, 2026",
+    publishDate: "August 12, 2026",
+    publishTime: "9:30 AM",
+    body:
+      "Live alerts are already flowing, but the longer-form subscriber package still needs final pre-match verification and print-summary framing.",
+    scorelineFocus: "Weekend league fixtures and injury notes",
+    location: "Brussels and regional stadiums",
+  },
+  {
+    id: "admin-events-1",
+    headline: "Events listing bundle held for venue confirmation",
+    sector: "Events",
+    editor: "Emily Rossini",
+    status: "Scheduled",
+    tone: "warning",
+    summary:
+      "The events desk is holding the next listings bundle until venue and sponsor confirmations are fully checked.",
+    author: "Emily Rossini",
+    publicAccessDate: "September 12, 2026",
+    publishDate: "August 12, 2026",
+    publishTime: "8:00 AM",
+    body:
+      "The listings package is structurally ready, but several venue confirmations and local sponsor details still need a final editorial pass before release.",
+    eventDate: "August 16-18, 2026",
+    location: "Brussels, Antwerp, and Berlin",
+  },
+];
+
+export const adminEditorTemplateFields = {
+  Politics: [
+    {
+      key: "councilSession",
+      label: "Institution or session",
+      placeholder: "Council, parliament, or committee session",
+      hint: "Politics coverage usually needs the decision-making body or vote context.",
+    },
+    {
+      key: "location",
+      label: "Policy region",
+      placeholder: "Brussels",
+      hint: "Keep the geographic scope explicit for public-affairs coverage.",
+    },
+  ],
+  Business: [
+    {
+      key: "marketImpact",
+      label: "Market or logistics angle",
+      placeholder: "Freight, pricing, or retail effect",
+      hint: "Business stories should keep the operational and commercial angle easy to scan.",
+    },
+    {
+      key: "location",
+      label: "Operating region",
+      placeholder: "Antwerp and Cologne",
+      hint: "Use region context when commercial or logistics effects vary by market.",
+    },
+  ],
+  Sports: [
+    {
+      key: "scorelineFocus",
+      label: "Fixture or analysis focus",
+      placeholder: "Matchday, injury notes, or analysis angle",
+      hint: "Sports packages should keep the performance focus visible before print summaries are prepared.",
+    },
+    {
+      key: "location",
+      label: "Venue region",
+      placeholder: "Regional stadiums",
+      hint: "Venue context matters for event timing and localized sports coverage.",
+    },
+  ],
+  Events: [
+    {
+      key: "eventDate",
+      label: "Event date or range",
+      placeholder: "August 16-18, 2026",
+      hint: "Events listings need explicit date coverage for publish and print workflows.",
+    },
+    {
+      key: "location",
+      label: "Venue or city",
+      placeholder: "Brussels",
+      hint: "Location fields keep regional event bundles structured and searchable.",
+    },
+  ],
+};
+
+export const adminEditorWorkflowNotes = [
+  "Draft, scheduled, and published states should stay visible because editorial review and release timing are separate decisions.",
+  "Sector templates matter: politics, business, sports, and events need different supporting fields even when they share one publishing shell.",
+  "Scheduled timing and public archive dates should remain explicit so subscriber-first access and later public release stay aligned.",
+];
+
+export const adminScheduleMetrics = [
+  {
+    label: "Scheduled today",
+    value: "8 items",
+    detail: "The release queue currently spans midday, evening, and next-morning publishing slots.",
+  },
+  {
+    label: "Print-linked",
+    value: "3",
+    detail: "Three upcoming items also influence the next print edition workflow.",
+    accent: true,
+  },
+  {
+    label: "Review holds",
+    value: "2",
+    detail: "A small set of stories still needs editorial or venue confirmation before release.",
+  },
+  {
+    label: "Future slots",
+    value: "5 days",
+    detail: "The visible schedule now stretches across the next five publishing days.",
+  },
+];
+
+export const adminScheduleRows = [
+  {
+    id: "admin-schedule-1",
+    slot: "August 11, 2026 · 2:00 PM",
+    sector: "Politics",
+    headline: "Municipal policy wrap and labor reaction package",
+    status: "Scheduled",
+    tone: "info",
+    release: "Subscriber release",
+  },
+  {
+    id: "admin-schedule-2",
+    slot: "August 11, 2026 · 6:00 PM",
+    sector: "Business",
+    headline: "Freight, pricing, and retail outlook",
+    status: "Scheduled",
+    tone: "info",
+    release: "Subscriber + print planning",
+  },
+  {
+    id: "admin-schedule-3",
+    slot: "August 12, 2026 · 8:00 AM",
+    sector: "Events",
+    headline: "Weekend listings bundle",
+    status: "Needs review",
+    tone: "warning",
+    release: "Pending venue confirmation",
+  },
+  {
+    id: "admin-schedule-4",
+    slot: "August 12, 2026 · 9:30 AM",
+    sector: "Sports",
+    headline: "Matchday package and injury recap",
+    status: "Draft",
+    tone: "neutral",
+    release: "Awaiting final desk sign-off",
+  },
+];
+
+export const adminScheduleVolumeBars = [
+  { label: "Tue", value: 8, tone: "accent" },
+  { label: "Wed", value: 6, tone: "default" },
+  { label: "Thu", value: 5, tone: "default" },
+  { label: "Fri", value: 7, tone: "accent" },
+  { label: "Sat", value: 4, tone: "default" },
+];
+
+export const adminScheduleNotes = [
+  "Immediate publishing and scheduled publishing should feel like one workflow, not two disconnected tools.",
+  "Print-linked stories need visible timing because scheduled digital release and print preparation often move together.",
+  "Hold states should stay explicit so editors can see which items are blocked by missing context, confirmation, or final review.",
+];
+
+export const adminSubscriberMetrics = [
+  {
+    label: "Active subscribers",
+    value: "24.3k",
+    detail: "Most accounts remain active, with only a narrow review set tied to billing or delivery status.",
+  },
+  {
+    label: "Renewals due",
+    value: "14 today",
+    detail: "A small set of renewals needs front-desk or billing follow-up before the current cycle closes.",
+    accent: true,
+  },
+  {
+    label: "Delivery holds",
+    value: "9",
+    detail: "Address or payment conditions currently block a small set of print-eligible accounts.",
+  },
+  {
+    label: "Support reviews",
+    value: "37",
+    detail: "The review queue spans missed-delivery, renewal, and access-state questions.",
+  },
+];
+
+export const adminSubscriberRows = [
+  {
+    id: "admin-subscriber-1",
+    name: "Amelie Laurent",
+    plan: "Print + Digital · Yearly",
+    renewal: "September 1, 2026",
+    deliveryEligibility: "Eligible",
+    status: "Active",
+    tone: "success",
+  },
+  {
+    id: "admin-subscriber-2",
+    name: "Jonas Stein",
+    plan: "Print + Digital · Monthly",
+    renewal: "August 12, 2026",
+    deliveryEligibility: "Address review",
+    status: "Needs review",
+    tone: "warning",
+  },
+  {
+    id: "admin-subscriber-3",
+    name: "Marta Kovacs",
+    plan: "Digital Only · Monthly",
+    renewal: "August 18, 2026",
+    deliveryEligibility: "Digital only",
+    status: "Active",
+    tone: "info",
+  },
+  {
+    id: "admin-subscriber-4",
+    name: "Niels Verbruggen",
+    plan: "Print + Digital · Yearly",
+    renewal: "August 11, 2026",
+    deliveryEligibility: "Payment hold",
+    status: "Renewal watch",
+    tone: "warning",
+  },
+];
+
+export const adminSubscriberWatchlist = [
+  {
+    title: "Renewal batch",
+    detail: "Fourteen renewals are due today, with three requiring billing follow-up before subscriber access changes.",
+    status: "In progress",
+    tone: "info",
+  },
+  {
+    title: "Delivery eligibility",
+    detail: "Nine print accounts are blocked by address or payment issues, which affects whether the next two-week cycle should include them.",
+    status: "Review",
+    tone: "warning",
+  },
+  {
+    title: "Support load",
+    detail: "Most open subscriber cases are still routine, with no broader product or delivery incident behind them.",
+    status: "Stable",
+    tone: "success",
+  },
+];
+
+export const adminSubscriberSupportNotes = [
+  "Billing cadence and delivery cadence remain separate, so renewal review does not automatically change the next print cycle without a status update.",
+  "Delivery eligibility depends on subscription state, payment status, and address readiness rather than only whether a reader prefers print.",
+  "The subscriber table should stay operational: support and front-desk teams need clear renewal and delivery signals more than marketing-style summaries.",
+];
+
+export const adminCompanyMetrics = [
+  {
+    label: "Active companies",
+    value: "46",
+    detail: "Company accounts span one-site, regional-team, and enterprise-route contract structures.",
+  },
+  {
+    label: "Regional Team tier",
+    value: "21 accounts",
+    detail: "The discounted multi-location tier is currently the most common business contract shape.",
+    accent: true,
+  },
+  {
+    label: "Invoice review",
+    value: "6 accounts",
+    detail: "A small group of companies still needs invoice or VAT clarification before the next cycle.",
+  },
+  {
+    label: "Cross-border",
+    value: "12 accounts",
+    detail: "Several businesses operate across both Belgium and Germany, increasing routing and billing complexity.",
+  },
+];
+
+export const adminCompanyRows = [
+  {
+    id: "admin-company-1",
+    company: "Atlas Hotels Belgium",
+    tier: "Regional Team",
+    volume: "180 copies / cycle",
+    billing: "Monthly invoice",
+    status: "Active",
+    tone: "success",
+    region: "Belgium",
+  },
+  {
+    id: "admin-company-2",
+    company: "Meridian Trade Offices",
+    tier: "Single Office",
+    volume: "95 copies / cycle",
+    billing: "Monthly invoice",
+    status: "Active",
+    tone: "info",
+    region: "Belgium",
+  },
+  {
+    id: "admin-company-3",
+    company: "Rhine Partner Lounges",
+    tier: "Regional Team",
+    volume: "140 copies / cycle",
+    billing: "Contract billing",
+    status: "Invoice review",
+    tone: "warning",
+    region: "Germany",
+  },
+  {
+    id: "admin-company-4",
+    company: "Embassy reception network",
+    tier: "Enterprise Route",
+    volume: "60 copies / cycle",
+    billing: "Contract billing",
+    status: "Onboarding",
+    tone: "neutral",
+    region: "Belgium + Germany",
+  },
+];
+
+export const adminCompanySegments = [
+  {
+    title: "Single-site accounts",
+    value: "14 active companies",
+    detail: "These accounts typically have one invoice contact and one main receiving location, so support is more compact.",
+  },
+  {
+    title: "Regional-team accounts",
+    value: "21 multi-location companies",
+    detail: "Most business customers now operate several destinations while still staying inside one recurring contract structure.",
+  },
+  {
+    title: "Enterprise-route accounts",
+    value: "11 complex contracts",
+    detail: "These organizations need the closest alignment between pricing, shipment grouping, and onboarding or support follow-up.",
+  },
+];
+
+export const adminCompanyWatchNotes = [
+  "Business accounts use contract and invoice logic that differs from subscriber self-serve renewal behavior, so the admin workflow should keep those models separate.",
+  "Copy volume, country coverage, and location footprint all influence how the company account should be routed through pricing and shipment operations.",
+  "Company management should stay summary-first here, with heavier pricing and logistics detail handled in the pricing and shipment workspaces.",
+];
+
+export const adminShipmentActivityRows = [
+  {
+    id: "admin-shipment-activity-1",
+    event: "Germany West delay escalation assigned to fleet desk",
+    shipment: "OPS-20260811-02",
+    status: "Escalated",
+    tone: "warning",
+    date: "August 11, 2026 · 8:10 AM",
+  },
+  {
+    id: "admin-shipment-activity-2",
+    event: "Brussels central subscriber route confirmed",
+    shipment: "OPS-20260811-03",
+    status: "Confirmed",
+    tone: "success",
+    date: "August 11, 2026 · 7:58 AM",
+  },
+  {
+    id: "admin-shipment-activity-3",
+    event: "Berlin prep manifest synced for next release window",
+    shipment: "OPS-20260825-04",
+    status: "Updated",
+    tone: "info",
+    date: "August 10, 2026 · 5:15 PM",
+  },
+  {
+    id: "admin-shipment-activity-4",
+    event: "Hospitality route stop count adjusted after receiving update",
+    shipment: "OPS-20260811-01",
+    status: "Queued",
+    tone: "neutral",
+    date: "August 10, 2026 · 4:05 PM",
+  },
+];
+
+export const adminShipmentOpsNotes = [
+  "Admin shipment monitoring should stay cross-account, since one delayed corridor can affect both subscriber and company deliveries in the same window.",
+  "Delay escalation, stop readiness, and receiving confirmation belong in this workspace so operations teams do not need to infer route health from customer-facing pages.",
+  "The shipment workspace stays logistics-first while subscriber, company, and pricing records continue to live in their own admin sections.",
+];
+
+export const adminShipmentKpis = [
+  {
+    label: "Outbound shipments",
+    value: "24",
+    detail: "Operations can watch all active company and subscriber routes from one admin delivery surface.",
+    icon: "Package",
+  },
+  {
+    label: "Delayed routes",
+    value: "2",
+    detail: "Two active corridors need intervention before the next delivery window closes.",
+    icon: "CalendarClock",
+    accent: true,
+  },
+  {
+    label: "Drop confirmation",
+    value: "91%",
+    detail: "Most active routes already have clean doorstep or receiving confirmations.",
+    icon: "ShieldCheck",
+  },
+];
+
+export const adminShipmentRows = [
+  {
+    id: "admin-shipment-1",
+    shipmentId: "OPS-20260811-01",
+    label: "Reader and hotel mix · Belgium North",
+    route: "Belgium North cluster",
+    scope: "8 stops / 320 copies",
+    status: "In dispatch",
+    tone: "info",
+    eta: "August 11, 2026 · 8:15 AM",
+  },
+  {
+    id: "admin-shipment-2",
+    shipmentId: "OPS-20260811-02",
+    label: "Business branch run · Germany West",
+    route: "Germany West corridor",
+    scope: "6 stops / 420 copies",
+    status: "Delay flagged",
+    tone: "warning",
+    eta: "August 11, 2026 · 9:05 AM",
+  },
+  {
+    id: "admin-shipment-3",
+    shipmentId: "OPS-20260811-03",
+    label: "Subscriber route · Brussels central",
+    route: "Brussels central corridor",
+    scope: "5 stops / 110 copies",
+    status: "Delivered",
+    tone: "success",
+    eta: "August 11, 2026 · 7:58 AM",
+  },
+  {
+    id: "admin-shipment-4",
+    shipmentId: "OPS-20260825-04",
+    label: "Cross-border prep · Berlin and Cologne",
+    route: "Germany East prep",
+    scope: "5 stops / 260 copies",
+    status: "Preparing",
+    tone: "neutral",
+    eta: "August 25, 2026 · Pre-release",
+  },
+];
+
+export const adminShipmentRouteSummaries = [
+  {
+    id: "admin-route-1",
+    route: "Belgium North cluster",
+    window: "August 11, 2026 · Live morning run",
+    shipments: "9 active shipments",
+    destinations: "31 stops",
+    status: "Stable",
+    tone: "success",
+    note: "Subscriber and business bundles are moving inside the expected release window with clean receiving confirmations.",
+  },
+  {
+    id: "admin-route-2",
+    route: "Germany West corridor",
+    window: "August 11, 2026 · Delay escalation",
+    shipments: "6 active shipments",
+    destinations: "22 stops",
+    status: "Delayed",
+    tone: "warning",
+    note: "Truck assignment drifted beyond the planned dispatch window, so affected business branches are held in one visible exception lane.",
+  },
+  {
+    id: "admin-route-3",
+    route: "Germany East prep",
+    window: "August 25, 2026 · Upcoming release",
+    shipments: "5 queued shipments",
+    destinations: "19 stops",
+    status: "Queued",
+    tone: "neutral",
+    note: "The next cycle is already grouped so operations can inspect route health before the fleet integration begins streaming live status.",
+  },
+];
+
+export const adminShipmentLocationRows = [
+  {
+    id: "admin-location-1",
+    location: "Brussels subscriber cluster",
+    region: "Belgium",
+    copies: "110 copies",
+    contact: "Doorstep confirmations",
+    status: "Delivered",
+    tone: "success",
+  },
+  {
+    id: "admin-location-2",
+    location: "Antwerp hospitality route",
+    region: "Belgium",
+    copies: "140 copies",
+    contact: "Concierge team",
+    status: "Receiving",
+    tone: "info",
+  },
+  {
+    id: "admin-location-3",
+    location: "Cologne branch network",
+    region: "Germany",
+    copies: "180 copies",
+    contact: "Operations desk",
+    status: "Delay watch",
+    tone: "warning",
+  },
+  {
+    id: "admin-location-4",
+    location: "Berlin expansion route",
+    region: "Germany",
+    copies: "95 copies",
+    contact: "Fleet prep",
+    status: "Queued",
+    tone: "neutral",
+  },
+];
+
+export const adminShipmentIssueStates = [
+  {
+    id: "admin-shipment-issue-1",
+    label: "Delay escalation",
+    summary: "Germany West remains the only active corridor with a live dispatch delay.",
+    status: "Escalated",
+    tone: "warning",
+    icon: "AlertTriangle",
+    detail:
+      "Operations can keep the flagged route visible here while still monitoring all other outbound shipments in the same admin workspace.",
+  },
+  {
+    id: "admin-shipment-issue-2",
+    label: "Coverage health",
+    summary: "Belgium North and Brussels central runs are still confirming at the expected pace.",
+    status: "Healthy",
+    tone: "success",
+    icon: "ShieldCheck",
+    detail:
+      "Most active stops already have clean receiving or doorstep confirmation, which keeps the wider network from looking noisier than it is.",
+  },
+  {
+    id: "admin-shipment-issue-3",
+    label: "Ops support path",
+    summary: "One branch is waiting on fleet follow-up, but no broader customer incident is open yet.",
+    status: "Standby",
+    tone: "neutral",
+    icon: "LifeBuoy",
+    detail:
+      "Future integrations can connect support tickets, reroute notes, and callback outcomes into this same issue-state pattern.",
+  },
+];
+
+export const adminPricingMetrics = [
+  {
+    label: "Pricing tiers",
+    value: "3 active bands",
+    detail: "Single Office, Regional Team, and Enterprise Route are currently the live business pricing models.",
+  },
+  {
+    label: "Accounts under review",
+    value: "6",
+    detail: "A small set of company accounts still needs tier or billing clarification before the next invoice cycle.",
+    accent: true,
+  },
+  {
+    label: "Cross-border contracts",
+    value: "12",
+    detail: "Several business accounts now require pricing decisions that account for Belgium and Germany coverage together.",
+  },
+  {
+    label: "Custom contracts",
+    value: "11",
+    detail: "Enterprise-route accounts depend on manual pricing guidance rather than a simple self-serve plan.",
+  },
+];
+
+export const adminPricingRows = [
+  {
+    id: "admin-pricing-1",
+    tier: "Single Office",
+    volume: "25-100 copies / cycle",
+    billing: "One invoice contact",
+    status: "Live",
+    tone: "success",
+    coverage: "Single-location Belgium or Germany",
+  },
+  {
+    id: "admin-pricing-2",
+    tier: "Regional Team",
+    volume: "101-500 copies / cycle",
+    billing: "Consolidated invoicing",
+    status: "Most used",
+    tone: "info",
+    coverage: "Multi-location, often cross-city",
+  },
+  {
+    id: "admin-pricing-3",
+    tier: "Enterprise Route",
+    volume: "500+ copies or special routing",
+    billing: "Contract billing",
+    status: "Manual review",
+    tone: "warning",
+    coverage: "Complex or cross-border account groups",
+  },
+];
+
+export const adminPricingBandCards = [
+  {
+    title: "Single Office",
+    detail: "Best for one headquarters, embassy, showroom, or hospitality site with one invoice owner and a simpler route footprint.",
+    note: "Lower operational complexity keeps pricing closer to the entry volume tier.",
+  },
+  {
+    title: "Regional Team",
+    detail: "Designed for organizations with several city or country locations that still fit one coordinated recurring contract model.",
+    note: "This is currently the dominant business-account shape in the admin workspace.",
+  },
+  {
+    title: "Enterprise Route",
+    detail: "Built for high-volume or special-routing accounts that need closer coordination between pricing, rollout, and shipment planning.",
+    note: "These accounts usually require manual approval before tier changes are finalized.",
+  },
+];
+
+export const adminPricingNotes = [
+  "Business pricing is operational, not consumer-style: copy volume, location footprint, and invoice structure all influence the correct tier.",
+  "Cross-border Belgium and Germany accounts may need different tax or commercial handling even when the delivery cadence stays the same.",
+  "Pricing decisions should remain linked to shipment complexity and company profile so the admin team can explain why a contract sits in a given band.",
+];
+
+export const readerBillingRows = [
+  {
+    id: "invoice-1",
+    item: "Invoice INV-2026-08",
+    amount: "€24.99",
+    status: "Paid",
+    tone: "success",
+    date: "August 11, 2026",
+  },
+  {
+    id: "invoice-2",
+    item: "Invoice INV-2026-07",
+    amount: "€24.99",
+    status: "Paid",
+    tone: "success",
+    date: "July 11, 2026",
+  },
+  {
+    id: "invoice-3",
+    item: "Renewal reminder",
+    amount: "€24.99",
+    status: "Upcoming",
+    tone: "warning",
+    date: "September 11, 2026",
+  },
+  {
+    id: "invoice-4",
+    item: "Payment method check",
+    amount: "PayPal",
+    status: "Verified",
+    tone: "info",
+    date: "August 10, 2026",
+  },
+];
+
+export const readerBillingEvents = [
+  {
+    title: "Billing frequency",
+    body: "Monthly and yearly plans change payment timing, not the newspaper delivery rhythm.",
+  },
+  {
+    title: "Payment methods",
+    body: "Reader plans are designed around PayPal, Visa, and Mastercard through a PCI-aware payment processor handoff.",
+  },
+  {
+    title: "Renewal expectations",
+    body: "Keep plan and payment state visible here so renewals do not feel hidden behind an invoice table.",
+  },
+];
+
+export const readerBillingQuickFacts = [
+  {
+    label: "Current plan",
+    value: "Print + Digital",
+    detail: "Includes subscriber-first access plus physical delivery every two weeks.",
+  },
+  {
+    label: "Renewal cycle",
+    value: "Monthly",
+    detail: "Future yearly plans should still render the same billing workspace structure.",
+  },
+  {
+    label: "Payment path",
+    value: "PayPal",
+    detail: "The live processor reference would be stored outside raw card data handling.",
+  },
+];
+
+export const readerHistoryRows = [
+  {
+    id: "history-1",
+    item: "City Council Approves New Waterline and Road Repair Program",
+    category: "News",
+    status: "Read today",
+    tone: "info",
+    date: "August 11, 2026",
+  },
+  {
+    id: "history-2",
+    item: "Family-Owned Logistics Firm Expands After Securing Regional Contract",
+    category: "Business",
+    status: "Saved",
+    tone: "success",
+    date: "August 10, 2026",
+  },
+  {
+    id: "history-3",
+    item: "The Vanishing Art of the Morning Paper",
+    category: "Feature",
+    status: "Archive soon",
+    tone: "warning",
+    date: "August 9, 2026",
+  },
+  {
+    id: "history-4",
+    item: "Local Couple Celebrates 50 Years of Marriage Surrounded by Family",
+    category: "Community",
+    status: "Completed",
+    tone: "neutral",
+    date: "August 8, 2026",
+  },
+];
+
+export const readerSavedCollections = [
+  {
+    id: "saved-collection-1",
+    title: "Morning briefing queue",
+    detail:
+      "The set of politics, business, and route-related stories you are likely to continue before the next print cycle.",
+    route: "/article/news-1",
+  },
+  {
+    id: "saved-collection-2",
+    title: "Subscriber-first features",
+    detail:
+      "Long-form pieces still inside the paid access window and worth revisiting before they drift into the delayed archive.",
+    route: "/article/feat-1",
+  },
+  {
+    id: "saved-collection-3",
+    title: "Logistics and business follow-up",
+    detail:
+      "Saved reporting that helps explain the same distribution and operations themes present in the product itself.",
+    route: "/article/business-1",
+  },
+];
+
+export const subscriptionPlanFacts = [
+  {
+    title: "Billing options",
+    detail: "Readers choose monthly or yearly billing, while print cadence stays fixed.",
+  },
+  {
+    title: "Delivery cadence",
+    detail: "Every active print subscriber receives a physical edition every two weeks.",
+  },
+  {
+    title: "Recent access rule",
+    detail: "Fresh reporting is subscriber-only, then moves into the public archive after 30 days.",
+  },
+  {
+    title: "Payments",
+    detail: "Supported methods include PayPal, Visa, and Mastercard, with invoicing for business orders.",
+  },
+];
+
+export const deliveryJourney = [
+  {
+    icon: "Clock",
+    label: "Press Time",
+    desc: "Sector editions close and the print run is prepared for the next regional dispatch.",
+    time: "3:00 AM",
+  },
+  {
+    icon: "Package",
+    label: "Sort and Dispatch",
+    desc: "Copies are packed by route and matched to the active subscriber and business delivery cycle.",
+    time: "5:30 AM",
+  },
+  {
+    icon: "Truck",
+    label: "Fleet Tracking",
+    desc: "Live route states sync from the client's existing truck and mapping system.",
+    time: "7:00 AM",
+  },
+  {
+    icon: "MapPin",
+    label: "Doorstep Delivery",
+    desc: "Subscribers see ETA and final drop confirmation in the delivery experience.",
+    time: "8:30 AM",
+  },
+];
+
+export const deliveryCoveragePoints = [
+  {
+    label: "Cadence",
+    value: "Biweekly print delivery",
+  },
+  {
+    label: "Tracking source",
+    value: "Existing fleet and map system",
+  },
+  {
+    label: "Coverage",
+    value: "Belgium and Germany routing ready",
+  },
+];
+
+export const businessBenefits = [
+  {
+    title: "Bulk copy management",
+    desc: "Order physical newspapers in volume for offices, receptions, hotels, and partner sites.",
+  },
+  {
+    title: "Volume-based pricing",
+    desc: "Company pricing can scale by order size instead of using individual-reader plan rules.",
+  },
+  {
+    title: "Consolidated invoicing",
+    desc: "Handle billing and renewal activity from one place instead of splitting charges across staff accounts.",
+  },
+  {
+    title: "Multi-location tracking",
+    desc: "Monitor shipment progress across several delivery points from a shared company workspace.",
+  },
+];
+
+export const businessHighlights = [
+  {
+    label: "Account model",
+    value: "Individual and business flows stay separate",
+  },
+  {
+    label: "Billing",
+    value: "Contract and invoice-friendly",
+  },
+  {
+    label: "Delivery view",
+    value: "Single-location or consolidated route tracking",
+  },
+];
+
+export const businessLandingStats = [
+  {
+    label: "Order model",
+    value: "Bulk copies per delivery cycle",
+    detail: "Business accounts are structured around copy volume, not single-reader plan rules.",
+  },
+  {
+    label: "Billing model",
+    value: "Invoice or contract-ready",
+    detail: "Commercial orders can move through consolidated invoicing instead of consumer-style self-serve renewal only.",
+  },
+  {
+    label: "Delivery model",
+    value: "Single site or multi-location routing",
+    detail: "The same workspace can cover one office, several branches, or regional partner locations.",
+  },
+  {
+    label: "Operating region",
+    value: "Belgium and Germany",
+    detail: "Built with EU routing, VAT awareness, and regional logistics in mind.",
+  },
+];
+
+export const businessLandingFeatures = [
+  {
+    title: "Bulk copy planning",
+    desc: "Plan how many newspapers each office, reception, hotel, or client site should receive on each delivery cycle.",
+  },
+  {
+    title: "Consolidated invoicing",
+    desc: "Keep company billing separate from ordinary reader subscriptions with invoice-friendly payment handling and contract expectations.",
+  },
+  {
+    title: "Location management",
+    desc: "Track delivery destinations by branch or site instead of forcing every order into one household-style address model.",
+  },
+  {
+    title: "Operational shipment visibility",
+    desc: "Monitor one consolidated business shipment view instead of several isolated reader-level deliveries.",
+  },
+  {
+    title: "Volume pricing logic",
+    desc: "Pricing can scale by copy count and organizational footprint instead of using flat reader rates for every account.",
+  },
+  {
+    title: "Company workspace",
+    desc: "Teams get a dedicated dashboard for orders, invoices, locations, and shipment health rather than sharing a consumer account.",
+  },
+];
+
+export const businessPricingFramework = [
+  {
+    tier: "Single Office",
+    volume: "25-100 copies per delivery",
+    pricing: "Entry volume tier",
+    billing: "One invoice contact, one main delivery location",
+    note: "Best for one headquarters, embassy, showroom, or hospitality site.",
+  },
+  {
+    tier: "Regional Team",
+    volume: "101-500 copies per delivery",
+    pricing: "Discounted volume band",
+    billing: "Consolidated invoicing across several delivery points",
+    note: "Designed for organizations operating across several city or country locations.",
+  },
+  {
+    tier: "Enterprise Route",
+    volume: "500+ copies or special routing",
+    pricing: "Custom contract pricing",
+    billing: "Contract-based billing and rollout planning",
+    note: "For large employer, campus, hotel, or partner-distribution networks.",
+  },
+];
+
+export const businessPricingNotes = [
+  "Final business discount tiers are confirmed during commercial onboarding rather than treated as fixed public checkout prices.",
+  "Business pricing can vary by copy volume, number of delivery locations, country coverage, and invoice or contract structure.",
+  "Belgium and Germany launches may also require VAT-aware billing and country-specific commercial setup details.",
+];
+
+export const businessDeliveryLocations = [
+  {
+    title: "Head office delivery",
+    detail: "One central office can receive a single recurring drop with a named billing contact and a simple receiving workflow.",
+  },
+  {
+    title: "Multi-branch rollout",
+    detail: "Several city or regional offices can be grouped into one account while still tracking delivery by destination.",
+  },
+  {
+    title: "Hospitality and partner sites",
+    detail: "Hotels, lounges, retail counters, and client-facing locations can receive their own copy allocations per cycle.",
+  },
+];
+
+export const businessOnboardingSteps = [
+  {
+    title: "Share organization profile",
+    detail: "Tell us who is ordering, which country or countries you operate in, and who owns commercial follow-up.",
+  },
+  {
+    title: "Estimate volume and destinations",
+    detail: "Outline expected copies per delivery cycle and how many sites or offices need recurring service.",
+  },
+  {
+    title: "Confirm invoicing and rollout",
+    detail: "Choose invoice or contract expectations, discuss timeline, and align on fulfillment before activation.",
+  },
+];
+
+export const businessApplySteps = [
+  {
+    id: "profile",
+    label: "Organization",
+    detail: "Capture the buyer, company profile, and country scope first.",
+  },
+  {
+    id: "operations",
+    label: "Fulfillment",
+    detail: "Document expected copies, delivery locations, and launch timing.",
+  },
+  {
+    id: "billing",
+    label: "Billing",
+    detail: "Set invoice expectations, decision context, and quote readiness.",
+  },
+  {
+    id: "submit",
+    label: "Submit",
+    detail: "Review the request and route it into the mocked business intake pipeline.",
+  },
+];
+
+export const businessApplyBenefits = [
+  "Separate business onboarding from consumer checkout so company billing and routing stay explicit.",
+  "Capture copy volume, location count, and invoicing preferences before anyone is pushed into a dashboard login.",
+  "Keep Belgium and Germany scope visible because country coverage affects rollout and VAT-aware billing.",
+];
+
+export const businessApplySuccessSteps = [
+  {
+    title: "Commercial request logged",
+    detail:
+      "The organization profile, requester details, and quote context are saved for commercial follow-up.",
+  },
+  {
+    title: "Fulfillment assumptions prepared",
+    detail:
+      "Copy volume, delivery locations, and rollout timing can now be reviewed against the proposed distribution model.",
+  },
+  {
+    title: "Billing discussion clarified",
+    detail:
+      "Invoice preference, VAT or purchase-order needs, and rollout notes stay attached to the request from the first conversation.",
+  },
+];
+
+export const businessIntakeOptions = {
+  requestTypes: [
+    "Bulk Newspaper Order",
+    "Business Subscription",
+    "Hospitality Distribution",
+    "Partnership or Sponsorship",
+    "Enterprise Support",
+    "Other",
+  ],
+  companySizes: ["1-10", "11-50", "51-200", "200-1000", "1000+"],
+  billingPreferences: [
+    "Monthly invoice",
+    "Quarterly invoice",
+    "Contract billing",
+    "Need guidance",
+  ],
+  launchTimelines: [
+    "Within 2 weeks",
+    "Within 1 month",
+    "This quarter",
+    "Exploring options",
+  ],
+  countryScopes: ["Belgium", "Germany", "Belgium and Germany"],
+};
+
+export const businessContactCards = [
+  {
+    title: "Commercial email",
+    detail: "business@newsletter.local",
+    note: "Best for quote requests, invoicing questions, and commercial rollout planning.",
+    href: "mailto:business@newsletter.local?subject=Business%20Inquiry",
+    action: "Email commercial team",
+  },
+  {
+    title: "Billing desk",
+    detail: "billing@newsletter.local",
+    note: "Use this for invoice structure, VAT questions, or company payment expectations.",
+    href: "mailto:billing@newsletter.local?subject=Business%20Billing",
+    action: "Contact billing",
+  },
+  {
+    title: "Business intake",
+    detail: "Start with your expected volume and delivery footprint.",
+    note: "The intake path should include organization details, locations, volume, and invoicing preferences.",
+    href: "/business#business-intake",
+    action: "Open intake section",
+  },
+];
+
+export const subscriptionPageFacts = [
+  {
+    label: "Billing cycle",
+    value: "Monthly or yearly for reader plans",
+    detail: "Business accounts move through invoice or contract billing instead of the self-serve reader cycle.",
+  },
+  {
+    label: "Print cadence",
+    value: "Every two weeks for active print subscribers",
+    detail: "Delivery timing stays fixed even when billing changes from monthly to yearly.",
+  },
+  {
+    label: "Recent access",
+    value: "Fresh reporting is subscriber-only",
+    detail: "Public readers unlock the same content once it is 30 days old.",
+  },
+  {
+    label: "Payments",
+    value: "PayPal, Mastercard, and Visa",
+    detail: "Business orders can also move through one-time invoicing and volume pricing arrangements.",
+  },
+];
+
+export const subscriptionAccessMoments = [
+  {
+    title: "Publish day",
+    detail: "Newly published stories are immediately available to active subscribers.",
+  },
+  {
+    title: "During the first 30 days",
+    detail: "Non-subscribers can still browse the product, but recent content remains gated.",
+  },
+  {
+    title: "After 30 days",
+    detail: "The same reporting can move into the public archive for non-subscribers.",
+  },
+];
+
+export const subscriptionCheckoutNotes = [
+  {
+    title: "What sign-up collects",
+    detail: "Reader onboarding needs your name, contact details, delivery address, and account type so billing and shipment routing work correctly.",
+  },
+  {
+    title: "How payment data is handled",
+    detail: "Card details are expected to be captured by a PCI-compliant payment processor, while the platform stores only the reference needed to manage billing.",
+  },
+  {
+    title: "What consent covers",
+    detail: "Sign-up consent needs to explain how your personal data is used and when delivery addresses are shared with the logistics system.",
+  },
+];
+
+export const subscriptionFaqs = [
+  {
+    q: "How is yearly billing different from print delivery timing?",
+    a: "Yearly billing changes how often you are charged, not how often the newspaper arrives. Active print subscribers still receive their physical edition every two weeks.",
+  },
+  {
+    q: "When can non-subscribers read the same stories?",
+    a: "Recent reporting is reserved for active subscribers. Public readers can access the same content once it is at least 30 days old.",
+  },
+  {
+    q: "Which payment methods should I expect at checkout?",
+    a: "Reader plans are designed around PayPal, Mastercard, and Visa. Business orders may also use invoice-based payment arrangements.",
+  },
+  {
+    q: "What information do I need to provide when subscribing?",
+    a: "You should expect to provide your name, contact details, delivery address, and payment information so the system can handle billing and shipment routing.",
+  },
+];
+
+export const privacyPrinciples = [
+  {
+    title: "Data collected at sign-up",
+    body: "The platform needs name, contact details, delivery address, account type, and payment references so it can create the correct subscription, delivery, and billing records.",
+  },
+  {
+    title: "Why delivery addresses matter",
+    body: "Delivery addresses are used to determine shipment routing and may be shared with the courier or fleet-integrated logistics workflow that powers physical newspaper delivery.",
+  },
+  {
+    title: "How payments stay safer",
+    body: "Raw card numbers should not be stored in the platform database. Payment details are expected to be captured and vaulted by a PCI-compliant processor, with the platform retaining only a reference token.",
+  },
+  {
+    title: "How consent should be presented",
+    body: "Consent needs to be explicit at sign-up, especially when personal data supports billing, account management, and delivery coordination across Belgium and Germany.",
+  },
+];
+
+export const privacyRights = [
+  "Access the personal data stored for your account.",
+  "Request export of your account and subscription-related data.",
+  "Request deletion or retention review where legal and operational obligations allow it.",
+  "Understand when address data is shared with logistics or payment partners.",
+];
+
+export const privacyRetentionNotes = [
+  "Account and subscription records should be retained only as long as operational, legal, and billing obligations require.",
+  "Delivery and shipment history may need limited retention to resolve disputes, missed deliveries, or account support issues.",
+  "Business-account invoicing records may require longer retention than ordinary reader marketing preferences.",
+];
+
+export const readerProfileHighlights = [
+  {
+    label: "Account type",
+    value: "Individual reader",
+    detail: "This workspace is for one subscriber account, not a multi-seat company profile.",
+  },
+  {
+    label: "Address role",
+    value: "Billing and delivery reference",
+    detail: "The saved address supports recurring billing support and shipment routing where print delivery applies.",
+  },
+  {
+    label: "Support model",
+    value: "Self-service first",
+    detail: "Profile edits, privacy visibility, export, and deletion review all need clear routes inside the account area.",
+  },
+];
+
+export const readerConsentChecklist = [
+  {
+    title: "Delivery coordination consent",
+    detail: "Address and contact data may be shared with the logistics workflow when physical newspaper delivery is part of the plan.",
+  },
+  {
+    title: "Privacy update visibility",
+    detail: "Important account or governance notices should stay visible even when marketing messages are turned off.",
+  },
+  {
+    title: "Newsletter preference",
+    detail: "Editorial product updates should be optional and separate from essential billing or privacy communication.",
+  },
+];
+
+export const readerGovernanceActionNotes = [
+  {
+    title: "Data export",
+    detail: "Use export when you want a copy of the profile, subscription, and delivery-related data attached to your account.",
+  },
+  {
+    title: "Deletion review",
+    detail: "Deletion requests may still require retention review when billing, shipment, or legal obligations apply.",
+  },
+  {
+    title: "Retention context",
+    detail: "Operational records may outlive marketing preferences, especially where delivery disputes or invoice history are involved.",
+  },
+];
+
+export const businessPrivacyChecklist = [
+  {
+    title: "Delivery coordination consent",
+    field: "deliveryDataConsent",
+    detail: "Receiving contacts, site addresses, and shipment notes may be shared with the logistics workflow when business newspaper distribution is active.",
+  },
+  {
+    title: "Privacy update visibility",
+    field: "privacyUpdatesOptIn",
+    detail: "Company account owners should keep governance and compliance notices visible even when optional commercial outreach is turned off.",
+  },
+  {
+    title: "Commercial update preference",
+    field: "commercialUpdatesOptIn",
+    detail: "Pricing, contract, and product updates stay optional and separate from required operational or privacy communication.",
+  },
+];
+
+export const businessGovernanceActionNotes = [
+  {
+    title: "Company data export",
+    detail: "Use export when you need a packaged copy of organization contacts, location records, shipment context, and invoice-linked account data.",
+  },
+  {
+    title: "Deletion and retention review",
+    detail: "Business requests may require staged deletion review when VAT, invoice, shipment, or dispute records still need to be retained.",
+  },
+  {
+    title: "Admin review path",
+    detail: "Some requests need operations or admin confirmation so the team can verify authority before changing company-level records.",
+  },
+];
+
+export const businessPrivacyPrinciples = [
+  {
+    title: "Company contacts are still personal data",
+    body: "Even in a business workspace, named account owners, invoice contacts, and receiving leads are treated as personal data and need clear handling rules.",
+  },
+  {
+    title: "Location records support distribution",
+    body: "Office and site addresses are used for bulk-copy allocation, shipment routing, and receiving coordination across Belgium and Germany.",
+  },
+  {
+    title: "Invoice and tax data have longer tails",
+    body: "Business invoicing, VAT context, and dispute resolution may require longer retention than ordinary marketing preferences or editorial update opt-ins.",
+  },
+  {
+    title: "Governance should match team roles",
+    body: "Account-level privacy actions should stay visible to the right business owner or operator rather than being hidden inside a generic settings screen.",
+  },
+];
+
+export const businessPrivacyRights = [
+  "Review what company-linked personal and operational data is stored in the workspace.",
+  "Request export of company contacts, receiving details, and invoice-linked account records.",
+  "Request deletion or retention review for business records when legal and operational obligations permit changes.",
+  "Understand when company addresses or named contacts are shared with logistics, billing, or support workflows.",
+];
+
+export const businessPrivacyRetentionNotes = [
+  "Shipment incidents, proof-of-delivery notes, and receiving exceptions may need limited retention after a delivery cycle closes.",
+  "Invoice and VAT-supporting records can outlive optional communication preferences because they support accounting and compliance obligations.",
+  "Team-member access changes should not erase the operational history needed to explain prior approvals, disputes, or location changes.",
+];
+
+export const termsHighlights = [
+  {
+    title: "Subscription billing",
+    body: "Individual reader subscriptions are offered on monthly or yearly billing cycles. Business accounts may instead use negotiated or invoice-based billing arrangements.",
+  },
+  {
+    title: "Delivery cadence",
+    body: "Billing frequency does not control newspaper arrival frequency. Active print subscribers follow the fixed two-week delivery cadence described in the product proposal.",
+  },
+  {
+    title: "Access timing",
+    body: "Recent articles are reserved for active subscribers, while public readers gain access once the content moves beyond the 30-day delay window.",
+  },
+  {
+    title: "Account responsibilities",
+    body: "Subscribers are responsible for keeping contact and delivery details accurate so billing and shipment routing can function correctly.",
+  },
+  {
+    title: "Business orders and pricing",
+    body: "Business ordering may involve bulk copy counts, separate invoice handling, and volume-based pricing rules that differ from individual reader plans.",
+  },
+  {
+    title: "Content use",
+    body: "Editorial content remains protected by copyright and may not be reproduced or redistributed commercially without permission.",
+  },
+];
+
+export const policyContacts = {
+  privacyEmail: "privacy@newsletter.local",
+  supportEmail: "support@newsletter.local",
+  billingEmail: "billing@newsletter.local",
+};
+
+const MONTH_INDEX = {
+  January: 0,
+  February: 1,
+  March: 2,
+  April: 3,
+  May: 4,
+  June: 5,
+  July: 6,
+  August: 7,
+  September: 8,
+  October: 9,
+  November: 10,
+  December: 11,
+};
+
+const ACCESS_REFERENCE_DATE = new Date(Date.UTC(2026, 7, 10));
+
+export function parseArticleDate(dateLabel) {
+  if (!dateLabel) {
+    return null;
+  }
+
+  const [monthName, dayLabel, yearLabel] = dateLabel.replace(",", "").split(" ");
+  const month = MONTH_INDEX[monthName];
+  const day = Number(dayLabel);
+  const year = Number(yearLabel);
+
+  if (Number.isNaN(day) || Number.isNaN(year) || month === undefined) {
+    return null;
+  }
+
+  return new Date(Date.UTC(year, month, day));
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function formatArticleDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+export function getArticleAccessState(article, hasSubscriberAccess = false) {
+  const publishedAt = parseArticleDate(article?.date);
+  const derivedPublicAccessAt = publishedAt ? addDays(publishedAt, 30) : null;
+  const publicAccessAt = article?.publicAccessDate
+    ? parseArticleDate(article.publicAccessDate)
+    : derivedPublicAccessAt;
+  const isArchiveOpen =
+    publicAccessAt instanceof Date &&
+    !Number.isNaN(publicAccessAt.getTime()) &&
+    publicAccessAt <= ACCESS_REFERENCE_DATE;
+
+  if (hasSubscriberAccess) {
+    return {
+      key: "subscriber",
+      label: "Subscriber access active",
+      shortLabel: "Subscriber access",
+      detail: publicAccessAt
+        ? `Full article access is active. Public archive opens on ${formatArticleDate(publicAccessAt)}.`
+        : "Full article access is active for signed-in readers.",
+      publicAccessDate: publicAccessAt ? formatArticleDate(publicAccessAt) : null,
+      canReadFull: true,
+      isLocked: false,
+      isArchiveOpen,
+    };
+  }
+
+  if (isArchiveOpen) {
+    return {
+      key: "public",
+      label: "Public archive access",
+      shortLabel: "Public archive",
+      detail: "This story is now open to all readers because the 30-day access window has passed.",
+      publicAccessDate: publicAccessAt ? formatArticleDate(publicAccessAt) : null,
+      canReadFull: true,
+      isLocked: false,
+      isArchiveOpen: true,
+    };
+  }
+
+  return {
+    key: "locked",
+    label: "Recent subscriber-only story",
+    shortLabel: publicAccessAt
+      ? `Opens publicly ${formatArticleDate(publicAccessAt)}`
+      : "Subscriber-only access",
+    detail: publicAccessAt
+      ? `This reporting stays reserved for active subscribers until ${formatArticleDate(publicAccessAt)}.`
+      : "This reporting stays reserved for active subscribers during the recent-access window.",
+    publicAccessDate: publicAccessAt ? formatArticleDate(publicAccessAt) : null,
+    canReadFull: false,
+    isLocked: true,
+    isArchiveOpen: false,
+  };
+}

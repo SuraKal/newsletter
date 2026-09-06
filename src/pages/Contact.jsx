@@ -102,7 +102,7 @@ export default function Contact() {
                   Address
                 </h3>
               </div>
-              <p className="font-body text-sm text-redacted leading-relaxed ml-8">
+              <p className="ml-8 break-words font-body text-sm leading-relaxed text-redacted">
                 ንቐደም Publishing
                 <br />
                 42 Fleet Street
@@ -139,7 +139,7 @@ export default function Contact() {
                   Email
                 </h3>
               </div>
-              <p className="font-body text-sm text-redacted ml-8">
+              <p className="ml-8 break-words font-body text-sm text-redacted">
                 editorial@ንቐደም.com
                 <br />
                 subscriptions@ንቐደም.com
@@ -154,7 +154,7 @@ export default function Contact() {
                   Phone
                 </h3>
               </div>
-              <p className="font-body text-sm text-redacted ml-8">
+              <p className="ml-8 break-words font-body text-sm text-redacted">
                 +44 (0) 20 7946 0958
               </p>
             </div>

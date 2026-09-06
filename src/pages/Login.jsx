@@ -2,21 +2,70 @@ import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
+  Building2,
   KeyRound,
   Lock,
   Mail,
+  Newspaper,
   ShieldCheck,
 } from "lucide-react";
-import { useAuth } from "@/lib/AuthContext";
+import { authJourneyContent, useAuth } from "@/lib/AuthContext";
 import { appClient } from "@/api/appClient";
 import { appParams } from "@/lib/app-params";
+import { getDefaultDashboardRoute } from "@/lib/dashboard-config";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 
-const highlights = [
-  "Morning briefings and curated front-page coverage",
-  "Saved articles and reading history across devices",
-  "Subscriber-only access to business and editorial dashboards",
+const journeyOptions = [
+  {
+    key: "individual",
+    icon: Newspaper,
+    title: "Individual reader",
+    detail:
+      "Reading access, payment history, and one household delivery path.",
+    highlights: [
+      "Morning briefings and curated front-page coverage",
+      "Saved articles and reading history across devices",
+      "Personal billing and next-edition delivery visibility",
+    ],
+    note:
+      "Use the reader journey for one-person subscriptions, account updates, and home delivery tracking.",
+  },
+  {
+    key: "business",
+    icon: Building2,
+    title: "Company account",
+    detail:
+      "Bulk copies, consolidated billing, and operational shipment visibility.",
+    highlights: [
+      "Shared shipment visibility across company delivery points",
+      "Invoice-friendly account access for contract and billing teams",
+      "Operational oversight for orders, locations, and upcoming runs",
+    ],
+    note:
+      "Use the business journey when your account manages multiple copies, company invoicing, or several delivery locations.",
+  },
+];
+
+const demoAccounts = [
+  {
+    key: "individual",
+    label: "Demo Reader",
+    email: appParams.readerEmail,
+    password: appParams.readerPassword,
+  },
+  {
+    key: "business",
+    label: "Demo Business",
+    email: appParams.businessEmail,
+    password: appParams.businessPassword,
+  },
+  {
+    key: "admin",
+    label: "Demo Admin",
+    email: appParams.adminEmail,
+    password: appParams.adminPassword,
+  },
 ];
 
 export default function Login() {
@@ -26,8 +75,27 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { checkUserAuth } = useAuth();
+  const journeyKey =
+    searchParams.get("journey") === "business" ? "business" : "individual";
+  const selectedJourney =
+    journeyOptions.find((option) => option.key === journeyKey) ||
+    journeyOptions[0];
+
+  const selectJourney = (nextJourney) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("journey", nextJourney);
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const fillDemoCredentials = (account) => {
+    setEmail(account.email);
+    setPassword(account.password);
+    if (account.key === "individual" || account.key === "business") {
+      selectJourney(account.key);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,9 +103,16 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await appClient.auth.login({ email, password, rememberMe });
+      const signedInUser = await appClient.auth.login({
+        email,
+        password,
+        rememberMe,
+      });
       await checkUserAuth();
-      navigate(searchParams.get("from") || "/dashboard", { replace: true });
+      navigate(
+        searchParams.get("from") || getDefaultDashboardRoute(signedInUser.role),
+        { replace: true },
+      );
     } catch (authError) {
       setError(authError.message || "Unable to sign in");
     } finally {
@@ -56,17 +131,56 @@ export default function Login() {
             <div className="relative">
               <p className="category-label">Member Access</p>
               <h1 className="mt-4 max-w-xl font-display text-4xl font-black leading-tight text-ink md:text-5xl">
-                Return to the edition that keeps its readers ahead.
+                Choose the right account path before you return to the newsroom.
               </h1>
               <p className="mt-5 max-w-2xl font-body text-base leading-relaxed text-redacted md:text-lg">
-                Sign in to continue with your saved reads, delivery tracking,
-                premium briefings, and your personalized newsroom experience.
+                Individual subscribers and company teams share the same
+                product, but not the same onboarding and dashboard
+                expectations. Start in the journey that matches your account so
+                the next step stays clear.
               </p>
 
               <div className="newspaper-rule-double my-8" />
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                {highlights.map((item) => (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {journeyOptions.map((option) => {
+                  const OptionIcon = option.icon;
+                  const isActive = option.key === journeyKey;
+
+                  return (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => selectJourney(option.key)}
+                      className={`rounded-[1.5rem] border p-5 text-left transition ${
+                        isActive
+                          ? "border-heritage bg-paper shadow-[0_18px_38px_rgba(76,43,8,0.08)]"
+                          : "border-stone-300/50 bg-paper/80 hover:border-stone-400"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300/60 bg-vellum">
+                          <OptionIcon className="h-5 w-5 text-heritage" />
+                        </div>
+                        <div>
+                          <p className="font-sans text-[0.64rem] font-bold uppercase tracking-[0.24em] text-heritage">
+                            {authJourneyContent[option.key].eyebrow}
+                          </p>
+                          <p className="mt-1 font-display text-xl font-bold text-ink">
+                            {option.title}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="mt-4 font-body text-sm leading-6 text-redacted">
+                        {option.detail}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                {selectedJourney.highlights.map((item) => (
                   <div
                     key={item}
                     className="rounded-[1.25rem] border border-stone-300/50 bg-paper/80 p-4"
@@ -81,14 +195,13 @@ export default function Login() {
 
               <div className="mt-8 rounded-[1.5rem] border border-stone-300/50 bg-paper/80 p-6">
                 <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.28em] text-heritage">
-                  Editorial Note
+                  Journey Note
                 </p>
                 <p className="mt-4 font-body text-lg leading-relaxed text-ink">
-                  “Strong reporting begins with readers who value depth over
-                  noise.”
+                  {selectedJourney.note}
                 </p>
                 <p className="mt-3 font-sans text-xs uppercase tracking-[0.24em] text-redacted">
-                  Subscriber Desk
+                  Account Routing
                 </p>
               </div>
             </div>
@@ -98,7 +211,9 @@ export default function Login() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.28em] text-heritage">
-                  Sign In
+                  {journeyKey === "business"
+                    ? "Business Sign In"
+                    : "Reader Sign In"}
                 </p>
                 <h2 className="mt-2 font-display text-3xl font-black text-ink">
                   Welcome back
@@ -110,7 +225,9 @@ export default function Login() {
             </div>
 
             <p className="mt-4 font-body text-sm leading-6 text-redacted">
-              Enter your email and password to continue to your account.
+              {journeyKey === "business"
+                ? "Enter the company account credentials used for invoicing, locations, and bulk delivery oversight."
+                : "Enter your personal subscriber email and password to continue to reading access, billing, and delivery tracking."}
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
@@ -131,7 +248,11 @@ export default function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="reader@nequdem.local"
+                    placeholder={
+                      journeyKey === "business"
+                        ? "operations@company.com"
+                        : "reader@nekedem.local"
+                    }
                     className="w-full bg-transparent font-body text-sm text-ink outline-none placeholder:text-redacted/60"
                   />
                 </div>
@@ -167,7 +288,7 @@ export default function Login() {
                   </span>
                 </label>
                 <Link
-                  to="/forgot-password"
+                  to={`/forgot-password?journey=${journeyKey}`}
                   className="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-heritage hover:underline"
                 >
                   Forgot password
@@ -186,36 +307,32 @@ export default function Login() {
 
             <div className="newspaper-rule my-8" />
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[1.25rem] border border-stone-300/50 bg-vellum/45 p-4">
-                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.22em] text-heritage">
-                  Demo Reader
-                </p>
-                <p className="mt-3 break-all font-body text-sm text-ink">
-                  {appParams.readerEmail}
-                </p>
-                <p className="font-sans text-xs text-redacted">
-                  {appParams.readerPassword}
-                </p>
-              </div>
-              <div className="rounded-[1.25rem] border border-stone-300/50 bg-vellum/45 p-4">
-                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.22em] text-heritage">
-                  Demo Admin
-                </p>
-                <p className="mt-3 break-all font-body text-sm text-ink">
-                  {appParams.adminEmail}
-                </p>
-                <p className="font-sans text-xs text-redacted">
-                  {appParams.adminPassword}
-                </p>
-              </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {demoAccounts.map((account) => (
+                <button
+                  key={account.key}
+                  type="button"
+                  onClick={() => fillDemoCredentials(account)}
+                  className="rounded-[1.25rem] border border-stone-300/50 bg-vellum/45 p-4 text-left transition hover:border-stone-400 hover:bg-vellum/65"
+                >
+                  <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.22em] text-heritage">
+                    {account.label}
+                  </p>
+                  <p className="mt-3 break-all font-body text-sm text-ink">
+                    {account.email}
+                  </p>
+                  <p className="font-sans text-xs text-redacted">
+                    {account.password}
+                  </p>
+                </button>
+              ))}
             </div>
 
             <div className="mt-6 text-center">
               <p className="font-sans text-xs text-redacted">
                 Don't have an account?{" "}
                 <Link
-                  to="/register"
+                  to={`/register?journey=${journeyKey}`}
                   className="font-semibold uppercase tracking-[0.16em] text-heritage hover:underline"
                 >
                   Create one
