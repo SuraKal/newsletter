@@ -195,9 +195,6 @@ export default function Masthead() {
           <div className="flex items-center justify-between gap-3 px-4 py-2">
             <div className="hidden items-center gap-4 md:flex">
               <span className="meta-text">{strings.today}: {today}</span>
-              <span className="meta-text hidden sm:inline">
-                {strings.edition}
-              </span>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2">
@@ -243,11 +240,11 @@ export default function Masthead() {
               )}
             </button>
 
-            <Link to="/" className="flex items-center justify-center gap-3 text-center" onClick={closeAllPanels}>
-              <h1 className="font-display text-3xl font-black tracking-tight text-ink md:text-6xl lg:text-7xl">
+            <Link to="/" className="flex flex-col items-center justify-center text-center leading-none" onClick={closeAllPanels}>
+              <h1 className="font-display text-2xl font-black tracking-tight text-ink md:text-5xl lg:text-6xl">
                 ንቐደም
               </h1>
-              <p className="mt-1 hidden font-sans text-[0.6rem] uppercase tracking-[0.35em] text-redacted md:block">
+              <p className="mt-1 font-sans text-[0.5rem] uppercase tracking-[0.25em] text-redacted md:text-[0.55rem]">
                 Independent Journalism Since 2024
               </p>
             </Link>
