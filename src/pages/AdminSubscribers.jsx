@@ -33,7 +33,6 @@ export default function AdminSubscribers() {
       <DashboardPageHeader
         eyebrow="Admin subscribers"
         title="Subscriber status, renewals, and delivery eligibility"
-        description="Subscriber operations should keep renewal state, print eligibility, and support review easy to scan without sending the front desk into unrelated logistics or billing screens."
         action={
           <Link
             to="/admin/shipments"
@@ -65,7 +64,6 @@ export default function AdminSubscribers() {
             key={metric.label}
             label={metric.label}
             value={metric.value}
-            detail={metric.detail}
             accent={metric.accent}
           />
         ))}
@@ -74,7 +72,6 @@ export default function AdminSubscribers() {
       <section>
         <DashboardActivityTable
           title="Subscriber operations table"
-          description="Keep renewal, plan, and delivery-eligibility checks together so frontline account work can be resolved without jumping across several pages."
           columns={subscriberColumns}
           rows={adminSubscriberRows}
         />

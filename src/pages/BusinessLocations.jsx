@@ -22,7 +22,6 @@ export default function BusinessLocations() {
       <DashboardPageHeader
         eyebrow="Business locations"
         title="Delivery destinations and receiving readiness"
-        description="Location management should make site coverage, receiving contacts, and destination health easy to verify without collapsing into the live shipment workspace."
         action={
           <Link
             to="/business-dashboard/shipments"
@@ -54,7 +53,6 @@ export default function BusinessLocations() {
             key={metric.label}
             label={metric.label}
             value={metric.value}
-            detail={metric.detail}
             accent={metric.accent}
           />
         ))}
@@ -63,12 +61,11 @@ export default function BusinessLocations() {
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <LocationStatusTable
           title="Location status"
-          description="Each branch, reception point, or partner site should stay visible as its own destination record."
+          description=""
           rows={businessLocationRows}
         />
         <RouteSummaryPanel
           title="Route alignment preview"
-          description="Location management should still reflect how sites roll up into the shared regional route structure."
           items={businessShipmentRouteSummaries}
         />
       </section>
@@ -76,11 +73,9 @@ export default function BusinessLocations() {
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <DeliveryMapPanel
           title="Destination coverage"
-          description="The map stays modular so richer location grouping can arrive later without changing the business locations layout."
           imageSrc={IMAGES.delivery}
           imageAlt="Business delivery destination coverage"
           tags={["Brussels", "Antwerp", "Cologne", "Berlin"]}
-          caption="Business destination management should remain separate from live shipment timing while still reflecting the same regional footprint."
         />
       </section>
     </div>

@@ -33,7 +33,6 @@ export default function AdminContentList() {
       <DashboardPageHeader
         eyebrow="Admin content"
         title="Publishing queue and article inventory"
-        description="The content workspace should keep draft, scheduled, and published editorial work visible in one searchable list without mixing it into the broader admin landing page."
         action={
           <Link
             to="/admin/content/new"
@@ -65,7 +64,6 @@ export default function AdminContentList() {
             key={metric.label}
             label={metric.label}
             value={metric.value}
-            detail={metric.detail}
             accent={metric.accent}
           />
         ))}
@@ -74,7 +72,6 @@ export default function AdminContentList() {
       <section>
         <DashboardActivityTable
           title="Article states"
-          description="Editorial teams should be able to scan status and publish timing without opening each story first."
           columns={contentColumns}
           rows={adminContentRows}
         />

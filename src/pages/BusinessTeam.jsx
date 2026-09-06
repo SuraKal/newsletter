@@ -35,7 +35,6 @@ export default function BusinessTeam() {
       <DashboardPageHeader
         eyebrow="Business team"
         title="Roles, seats, and operational access"
-        description="Team membership should stay operational: who can approve invoices, who owns receiving coordination, and who needs access before the next business delivery cycle."
         action={
           <Link
             to="/business-dashboard/invoices"
@@ -67,7 +66,6 @@ export default function BusinessTeam() {
             key={metric.label}
             label={metric.label}
             value={metric.value}
-            detail={metric.detail}
             accent={metric.accent}
           />
         ))}
@@ -76,13 +74,11 @@ export default function BusinessTeam() {
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <DashboardActivityTable
           title="Team access roster"
-          description="Separate commercial, finance, and receiving roles so the account never depends on one person holding every responsibility."
           columns={teamColumns}
           rows={businessTeamRows}
         />
         <DashboardPanel
           title="Role and invitation guidance"
-          description="Keep access rules visible so the team workspace does not turn into a generic member directory."
           className="h-full"
         >
           <div className="space-y-4">
@@ -102,9 +98,6 @@ export default function BusinessTeam() {
                   <div>
                     <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
                       {card.title}
-                    </p>
-                    <p className="dashboard-page-description mt-2 font-sans text-xs leading-5">
-                      {card.detail}
                     </p>
                   </div>
                 </div>

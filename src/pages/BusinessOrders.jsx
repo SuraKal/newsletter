@@ -36,7 +36,6 @@ export default function BusinessOrders() {
       <DashboardPageHeader
         eyebrow="Business orders"
         title="Bulk volume and recurring distribution planning"
-        description="Order management should make copy counts, cadence, and site coverage easy to adjust without mixing commercial planning into the shipment detail pages."
         action={
           <Link
             to="/business-dashboard/shipments"
@@ -68,7 +67,6 @@ export default function BusinessOrders() {
             key={metric.label}
             label={metric.label}
             value={metric.value}
-            detail={metric.detail}
             accent={metric.accent}
           />
         ))}
@@ -77,12 +75,10 @@ export default function BusinessOrders() {
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardChartPanel
           title="Copy distribution by destination"
-          description="The order workspace should show where volume is concentrated before the business user changes a recurring allocation."
           data={businessOrderVolumeBars}
         />
         <DashboardActivityTable
           title="Recurring order plans"
-          description="Keep order planning in a dedicated table so users can compare cadence and footprint without leaving the business workspace."
           columns={orderColumns}
           rows={businessOrderRows}
         />

@@ -26,6 +26,7 @@ const timelineItems = readerDashboardDeliveryTimeline.map((item, index) => {
   return {
     ...item,
     icon: iconMap[index] || Route,
+    description: "",
     badge: (
       <DashboardStatusBadge
         label={item.badge}
@@ -130,7 +131,7 @@ export default function ReaderOverviewPage() {
                 {weeklyReadingCount} articles
               </p>
               <p className="dashboard-page-description mt-2 font-sans text-xs leading-5">
-                {savedStoriesCount} stories saved for later across politics, business, and weekend analysis.
+                {savedStoriesCount} stories saved for later.
               </p>
             </div>
           </div>
@@ -173,9 +174,6 @@ export default function ReaderOverviewPage() {
                     <h3 className="font-sans text-sm font-semibold text-stone-900 dark:text-stone-100">
                       {item.title}
                     </h3>
-                    <p className="dashboard-page-description mt-2 font-sans text-xs leading-5">
-                      {item.detail}
-                    </p>
                   </div>
                   <DashboardStatusBadge label={item.status} tone={item.tone} />
                 </div>
@@ -199,9 +197,6 @@ export default function ReaderOverviewPage() {
               >
                 <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
                   {action.label}
-                </p>
-                <p className="dashboard-page-description mt-2 font-sans text-xs leading-5">
-                  {action.detail}
                 </p>
               </Link>
             ))}

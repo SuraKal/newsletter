@@ -77,7 +77,11 @@ const mapDeliveryTimeline = (items) =>
   items.map((item) => ({
     ...item,
     icon: deliveryIconMap[item.icon] || Package,
+    description: "",
   }));
+
+const stripDetail = (items) =>
+  items.map(({ detail, ...item }) => item);
 
 export function ReaderDeliveriesPage() {
   const { user } = useAuth();
@@ -141,7 +145,7 @@ export function ReaderDeliveriesPage() {
         />
       ) : (
         <>
-          <ShipmentKpiSummary items={readerDeliveryKpis} />
+          <ShipmentKpiSummary items={stripDetail(readerDeliveryKpis)} />
 
           <DeliveryStatusHero
             edition={currentDelivery.edition}
@@ -178,7 +182,7 @@ export function ReaderDeliveriesPage() {
             <ShipmentIssuePanel
               title="Issue states and support readiness"
               description=""
-              items={readerDeliveryIssueStates}
+              items={stripDetail(readerDeliveryIssueStates)}
             />
           </section>
         </>
@@ -352,9 +356,6 @@ export function ReaderHistoryPage() {
                 <p className="font-sans text-sm font-semibold text-stone-900 dark:text-stone-100">
                   {collection.title}
                 </p>
-                <p className="mt-2 font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                  {collection.detail}
-                </p>
               </Link>
             ))}
           </div>
@@ -495,7 +496,6 @@ export function ReaderProfilePage() {
             key={item.label}
             label={item.label}
             value={item.value}
-            detail={item.detail}
             accent={index === 1}
           />
         ))}

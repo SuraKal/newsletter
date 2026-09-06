@@ -22,13 +22,15 @@ import {
   adminShipmentRows,
 } from "@/lib/demoData";
 
+const stripDetail = (items) =>
+  items.map(({ detail, ...item }) => item);
+
 export default function AdminShipments() {
   return (
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Admin shipments"
         title="Network-wide outbound delivery operations"
-        description="Operations staff need a cross-account shipment view that surfaces active routes, delayed corridors, and location-level fulfillment signals across both subscriber and business deliveries."
         action={
           <Link
             to="/admin/companies"
@@ -54,17 +56,16 @@ export default function AdminShipments() {
         }
       />
 
-      <ShipmentKpiSummary items={adminShipmentKpis} />
+      <ShipmentKpiSummary items={stripDetail(adminShipmentKpis)} />
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <MultiShipmentTable
           title="Active outbound shipments"
-          description="Admin operations can inspect several live runs at once instead of drilling into one subscriber or company shipment at a time."
+          description=""
           rows={adminShipmentRows}
         />
         <RouteSummaryPanel
           title="Corridor health summaries"
-          description="Route-level health stays visible beside the shipment list so delays and stable corridors are easy to compare."
           items={adminShipmentRouteSummaries}
         />
       </section>
@@ -72,29 +73,25 @@ export default function AdminShipments() {
       <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
         <LocationStatusTable
           title="Location and stop status"
-          description="Operations should be able to see destination-level readiness, receiving state, and delay watch signals without leaving the shipment workspace."
+          description=""
           rows={adminShipmentLocationRows}
         />
         <ShipmentIssuePanel
           title="Delay and escalation states"
-          description="Issue-state visibility keeps the admin surface operational instead of burying route trouble inside generic dashboard notes."
-          items={adminShipmentIssueStates}
-          footer="The same issue-state language can later absorb live fleet alerts, reroute events, and support callbacks once the logistics integration is connected."
+          items={stripDetail(adminShipmentIssueStates)}
         />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <DeliveryMapPanel
           title="Network coverage placeholder"
-          description="A deeper fleet map can arrive later without changing the overall admin shipment workspace layout."
           imageSrc={IMAGES.delivery}
           imageAlt="Admin network delivery coverage"
           tags={["All outbound routes", "Belgium", "Germany", "Ops monitoring"]}
-          caption="The admin workspace keeps consolidated network context visible while list and issue modules handle the operational detail."
         />
         <ShipmentActivityTable
           title="Recent logistics activity"
-          description="Operations teams should see escalation events, route confirmations, and manifest updates without leaving the shipment workspace."
+          description=""
           rows={adminShipmentActivityRows}
         />
       </section>

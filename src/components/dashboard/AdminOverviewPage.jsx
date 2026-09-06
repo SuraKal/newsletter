@@ -91,7 +91,6 @@ export default function AdminOverviewPage() {
             key={metric.label}
             label={metric.label}
             value={metric.value}
-            detail={metric.detail}
             accent={metric.accent}
           />
         ))}
@@ -104,7 +103,7 @@ export default function AdminOverviewPage() {
           leftValue="August 11, 2026 · 2:00 PM"
           rightLabel="Queue mix"
           rightValue="8 scheduled / 5 drafts"
-          footer="Editorial scheduling and operations release timing should stay connected here before the team opens the dedicated schedule and content workspaces."
+          footer=""
         />
         <DashboardPanel
           title="Subscriber and company health"
@@ -118,9 +117,6 @@ export default function AdminOverviewPage() {
                 </p>
                 <p className="dashboard-kpi-value mt-2 font-sans text-2xl font-semibold">
                   {item.value}
-                </p>
-                <p className="dashboard-page-description mt-2 font-sans text-xs leading-5">
-                  {item.detail}
                 </p>
               </div>
             ))}
@@ -166,9 +162,6 @@ export default function AdminOverviewPage() {
                     <div>
                       <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
                         {action.label}
-                      </p>
-                      <p className="dashboard-page-description mt-2 font-sans text-xs leading-5">
-                        {action.detail}
                       </p>
                     </div>
                   </div>

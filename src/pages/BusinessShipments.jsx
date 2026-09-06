@@ -22,13 +22,15 @@ import {
   businessShipmentRows,
 } from "@/lib/demoData";
 
+const stripDetail = (items) =>
+  items.map(({ detail, ...item }) => item);
+
 export default function BusinessShipments() {
   return (
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Business shipments"
         title="Consolidated delivery visibility across your locations"
-        description="Business accounts need one operational shipment view that groups branch deliveries, route timing, and receiving readiness without forcing teams to inspect reader-style single drops."
         action={
           <Link
             to="/business-dashboard/locations"
@@ -54,17 +56,16 @@ export default function BusinessShipments() {
         }
       />
 
-      <ShipmentKpiSummary items={businessShipmentKpis} />
+      <ShipmentKpiSummary items={stripDetail(businessShipmentKpis)} />
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <MultiShipmentTable
           title="Consolidated shipment runs"
-          description="This business table stays grouped by shipment run so teams can track several destinations without dropping into an admin-only network view."
+          description=""
           rows={businessShipmentRows}
         />
         <RouteSummaryPanel
           title="Regional route summaries"
-          description="Each contract shipment can still be understood by corridor, release window, and destination footprint."
           items={businessShipmentRouteSummaries}
         />
       </section>
@@ -72,29 +73,25 @@ export default function BusinessShipments() {
       <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
         <LocationStatusTable
           title="Location-level delivery status"
-          description="Branch and receiving-point visibility stays close to the shipment list so businesses can confirm which sites are ready for the next drop."
+          description=""
           rows={businessShipmentLocationRows}
         />
         <ShipmentIssuePanel
           title="Exceptions and receiving notes"
-          description="Business teams should see contract-safe issue states without being overloaded by every network-wide operations detail."
-          items={businessShipmentIssueStates}
-          footer="Bulk copy planning, invoice ownership, and receiving contact readiness remain aligned inside this shared business logistics view."
+          items={stripDetail(businessShipmentIssueStates)}
         />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <DeliveryMapPanel
           title="Coverage and receiving footprint"
-          description="The map placeholder stays modular so later fleet data can deepen the experience without replacing the page structure."
           imageSrc={IMAGES.delivery}
           imageAlt="Business delivery network coverage"
           tags={["Brussels", "Antwerp", "Cologne", "Berlin"]}
-          caption="Business shipment visibility stays consolidated even when one contract covers several offices, hospitality desks, or partner sites."
         />
         <ShipmentActivityTable
           title="Recent logistics activity"
-          description="Business users should see operational follow-up and destination updates in the shipment workspace without dropping into the admin network view."
+          description=""
           rows={businessShipmentActivityRows}
         />
       </section>

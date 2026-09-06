@@ -34,7 +34,6 @@ export default function BusinessInvoices() {
       <DashboardPageHeader
         eyebrow="Business invoices"
         title="Invoice records and billing follow-up"
-        description="Commercial billing should be searchable, contract-aware, and easy to separate from reader-style self-serve renewals."
         action={
           <Link
             to="/business-dashboard/orders"
@@ -66,7 +65,6 @@ export default function BusinessInvoices() {
             key={metric.label}
             label={metric.label}
             value={metric.value}
-            detail={metric.detail}
             accent={metric.accent}
           />
         ))}
@@ -79,11 +77,10 @@ export default function BusinessInvoices() {
           leftValue="September 1, 2026"
           rightLabel="Expected amount"
           rightValue="EUR 8,950"
-          footer="The business account remains on invoice-based billing rather than the self-serve monthly or yearly reader cycle."
+          footer=""
         />
         <DashboardActivityTable
           title="Invoice history"
-          description="Invoice records should stay organized in their own operational table instead of being compressed into one overview card."
           columns={invoiceColumns}
           rows={businessInvoiceRows}
         />

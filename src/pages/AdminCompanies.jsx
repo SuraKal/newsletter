@@ -34,7 +34,6 @@ export default function AdminCompanies() {
       <DashboardPageHeader
         eyebrow="Admin companies"
         title="Business account summaries and contract health"
-        description="Company management should keep volume, billing model, and account status visible so operations can support B2B accounts without falling back to consumer subscription assumptions."
         action={
           <Link
             to="/admin/pricing"
@@ -66,7 +65,6 @@ export default function AdminCompanies() {
             key={metric.label}
             label={metric.label}
             value={metric.value}
-            detail={metric.detail}
             accent={metric.accent}
           />
         ))}
@@ -75,7 +73,6 @@ export default function AdminCompanies() {
       <section>
         <DashboardActivityTable
           title="Company account table"
-          description="Business account operations should stay searchable by tier, volume, and invoice model rather than being hidden inside overview cards."
           columns={companyColumns}
           rows={adminCompanyRows}
         />

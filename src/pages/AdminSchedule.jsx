@@ -35,7 +35,6 @@ export default function AdminSchedule() {
       <DashboardPageHeader
         eyebrow="Admin schedule"
         title="Scheduled publishing and release coordination"
-        description="Scheduling should make planned publish windows, draft readiness, and print-linked release timing easy to scan from one operational workspace."
         action={
           <Link
             to="/admin/content/new"
@@ -67,7 +66,6 @@ export default function AdminSchedule() {
             key={metric.label}
             label={metric.label}
             value={metric.value}
-            detail={metric.detail}
             accent={metric.accent}
           />
         ))}
@@ -76,12 +74,10 @@ export default function AdminSchedule() {
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardChartPanel
           title="Release load by day"
-          description="The schedule workspace should help editors and operations see which days carry the heaviest release pressure."
           data={adminScheduleVolumeBars}
         />
         <DashboardActivityTable
           title="Scheduled publishing queue"
-          description="Future publishing slots need a dedicated table so draft, scheduled, and hold states stay obvious."
           columns={scheduleColumns}
           rows={adminScheduleRows}
         />

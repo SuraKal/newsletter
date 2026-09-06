@@ -33,7 +33,6 @@ export default function AdminPricing() {
       <DashboardPageHeader
         eyebrow="Admin pricing"
         title="Business pricing tiers and contract guidance"
-        description="Pricing management should make business tier logic, contract-band fit, and commercial review signals visible without forcing the team into the public business marketing flow."
         action={
           <Link
             to="/admin/companies"
@@ -65,7 +64,6 @@ export default function AdminPricing() {
             key={metric.label}
             label={metric.label}
             value={metric.value}
-            detail={metric.detail}
             accent={metric.accent}
           />
         ))}
@@ -74,7 +72,6 @@ export default function AdminPricing() {
       <section>
         <DashboardActivityTable
           title="Pricing tier matrix"
-          description="Admins should be able to scan the live business pricing bands and their intended operating fit in one operational table."
           columns={pricingColumns}
           rows={adminPricingRows}
         />
