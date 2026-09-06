@@ -4,6 +4,7 @@ import { ArrowLeft, Bookmark, Clock, Share2 } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import NewsCard from "@/components/newspaper/NewsCard";
+import HeritageOrnament from "@/components/newspaper/HeritageOrnament";
 import { useAuth } from "@/lib/AuthContext";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
 import {
@@ -62,10 +63,10 @@ export default function ArticleDetail() {
   ];
 
   return (
-    <div className="min-h-screen bg-paper">
+    <div className="min-h-screen bg-paper newspaper-page">
       <Masthead />
       <main>
-        <section className="mx-auto max-w-7xl px-4 pt-8">
+        <section className="mx-auto max-w-[1320px] px-3 pt-4 sm:px-5 lg:px-8">
           <div className="newspaper-rule-double mb-4" />
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-300/50 pb-4">
             <Link
@@ -90,9 +91,10 @@ export default function ArticleDetail() {
               </button>
             </div>
           </div>
+          <HeritageOrnament className="mx-auto mt-4 h-5 max-w-[520px]" />
         </section>
 
-        <article className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-8 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.9fr)]">
+        <article className="mx-auto grid max-w-[1320px] grid-cols-1 gap-6 px-3 py-6 sm:px-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.9fr)] lg:px-8 lg:py-8">
           <div className="min-w-0 lg:border-r lg:border-stone-300/40 lg:pr-8">
             <div className="max-w-4xl">
               <div className="flex flex-wrap items-center gap-2">
@@ -235,7 +237,7 @@ export default function ArticleDetail() {
             </div>
           </div>
 
-          <aside className="min-w-0 lg:pl-2">
+          <aside className="min-w-0 border-t border-stone-400/70 pt-6 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
             <div className="sticky top-6 space-y-6">
               <div className="border border-stone-300/60 bg-paper p-5 shadow-[0_12px_30px_rgba(0,0,0,0.04)]">
                 <h2 className="font-display text-2xl font-black text-ink">
@@ -251,7 +253,7 @@ export default function ArticleDetail() {
           </aside>
         </article>
 
-        <div className="mx-auto max-w-7xl px-4 py-10">
+        <div className="mx-auto max-w-[1320px] border-t border-stone-400/70 px-3 py-8 sm:px-5 lg:px-8 lg:py-10">
           <div className="newspaper-rule-double mb-6" />
           <h2 className="mb-6 font-display text-2xl font-black uppercase text-ink">
             More From The Paper

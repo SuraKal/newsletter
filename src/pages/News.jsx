@@ -4,6 +4,7 @@ import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import NewsCard from "@/components/newspaper/NewsCard";
 import SectionHeader from "@/components/newspaper/SectionHeader";
+import HeritageOrnament from "@/components/newspaper/HeritageOrnament";
 import { useAuth } from "@/lib/AuthContext";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
 import {
@@ -29,12 +30,27 @@ export default function News() {
   const heroAccess = getArticleAccessState(heroArticle, hasSubscriberAccess);
 
   return (
-    <div className="min-h-screen bg-paper">
+    <div className="min-h-screen bg-paper newspaper-page">
       <Masthead />
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="mx-auto max-w-[1320px] px-3 py-3 sm:px-5 lg:px-8">
+        <div className="newspaper-sheet border border-stone-400/60 p-3 sm:p-5 lg:p-6">
         <SectionHeader title="All News" />
+        <HeritageOrnament className="mx-auto mb-6 h-5 max-w-[520px]" />
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 border-b border-stone-400/70 pb-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
+          <div className="border-b border-stone-400/70 pb-5 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-6">
+            <p className="category-label">News Desk</p>
+            <h2 className="mt-2 font-display text-2xl font-black leading-tight text-ink">
+              The stories shaping today’s edition
+            </h2>
+            <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
+              Follow the latest reporting across politics, business, sport, culture, and community life.
+            </p>
+            <Link to="/subscriptions" className="mt-5 inline-flex bg-heritage px-4 py-2.5 font-sans text-xs font-bold uppercase tracking-wider text-paper hover:bg-ink">
+              Read with access
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(240px,0.8fr)]">
           <Link to={`/article/${heroArticle.id}`} className="group">
             <img
               src={heroArticle.image}
@@ -71,6 +87,7 @@ export default function News() {
               <span className="meta-text">{heroArticle.date}</span>
             </div>
           </div>
+          </div>
         </div>
 
         <div className="newspaper-rule mb-8 mt-10" />
@@ -97,6 +114,7 @@ export default function News() {
               <NewsCard article={article} />
             </div>
           ))}
+        </div>
         </div>
       </main>
       <Footer />
