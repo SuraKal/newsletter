@@ -2,7 +2,7 @@ import React from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { featuredStory } from "@/lib/demoData";
-import HeritageOrnament from "@/components/newspaper/HeritageOrnament";
+
 import { useLanguage } from "@/lib/LanguageContext";
 
 export default function FeaturedStorySection() {
@@ -65,7 +65,7 @@ export default function FeaturedStorySection() {
           </Link>
         </article>
 
-        <HeritageOrnament className="mx-auto mt-8 h-5 max-w-[520px] opacity-90" />
+        
       </div>
     </section>
   );

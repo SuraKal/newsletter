@@ -71,7 +71,7 @@ module.exports = {
       },
       fontFamily: {
         heading: ["Playfair Display", "Georgia", "Times New Roman", "serif"],
-        body: ["Lora", "Georgia", "serif"],
+        body: ["Newsreader", "Georgia", "serif"],
         display: ["Playfair Display", "Georgia", "serif"],
         sans: ["Inter", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)"],

@@ -13,7 +13,7 @@ import EditorialsSection from "@/components/newspaper/EditorialsSection";
 import NewsletterSection from "@/components/newspaper/NewsletterSection";
 import Footer from "@/components/newspaper/Footer";
 import ScrollReveal from "@/components/newspaper/ScrollReveal";
-import HeritageOrnament from "@/components/newspaper/HeritageOrnament";
+
 
 export default function Home() {
   return (
@@ -24,8 +24,7 @@ export default function Home() {
         <ScrollReveal effect="wipe" className="section-sheen section-drift">
           <HeroSection />
         </ScrollReveal>
-        <HeritageOrnament className="mx-auto max-w-[720px] h-5" />
-        <ScrollReveal effect="float" delay={40} className="section-spark">
+<ScrollReveal effect="float" delay={40} className="section-spark">
           <LatestNewsSection />
         </ScrollReveal>
         <FeaturedStorySection />

@@ -4,7 +4,7 @@ import { ArrowLeft, Bookmark, Clock, Share2 } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import NewsCard from "@/components/newspaper/NewsCard";
-import HeritageOrnament from "@/components/newspaper/HeritageOrnament";
+
 import { useAuth } from "@/lib/AuthContext";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
 import {
@@ -91,8 +91,7 @@ export default function ArticleDetail() {
               </button>
             </div>
           </div>
-          <HeritageOrnament className="mx-auto mt-4 h-5 max-w-[520px]" />
-        </section>
+          </section>
 
         <article className="mx-auto grid max-w-[1320px] grid-cols-1 gap-6 px-3 py-6 sm:px-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.9fr)] lg:px-8 lg:py-8">
           <div className="min-w-0 lg:border-r lg:border-stone-300/40 lg:pr-8">
