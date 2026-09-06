@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Clock3, FileText, PenSquare } from "lucide-react";
+import { Clock3, FileText } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
@@ -11,7 +11,6 @@ import AdminArticleForm from "@/components/forms/AdminArticleForm";
 import {
   adminEditorArticles,
   adminEditorTemplateFields,
-  adminEditorWorkflowNotes,
 } from "@/lib/demoData";
 
 const createDefaultArticle = () => ({
@@ -162,29 +161,7 @@ export default function AdminContentEditor() {
             </div>
           </DashboardPanel>
 
-          <DashboardPanel
-            title="Editorial workflow reminders"
-            description="The editor should reinforce the publishing model without turning into a policy page."
-            className="h-full"
-          >
-            <div className="space-y-4">
-              {adminEditorWorkflowNotes.map((item) => (
-                <div
-                  key={item}
-                  className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="dashboard-icon-badge flex h-10 w-10 items-center justify-center">
-                      <PenSquare className="h-4 w-4" />
-                    </div>
-                    <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                      {item}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </DashboardPanel>
+
         </div>
       </section>
     </div>

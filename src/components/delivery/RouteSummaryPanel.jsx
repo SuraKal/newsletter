@@ -7,7 +7,7 @@ import {
 
 export default function RouteSummaryPanel({
   title,
-  description,
+  description = null,
   items = [],
 }) {
   return (

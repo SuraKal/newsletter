@@ -9,7 +9,6 @@ import ShipmentActivityTable from "@/components/delivery/ShipmentActivityTable";
 import ShipmentIssuePanel from "@/components/delivery/ShipmentIssuePanel";
 import ShipmentKpiSummary from "@/components/delivery/ShipmentKpiSummary";
 import {
-  DashboardPanel,
   DashboardFilterBar,
   DashboardPageHeader,
 } from "@/components/dashboard/DashboardPrimitives";
@@ -19,7 +18,6 @@ import {
   adminShipmentIssueStates,
   adminShipmentKpis,
   adminShipmentLocationRows,
-  adminShipmentOpsNotes,
   adminShipmentRouteSummaries,
   adminShipmentRows,
 } from "@/lib/demoData";
@@ -101,25 +99,7 @@ export default function AdminShipments() {
         />
       </section>
 
-      <section>
-        <DashboardPanel
-          title="Operations handling notes"
-          description="Keep the logistics model visible so the admin shipment page remains a true operations surface rather than a generic dashboard summary."
-        >
-          <div className="grid gap-4 sm:grid-cols-3">
-            {adminShipmentOpsNotes.map((item) => (
-              <div
-                key={item}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-              >
-                <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                  {item}
-                </p>
-              </div>
-            ))}
-          </div>
-        </DashboardPanel>
-      </section>
+
     </div>
   );
 }

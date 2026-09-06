@@ -26,7 +26,6 @@ import {
   adminOverviewMetrics,
   adminOverviewPublishingBars,
   adminOverviewQuickActions,
-  adminOverviewReminders,
   adminShipmentRouteSummaries,
 } from "@/lib/demoData";
 
@@ -57,7 +56,6 @@ export default function AdminOverviewPage() {
       <DashboardPageHeader
         eyebrow="Admin workspace"
         title="Editorial and operations control center"
-        description="The admin overview should make publishing load, subscriber and company health, and live delivery risk easy to scan before the team drills into the dedicated management workspaces."
         action={
           <Link
             to="/admin/content"
@@ -110,7 +108,6 @@ export default function AdminOverviewPage() {
         />
         <DashboardPanel
           title="Subscriber and company health"
-          description="Keep customer operations visible on the landing view without turning it into the full management tables."
           className="h-full"
         >
           <div className="grid gap-4 sm:grid-cols-3">
@@ -134,12 +131,10 @@ export default function AdminOverviewPage() {
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardChartPanel
           title="Publishing cadence"
-          description="The overview should summarize editorial output and scheduling load before the team opens the dedicated content and schedule tools."
           data={adminOverviewPublishingBars}
         />
         <DashboardActivityTable
           title="Recent operations activity"
-          description="Editorial, customer, and logistics signals should be visible together so admins can triage the day from one landing screen."
           columns={activityColumns}
           rows={adminOverviewActivityRows}
         />
@@ -148,12 +143,10 @@ export default function AdminOverviewPage() {
       <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
         <RouteSummaryPanel
           title="Live route risk preview"
-          description="The admin overview should surface corridor health immediately without replacing the dedicated shipment workspace."
           items={adminShipmentRouteSummaries.slice(0, 2)}
         />
         <DashboardPanel
           title="Quick actions"
-          description="The landing page should route the team into the right workspace instead of trying to become the full management tool itself."
           className="h-full"
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -184,18 +177,7 @@ export default function AdminOverviewPage() {
             })}
           </div>
 
-          <div className="mt-5 space-y-3">
-            {adminOverviewReminders.map((item) => (
-              <div
-                key={item}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-              >
-                <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                  {item}
-                </p>
-              </div>
-            ))}
-          </div>
+
         </DashboardPanel>
       </section>
     </div>

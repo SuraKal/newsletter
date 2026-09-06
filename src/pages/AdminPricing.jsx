@@ -1,18 +1,15 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Building2, CreditCard, Truck } from "lucide-react";
+import { Building2, Truck } from "lucide-react";
 import {
   DashboardActivityTable,
   DashboardFilterBar,
   DashboardMetricCard,
   DashboardPageHeader,
-  DashboardPanel,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import {
-  adminPricingBandCards,
   adminPricingMetrics,
-  adminPricingNotes,
   adminPricingRows,
 } from "@/lib/demoData";
 
@@ -74,64 +71,16 @@ export default function AdminPricing() {
         ))}
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+      <section>
         <DashboardActivityTable
           title="Pricing tier matrix"
           description="Admins should be able to scan the live business pricing bands and their intended operating fit in one operational table."
           columns={pricingColumns}
           rows={adminPricingRows}
         />
-
-        <DashboardPanel
-          title="Tier guidance"
-          description="Keep the contract shapes visible so operations and commercial follow-up use the same pricing language."
-          className="h-full"
-        >
-          <div className="space-y-4">
-            {adminPricingBandCards.map((card) => (
-              <div
-                key={card.title}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="dashboard-icon-badge flex h-10 w-10 items-center justify-center">
-                    <CreditCard className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
-                      {card.title}
-                    </p>
-                    <p className="mt-2 font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                      {card.detail}
-                    </p>
-                    <p className="mt-2 font-sans text-xs leading-5 text-stone-500">
-                      {card.note}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </DashboardPanel>
       </section>
 
-      <DashboardPanel
-        title="Pricing operations notes"
-        description="The admin pricing page should reinforce why business tiers exist and how they relate to route and contract complexity."
-      >
-        <div className="grid gap-4 sm:grid-cols-3">
-          {adminPricingNotes.map((item) => (
-            <div
-              key={item}
-              className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-            >
-              <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                {item}
-              </p>
-            </div>
-          ))}
-        </div>
-      </DashboardPanel>
+
     </div>
   );
 }

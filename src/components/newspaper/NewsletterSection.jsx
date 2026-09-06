@@ -22,10 +22,6 @@ export default function NewsletterSection() {
         <h2 className="font-display text-3xl md:text-4xl font-black text-ink">
           {t("The Morning Briefing")}
         </h2>
-        <p className="font-body text-base text-redacted mt-3 leading-relaxed">
-          {t("Start your day informed. Our curated morning newsletter delivers the most important headlines, analysis, and insights directly to your inbox - every weekday at 7:00 AM.")}
-        </p>
-
         {submitted ? (
           <p
             role="status"
@@ -60,9 +56,6 @@ export default function NewsletterSection() {
           </form>
         )}
 
-        <p className="meta-text mt-4">
-          {t("No spam. Unsubscribe anytime. Read our privacy policy.")}
-        </p>
       </div>
     </section>
   );

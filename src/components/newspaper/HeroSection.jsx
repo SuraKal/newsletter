@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/carousel";
 import {
   homepageHeroSlides,
-  homepagePromisePoints,
   rightColumnArticle,
   sidebarArticles,
 } from "@/lib/demoData";
@@ -184,36 +183,10 @@ export default function HeroSection() {
               {t("Business Ordering")}
             </Link>
           </div>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            {homepagePromisePoints.map((point) => (
-              <article
-                key={point.label}
-                className="rounded-[1.1rem] border border-stone-300/60 bg-paper p-4 shadow-[0_10px_24px_rgba(0,0,0,0.04)]"
-              >
-                <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
-                  {t(point.label)}
-                </p>
-                <h3 className="mt-2 font-heading text-lg font-bold leading-tight text-ink">
-                  {t(point.value)}
-                </h3>
-                <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                  {t(point.detail)}
-                </p>
-              </article>
-            ))}
-          </div>
         </div>
 
         <div className="hidden border-l border-stone-300/50 lg:col-span-3 lg:block lg:pl-6">
-          <div className="rounded-[1.2rem] border border-stone-300/60 bg-vellum p-4 shadow-[0_10px_26px_rgba(0,0,0,0.04)]">
-            <p className="category-label">{t("Access Rule")}</p>
-            <p className="mt-2 font-heading text-lg font-bold leading-snug text-ink">
-              {t("Fresh reporting first. Public archive after 30 days.")}
-            </p>
-          </div>
-
-          <Link to={`/article/${rightColumnArticle.id}`} className="group mt-6 block">
+          <Link to={`/article/${rightColumnArticle.id}`} className="group block">
             <article className="section-sheen">
               <img
                 src={rightColumnArticle.image}

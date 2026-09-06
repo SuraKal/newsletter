@@ -3,14 +3,8 @@ import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import SectionHeader from "@/components/newspaper/SectionHeader";
 import NewsCard from "@/components/newspaper/NewsCard";
-import { useAuth } from "@/lib/AuthContext";
-import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
 import { CATEGORIES, IMAGES } from "@/lib/constants";
-import {
-  categoryArticles,
-  getArticleAccessState,
-  latestNews,
-} from "@/lib/demoData";
+import { categoryArticles, latestNews } from "@/lib/demoData";
 
 const categoryImages = {
   News: IMAGES.politics,
@@ -111,8 +105,6 @@ function slugify(value) {
 }
 
 export default function CategoriesPage() {
-  const { isAuthenticated, user } = useAuth();
-  const hasSubscriberAccess = hasActiveReaderSubscription(user);
   const params = new URLSearchParams(window.location.search);
   const selectedCat = params.get("cat");
 
@@ -125,40 +117,12 @@ export default function CategoriesPage() {
       (a) => a.category.toLowerCase() === selectedCat.toLowerCase(),
     );
     const allCatArticles = [...articles, ...extraArticles];
-    const lockedCount = allCatArticles.filter(
-      (article) => getArticleAccessState(article, hasSubscriberAccess).isLocked,
-    ).length;
 
     return (
       <div className="min-h-screen bg-paper">
         <Masthead />
         <main className="mx-auto max-w-7xl px-4 py-8">
           <SectionHeader title={catName} />
-
-          <div className="mb-8 grid gap-4 md:grid-cols-2">
-            <article className="rounded-[1rem] border border-stone-300/60 bg-vellum p-4">
-              <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
-                Category access state
-              </p>
-              <p className="mt-2 font-heading text-lg font-bold text-ink">
-                {lockedCount > 0
-                  ? `${lockedCount} recent stories in ${catName} still require subscriber access on August 10, 2026.`
-                  : `All visible ${catName} stories are already open in the public archive.`}
-              </p>
-            </article>
-            <article className="rounded-[1rem] border border-stone-300/60 bg-paper p-4">
-              <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
-                What changes by sign-in
-              </p>
-              <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                {hasSubscriberAccess
-                  ? "Active reader subscriptions unlock recent reporting immediately while older stories remain part of the public archive."
-                  : isAuthenticated
-                    ? "A signed-in account without an active reader plan still sees locked recent stories and open archive stories side by side."
-                    : "Guests keep the same routes, but they see archive-open stories fully and subscriber-only stories with explicit access messaging."}
-              </p>
-            </article>
-          </div>
 
           {allCatArticles.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-stone-300/50">
@@ -174,8 +138,7 @@ export default function CategoriesPage() {
           ) : (
             <div className="max-w-3xl rounded-[1rem] border border-stone-300/60 bg-vellum p-6">
               <p className="font-body text-redacted">
-                No articles in this category yet. Use the category blocks below
-                to browse the full section map.
+                No articles in this category yet.
               </p>
             </div>
           )}
@@ -190,16 +153,6 @@ export default function CategoriesPage() {
       <Masthead />
       <main className="mx-auto max-w-7xl px-4 py-8">
         <SectionHeader title="All Categories" />
-
-        <div className="mb-8 rounded-[1rem] border border-stone-300/60 bg-vellum p-5">
-          <p className="category-label">Reading access</p>
-          <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
-            Category browsing now preserves the same access model as the main
-            newsroom feed: recent stories can remain subscriber-only through
-            September 2026, while older articles already open as public archive
-            reading.
-          </p>
-        </div>
 
         <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-5">
           {CATEGORIES.map((cat) => (
@@ -226,12 +179,8 @@ export default function CategoriesPage() {
         <section className="mt-14">
           <div className="mb-8 max-w-3xl">
             <h2 className="font-display text-3xl font-black text-ink md:text-4xl">
-              Expanded category guide
+              Browse subcategories
             </h2>
-            <p className="mt-3 font-body text-base leading-relaxed text-redacted">
-              This structure keeps the page organized by broad sections, with
-              the detailed subcategories grouped underneath each one.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

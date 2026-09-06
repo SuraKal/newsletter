@@ -11,7 +11,6 @@ import ShipmentKpiSummary from "@/components/delivery/ShipmentKpiSummary";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
-  DashboardPanel,
 } from "@/components/dashboard/DashboardPrimitives";
 import { IMAGES } from "@/lib/constants";
 import {
@@ -21,7 +20,6 @@ import {
   businessShipmentLocationRows,
   businessShipmentRouteSummaries,
   businessShipmentRows,
-  businessShipmentWorkspaceNotes,
 } from "@/lib/demoData";
 
 export default function BusinessShipments() {
@@ -99,26 +97,6 @@ export default function BusinessShipments() {
           description="Business users should see operational follow-up and destination updates in the shipment workspace without dropping into the admin network view."
           rows={businessShipmentActivityRows}
         />
-      </section>
-
-      <section>
-        <DashboardPanel
-          title="Business logistics rules"
-          description="Keep the contract-specific logistics model visible so this workspace remains distinct from the reader delivery experience."
-        >
-          <div className="grid gap-4 sm:grid-cols-3">
-            {businessShipmentWorkspaceNotes.map((item) => (
-              <div
-                key={item}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-              >
-                <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                  {item}
-                </p>
-              </div>
-            ))}
-          </div>
-        </DashboardPanel>
       </section>
     </div>
   );

@@ -1,19 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Clock, MapPin, Package, Truck } from "lucide-react";
 import { IMAGES } from "@/lib/constants";
-import {
-  deliveryCoveragePoints,
-  deliveryJourney,
-} from "@/lib/demoData";
+import { deliveryCoveragePoints } from "@/lib/demoData";
 import { useLanguage } from "@/lib/LanguageContext";
-
-const iconMap = {
-  Clock,
-  Package,
-  Truck,
-  MapPin,
-};
 
 export default function DeliverySection() {
   const { t } = useLanguage();
@@ -43,36 +32,6 @@ export default function DeliverySection() {
             ))}
           </div>
 
-          <div className="mt-8 space-y-4">
-            {deliveryJourney.map((step, index) => {
-              const Icon = iconMap[step.icon];
-
-              return (
-                <div key={step.label} className="flex items-start gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-heritage">
-                      <Icon className="h-4 w-4 text-heritage" />
-                    </div>
-                    {index < deliveryJourney.length - 1 ? (
-                      <div className="h-6 w-px border-l border-dashed border-heritage/40" />
-                    ) : null}
-                  </div>
-                  <div className="pt-1.5">
-                    <div className="flex items-baseline gap-3">
-                      <h4 className="font-sans text-sm font-bold uppercase tracking-wider text-ink">
-                        {t(step.label)}
-                      </h4>
-                      <span className="meta-text">{t(step.time)}</span>
-                    </div>
-                    <p className="mt-0.5 font-body text-sm text-redacted">
-                      {t(step.desc)}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               to="/delivery"
@@ -90,14 +49,6 @@ export default function DeliverySection() {
         </div>
 
         <div className="overflow-hidden">
-          <div className="mb-5 rounded-[1.1rem] border border-stone-300/60 bg-paper p-4 shadow-[0_12px_30px_rgba(0,0,0,0.04)]">
-            <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
-              {t("Delivery cadence")}
-            </p>
-            <p className="mt-2 font-body text-sm text-redacted">
-              {t("Active print plans follow the same two-week newspaper cycle.")}
-            </p>
-          </div>
           <img
             src={IMAGES.delivery}
             alt="Newspaper delivery and print operations"

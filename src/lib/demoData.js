@@ -202,43 +202,6 @@ export const topSliderSlides = [
   },
 ];
 
-export const homepagePromisePoints = [
-  {
-    label: "Recent access",
-    value: "Subscribers read first",
-    detail: "Public readers unlock each edition 30 days after publication.",
-  },
-  {
-    label: "Print cadence",
-    value: "Every two weeks",
-    detail: "Billing frequency stays separate from the delivery cycle.",
-  },
-  {
-    label: "Operating region",
-    value: "Belgium and Germany",
-    detail: "Built for multi-country publishing, billing, and routing.",
-  },
-];
-
-export const homepageSectorBriefs = [
-  {
-    title: "Politics desk",
-    description: "Structured coverage for public policy, institutions, and regional decisions.",
-  },
-  {
-    title: "Sport desk",
-    description: "Fast match reporting online with deeper context preserved for the next edition.",
-  },
-  {
-    title: "Business desk",
-    description: "Company, logistics, and pricing coverage that also informs operational decisions.",
-  },
-  {
-    title: "Events desk",
-    description: "Template-driven listings with dates, venues, and local publication timing.",
-  },
-];
-
 export const categoryArticles = {
   news: [
     {
@@ -520,30 +483,6 @@ export const readerPaymentMethods = [
   },
 ];
 
-export const readerCheckoutBenefits = [
-  "Monthly or yearly billing without changing the fixed two-week print cadence.",
-  "Fresh reporting unlocks immediately for active subscribers while public readers wait 30 days.",
-  "Delivery and account data are collected together so billing and routing stay aligned.",
-];
-
-export const readerCheckoutSuccessSteps = [
-  {
-    title: "Subscription created",
-    detail:
-      "The selected reader plan is recorded with its billing cycle and payment method.",
-  },
-  {
-    title: "Delivery profile prepared",
-    detail:
-      "Address and contact details are ready for shipment routing when the next eligible print cycle opens.",
-  },
-  {
-    title: "Access expectations set",
-    detail:
-      "Recent digital reporting stays available to active subscribers immediately after activation.",
-  },
-];
-
 export const readerDashboardFallbackOverview = {
   subscriptionStatus: "Trial-ready workspace",
   planName: "Print + Digital",
@@ -553,17 +492,6 @@ export const readerDashboardFallbackOverview = {
   paymentMethod: "PayPal",
   deliveryMode: "Biweekly print + digital",
   deliveryWindow: "Next delivery window opens August 25, 2026",
-};
-
-export const readerDashboardMetricNotes = {
-  subscriptionStatus:
-    "Billing stays separate from the print cadence, so renewal status should stay visible at a glance.",
-  nextBilling:
-    "Monthly or yearly charges should be obvious without forcing the user into a billing table first.",
-  nextDelivery:
-    "Physical delivery timing should read as operationally trustworthy, even before the deeper logistics modules land.",
-  accessState:
-    "Recent reporting remains part of the active-subscriber promise while older stories move into the public archive later.",
 };
 
 export const readerDashboardReadingBars = [
@@ -1027,12 +955,6 @@ export const businessShipmentActivityRows = [
   },
 ];
 
-export const businessShipmentWorkspaceNotes = [
-  "Business shipment monitoring should stay grouped by contract run and destination set instead of mimicking a reader's one-copy delivery view.",
-  "Receiving-contact readiness matters because one unresolved site can delay a shared regional release without changing the rest of the invoice cycle.",
-  "Recent logistics activity belongs here so the business account can track follow-up work without depending on the admin operations workspace.",
-];
-
 export const businessOverviewMetrics = [
   {
     label: "Contract state",
@@ -1152,12 +1074,6 @@ export const businessOverviewQuickActions = [
   },
 ];
 
-export const businessOverviewReminders = [
-  "Business pricing depends on copy volume, location footprint, and invoice structure rather than reader-style self-service plan rules.",
-  "Delivery cadence stays operationally separate from billing cadence, so contract invoicing does not change the shared print-release rhythm.",
-  "The overview stays concise by design; team, orders, invoices, locations, and shipments now have their own routed destinations.",
-];
-
 export const businessTeamMetrics = [
   {
     label: "Active seats",
@@ -1237,12 +1153,6 @@ export const businessTeamInviteCards = [
     detail: "Pending invites should stay visible when a new branch, concierge desk, or reception team needs access before rollout expands.",
     icon: "team",
   },
-];
-
-export const businessTeamRules = [
-  "Commercial ownership, billing approval, and receiving coordination should remain distinct roles where possible.",
-  "Invoice questions should route to finance contacts, while destination issues should route to the assigned receiving lead.",
-  "Seat growth should follow the business footprint instead of mirroring every staff member who reads the publication.",
 ];
 
 export const businessOrderMetrics = [
@@ -1579,12 +1489,6 @@ export const adminOverviewQuickActions = [
   },
 ];
 
-export const adminOverviewReminders = [
-  "The admin overview stays summary-first on purpose; heavier record management belongs in the dedicated content, subscriber, company, shipment, and pricing workspaces.",
-  "Publishing cadence, renewal state, and route health should be visible together here because the operational day crosses editorial, customer, and logistics boundaries.",
-  "Public reading, subscription, and delivery routes stay untouched while admin-only management surfaces deepen inside the authenticated shell.",
-];
-
 export const adminContentMetrics = [
   {
     label: "Drafts",
@@ -1645,33 +1549,6 @@ export const adminContentRows = [
     status: "Scheduled",
     tone: "warning",
     publishWindow: "August 12, 2026 · 8:00 AM",
-  },
-];
-
-export const adminContentTemplates = [
-  {
-    id: "politics",
-    label: "Politics template",
-    detail: "Supports institution, vote timing, and public-impact context for policy-driven stories.",
-    sampleId: "admin-politics-1",
-  },
-  {
-    id: "business",
-    label: "Business template",
-    detail: "Captures market angle, logistics effect, and pricing relevance for commercial coverage.",
-    sampleId: "admin-business-1",
-  },
-  {
-    id: "sports",
-    label: "Sports template",
-    detail: "Keeps fixture, result, and analysis fields aligned between live coverage and print summaries.",
-    sampleId: "admin-sports-1",
-  },
-  {
-    id: "events",
-    label: "Events template",
-    detail: "Adds venue, date, and regional detail fields so listings remain structured before publish.",
-    sampleId: "admin-events-1",
   },
 ];
 
@@ -1809,12 +1686,6 @@ export const adminEditorTemplateFields = {
   ],
 };
 
-export const adminEditorWorkflowNotes = [
-  "Draft, scheduled, and published states should stay visible because editorial review and release timing are separate decisions.",
-  "Sector templates matter: politics, business, sports, and events need different supporting fields even when they share one publishing shell.",
-  "Scheduled timing and public archive dates should remain explicit so subscriber-first access and later public release stay aligned.",
-];
-
 export const adminScheduleMetrics = [
   {
     label: "Scheduled today",
@@ -1886,12 +1757,6 @@ export const adminScheduleVolumeBars = [
   { label: "Sat", value: 4, tone: "default" },
 ];
 
-export const adminScheduleNotes = [
-  "Immediate publishing and scheduled publishing should feel like one workflow, not two disconnected tools.",
-  "Print-linked stories need visible timing because scheduled digital release and print preparation often move together.",
-  "Hold states should stay explicit so editors can see which items are blocked by missing context, confirmation, or final review.",
-];
-
 export const adminSubscriberMetrics = [
   {
     label: "Active subscribers",
@@ -1953,33 +1818,6 @@ export const adminSubscriberRows = [
     status: "Renewal watch",
     tone: "warning",
   },
-];
-
-export const adminSubscriberWatchlist = [
-  {
-    title: "Renewal batch",
-    detail: "Fourteen renewals are due today, with three requiring billing follow-up before subscriber access changes.",
-    status: "In progress",
-    tone: "info",
-  },
-  {
-    title: "Delivery eligibility",
-    detail: "Nine print accounts are blocked by address or payment issues, which affects whether the next two-week cycle should include them.",
-    status: "Review",
-    tone: "warning",
-  },
-  {
-    title: "Support load",
-    detail: "Most open subscriber cases are still routine, with no broader product or delivery incident behind them.",
-    status: "Stable",
-    tone: "success",
-  },
-];
-
-export const adminSubscriberSupportNotes = [
-  "Billing cadence and delivery cadence remain separate, so renewal review does not automatically change the next print cycle without a status update.",
-  "Delivery eligibility depends on subscription state, payment status, and address readiness rather than only whether a reader prefers print.",
-  "The subscriber table should stay operational: support and front-desk teams need clear renewal and delivery signals more than marketing-style summaries.",
 ];
 
 export const adminCompanyMetrics = [
@@ -2049,30 +1887,6 @@ export const adminCompanyRows = [
   },
 ];
 
-export const adminCompanySegments = [
-  {
-    title: "Single-site accounts",
-    value: "14 active companies",
-    detail: "These accounts typically have one invoice contact and one main receiving location, so support is more compact.",
-  },
-  {
-    title: "Regional-team accounts",
-    value: "21 multi-location companies",
-    detail: "Most business customers now operate several destinations while still staying inside one recurring contract structure.",
-  },
-  {
-    title: "Enterprise-route accounts",
-    value: "11 complex contracts",
-    detail: "These organizations need the closest alignment between pricing, shipment grouping, and onboarding or support follow-up.",
-  },
-];
-
-export const adminCompanyWatchNotes = [
-  "Business accounts use contract and invoice logic that differs from subscriber self-serve renewal behavior, so the admin workflow should keep those models separate.",
-  "Copy volume, country coverage, and location footprint all influence how the company account should be routed through pricing and shipment operations.",
-  "Company management should stay summary-first here, with heavier pricing and logistics detail handled in the pricing and shipment workspaces.",
-];
-
 export const adminShipmentActivityRows = [
   {
     id: "admin-shipment-activity-1",
@@ -2106,12 +1920,6 @@ export const adminShipmentActivityRows = [
     tone: "neutral",
     date: "August 10, 2026 · 4:05 PM",
   },
-];
-
-export const adminShipmentOpsNotes = [
-  "Admin shipment monitoring should stay cross-account, since one delayed corridor can affect both subscriber and company deliveries in the same window.",
-  "Delay escalation, stop readiness, and receiving confirmation belong in this workspace so operations teams do not need to infer route health from customer-facing pages.",
-  "The shipment workspace stays logistics-first while subscriber, company, and pricing records continue to live in their own admin sections.",
 ];
 
 export const adminShipmentKpis = [
@@ -2338,30 +2146,6 @@ export const adminPricingRows = [
   },
 ];
 
-export const adminPricingBandCards = [
-  {
-    title: "Single Office",
-    detail: "Best for one headquarters, embassy, showroom, or hospitality site with one invoice owner and a simpler route footprint.",
-    note: "Lower operational complexity keeps pricing closer to the entry volume tier.",
-  },
-  {
-    title: "Regional Team",
-    detail: "Designed for organizations with several city or country locations that still fit one coordinated recurring contract model.",
-    note: "This is currently the dominant business-account shape in the admin workspace.",
-  },
-  {
-    title: "Enterprise Route",
-    detail: "Built for high-volume or special-routing accounts that need closer coordination between pricing, rollout, and shipment planning.",
-    note: "These accounts usually require manual approval before tier changes are finalized.",
-  },
-];
-
-export const adminPricingNotes = [
-  "Business pricing is operational, not consumer-style: copy volume, location footprint, and invoice structure all influence the correct tier.",
-  "Cross-border Belgium and Germany accounts may need different tax or commercial handling even when the delivery cadence stays the same.",
-  "Pricing decisions should remain linked to shipment complexity and company profile so the admin team can explain why a contract sits in a given band.",
-];
-
 export const readerBillingRows = [
   {
     id: "invoice-1",
@@ -2394,21 +2178,6 @@ export const readerBillingRows = [
     status: "Verified",
     tone: "info",
     date: "August 10, 2026",
-  },
-];
-
-export const readerBillingEvents = [
-  {
-    title: "Billing frequency",
-    body: "Monthly and yearly plans change payment timing, not the newspaper delivery rhythm.",
-  },
-  {
-    title: "Payment methods",
-    body: "Reader plans are designed around PayPal, Visa, and Mastercard through a PCI-aware payment processor handoff.",
-  },
-  {
-    title: "Renewal expectations",
-    body: "Keep plan and payment state visible here so renewals do not feel hidden behind an invoice table.",
   },
 ];
 
@@ -2486,52 +2255,6 @@ export const readerSavedCollections = [
     detail:
       "Saved reporting that helps explain the same distribution and operations themes present in the product itself.",
     route: "/article/business-1",
-  },
-];
-
-export const subscriptionPlanFacts = [
-  {
-    title: "Billing options",
-    detail: "Readers choose monthly or yearly billing, while print cadence stays fixed.",
-  },
-  {
-    title: "Delivery cadence",
-    detail: "Every active print subscriber receives a physical edition every two weeks.",
-  },
-  {
-    title: "Recent access rule",
-    detail: "Fresh reporting is subscriber-only, then moves into the public archive after 30 days.",
-  },
-  {
-    title: "Payments",
-    detail: "Supported methods include PayPal, Visa, and Mastercard, with invoicing for business orders.",
-  },
-];
-
-export const deliveryJourney = [
-  {
-    icon: "Clock",
-    label: "Press Time",
-    desc: "Sector editions close and the print run is prepared for the next regional dispatch.",
-    time: "3:00 AM",
-  },
-  {
-    icon: "Package",
-    label: "Sort and Dispatch",
-    desc: "Copies are packed by route and matched to the active subscriber and business delivery cycle.",
-    time: "5:30 AM",
-  },
-  {
-    icon: "Truck",
-    label: "Fleet Tracking",
-    desc: "Live route states sync from the client's existing truck and mapping system.",
-    time: "7:00 AM",
-  },
-  {
-    icon: "MapPin",
-    label: "Doorstep Delivery",
-    desc: "Subscribers see ETA and final drop confirmation in the delivery experience.",
-    time: "8:30 AM",
   },
 ];
 
@@ -2658,12 +2381,6 @@ export const businessPricingFramework = [
   },
 ];
 
-export const businessPricingNotes = [
-  "Final business discount tiers are confirmed during commercial onboarding rather than treated as fixed public checkout prices.",
-  "Business pricing can vary by copy volume, number of delivery locations, country coverage, and invoice or contract structure.",
-  "Belgium and Germany launches may also require VAT-aware billing and country-specific commercial setup details.",
-];
-
 export const businessDeliveryLocations = [
   {
     title: "Head office delivery",
@@ -2676,21 +2393,6 @@ export const businessDeliveryLocations = [
   {
     title: "Hospitality and partner sites",
     detail: "Hotels, lounges, retail counters, and client-facing locations can receive their own copy allocations per cycle.",
-  },
-];
-
-export const businessOnboardingSteps = [
-  {
-    title: "Share organization profile",
-    detail: "Tell us who is ordering, which country or countries you operate in, and who owns commercial follow-up.",
-  },
-  {
-    title: "Estimate volume and destinations",
-    detail: "Outline expected copies per delivery cycle and how many sites or offices need recurring service.",
-  },
-  {
-    title: "Confirm invoicing and rollout",
-    detail: "Choose invoice or contract expectations, discuss timeline, and align on fulfillment before activation.",
   },
 ];
 
@@ -2714,30 +2416,6 @@ export const businessApplySteps = [
     id: "submit",
     label: "Submit",
     detail: "Review the request and route it into the mocked business intake pipeline.",
-  },
-];
-
-export const businessApplyBenefits = [
-  "Separate business onboarding from consumer checkout so company billing and routing stay explicit.",
-  "Capture copy volume, location count, and invoicing preferences before anyone is pushed into a dashboard login.",
-  "Keep Belgium and Germany scope visible because country coverage affects rollout and VAT-aware billing.",
-];
-
-export const businessApplySuccessSteps = [
-  {
-    title: "Commercial request logged",
-    detail:
-      "The organization profile, requester details, and quote context are saved for commercial follow-up.",
-  },
-  {
-    title: "Fulfillment assumptions prepared",
-    detail:
-      "Copy volume, delivery locations, and rollout timing can now be reviewed against the proposed distribution model.",
-  },
-  {
-    title: "Billing discussion clarified",
-    detail:
-      "Invoice preference, VAT or purchase-order needs, and rollout notes stay attached to the request from the first conversation.",
   },
 ];
 
@@ -2787,78 +2465,6 @@ export const businessContactCards = [
     note: "The intake path should include organization details, locations, volume, and invoicing preferences.",
     href: "/business#business-intake",
     action: "Open intake section",
-  },
-];
-
-export const subscriptionPageFacts = [
-  {
-    label: "Billing cycle",
-    value: "Monthly or yearly for reader plans",
-    detail: "Business accounts move through invoice or contract billing instead of the self-serve reader cycle.",
-  },
-  {
-    label: "Print cadence",
-    value: "Every two weeks for active print subscribers",
-    detail: "Delivery timing stays fixed even when billing changes from monthly to yearly.",
-  },
-  {
-    label: "Recent access",
-    value: "Fresh reporting is subscriber-only",
-    detail: "Public readers unlock the same content once it is 30 days old.",
-  },
-  {
-    label: "Payments",
-    value: "PayPal, Mastercard, and Visa",
-    detail: "Business orders can also move through one-time invoicing and volume pricing arrangements.",
-  },
-];
-
-export const subscriptionAccessMoments = [
-  {
-    title: "Publish day",
-    detail: "Newly published stories are immediately available to active subscribers.",
-  },
-  {
-    title: "During the first 30 days",
-    detail: "Non-subscribers can still browse the product, but recent content remains gated.",
-  },
-  {
-    title: "After 30 days",
-    detail: "The same reporting can move into the public archive for non-subscribers.",
-  },
-];
-
-export const subscriptionCheckoutNotes = [
-  {
-    title: "What sign-up collects",
-    detail: "Reader onboarding needs your name, contact details, delivery address, and account type so billing and shipment routing work correctly.",
-  },
-  {
-    title: "How payment data is handled",
-    detail: "Card details are expected to be captured by a PCI-compliant payment processor, while the platform stores only the reference needed to manage billing.",
-  },
-  {
-    title: "What consent covers",
-    detail: "Sign-up consent needs to explain how your personal data is used and when delivery addresses are shared with the logistics system.",
-  },
-];
-
-export const subscriptionFaqs = [
-  {
-    q: "How is yearly billing different from print delivery timing?",
-    a: "Yearly billing changes how often you are charged, not how often the newspaper arrives. Active print subscribers still receive their physical edition every two weeks.",
-  },
-  {
-    q: "When can non-subscribers read the same stories?",
-    a: "Recent reporting is reserved for active subscribers. Public readers can access the same content once it is at least 30 days old.",
-  },
-  {
-    q: "Which payment methods should I expect at checkout?",
-    a: "Reader plans are designed around PayPal, Mastercard, and Visa. Business orders may also use invoice-based payment arrangements.",
-  },
-  {
-    q: "What information do I need to provide when subscribing?",
-    a: "You should expect to provide your name, contact details, delivery address, and payment information so the system can handle billing and shipment routing.",
   },
 ];
 
@@ -2973,38 +2579,6 @@ export const businessGovernanceActionNotes = [
     title: "Admin review path",
     detail: "Some requests need operations or admin confirmation so the team can verify authority before changing company-level records.",
   },
-];
-
-export const businessPrivacyPrinciples = [
-  {
-    title: "Company contacts are still personal data",
-    body: "Even in a business workspace, named account owners, invoice contacts, and receiving leads are treated as personal data and need clear handling rules.",
-  },
-  {
-    title: "Location records support distribution",
-    body: "Office and site addresses are used for bulk-copy allocation, shipment routing, and receiving coordination across Belgium and Germany.",
-  },
-  {
-    title: "Invoice and tax data have longer tails",
-    body: "Business invoicing, VAT context, and dispute resolution may require longer retention than ordinary marketing preferences or editorial update opt-ins.",
-  },
-  {
-    title: "Governance should match team roles",
-    body: "Account-level privacy actions should stay visible to the right business owner or operator rather than being hidden inside a generic settings screen.",
-  },
-];
-
-export const businessPrivacyRights = [
-  "Review what company-linked personal and operational data is stored in the workspace.",
-  "Request export of company contacts, receiving details, and invoice-linked account records.",
-  "Request deletion or retention review for business records when legal and operational obligations permit changes.",
-  "Understand when company addresses or named contacts are shared with logistics, billing, or support workflows.",
-];
-
-export const businessPrivacyRetentionNotes = [
-  "Shipment incidents, proof-of-delivery notes, and receiving exceptions may need limited retention after a delivery cycle closes.",
-  "Invoice and VAT-supporting records can outlive optional communication preferences because they support accounting and compliance obligations.",
-  "Team-member access changes should not erase the operational history needed to explain prior approvals, disputes, or location changes.",
 ];
 
 export const termsHighlights = [

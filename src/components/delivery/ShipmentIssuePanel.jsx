@@ -19,7 +19,7 @@ const iconMap = {
 
 export default function ShipmentIssuePanel({
   title,
-  description,
+  description = null,
   items = [],
   footer = null,
 }) {

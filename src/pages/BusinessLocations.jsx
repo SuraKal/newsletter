@@ -1,18 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Building2, MapPinned, Truck } from "lucide-react";
+import { Building2, Truck } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardMetricCard,
   DashboardPageHeader,
-  DashboardPanel,
 } from "@/components/dashboard/DashboardPrimitives";
 import DeliveryMapPanel from "@/components/delivery/DeliveryMapPanel";
 import LocationStatusTable from "@/components/delivery/LocationStatusTable";
 import RouteSummaryPanel from "@/components/delivery/RouteSummaryPanel";
 import { IMAGES } from "@/lib/constants";
 import {
-  businessDeliveryLocations,
   businessLocationMetrics,
   businessLocationRows,
   businessShipmentRouteSummaries,
@@ -84,34 +82,6 @@ export default function BusinessLocations() {
           tags={["Brussels", "Antwerp", "Cologne", "Berlin"]}
           caption="Business destination management should remain separate from live shipment timing while still reflecting the same regional footprint."
         />
-        <DashboardPanel
-          title="Location models"
-          description="Keep the supported destination patterns visible so new sites are added using the same commercial and operational rules."
-          className="h-full"
-        >
-          <div className="space-y-4">
-            {businessDeliveryLocations.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="dashboard-icon-badge flex h-10 w-10 items-center justify-center">
-                    <MapPinned className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
-                      {item.title}
-                    </p>
-                    <p className="mt-2 font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                      {item.detail}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </DashboardPanel>
       </section>
     </div>
   );

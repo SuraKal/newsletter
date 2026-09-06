@@ -1,18 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, PenSquare, Truck } from "lucide-react";
+import { PenSquare, Truck } from "lucide-react";
 import {
   DashboardActivityTable,
   DashboardChartPanel,
   DashboardFilterBar,
   DashboardMetricCard,
   DashboardPageHeader,
-  DashboardPanel,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import {
   adminScheduleMetrics,
-  adminScheduleNotes,
   adminScheduleRows,
   adminScheduleVolumeBars,
 } from "@/lib/demoData";
@@ -89,28 +87,7 @@ export default function AdminSchedule() {
         />
       </section>
 
-      <DashboardPanel
-        title="Scheduling rules"
-        description="Keep the publish model visible so release timing and print coordination stay aligned."
-      >
-        <div className="grid gap-4 sm:grid-cols-3">
-          {adminScheduleNotes.map((item) => (
-            <div
-              key={item}
-              className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-            >
-              <div className="flex items-start gap-3">
-                <div className="dashboard-icon-badge flex h-10 w-10 items-center justify-center">
-                  <CalendarDays className="h-4 w-4" />
-                </div>
-                <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                  {item}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </DashboardPanel>
+
     </div>
   );
 }

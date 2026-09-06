@@ -24,52 +24,15 @@ const allArticles = [
 ];
 
 export default function News() {
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
   const hasSubscriberAccess = hasActiveReaderSubscription(user);
   const heroAccess = getArticleAccessState(heroArticle, hasSubscriberAccess);
-  const lockedCount = allArticles.filter(
-    (article) => getArticleAccessState(article, hasSubscriberAccess).isLocked,
-  ).length;
-  const archiveCount = allArticles.length - lockedCount;
 
   return (
     <div className="min-h-screen bg-paper">
       <Masthead />
       <main className="mx-auto max-w-7xl px-4 py-8">
         <SectionHeader title="All News" />
-
-        <div className="mb-8 grid gap-4 md:grid-cols-3">
-          <article className="rounded-[1rem] border border-stone-300/60 bg-vellum p-4">
-            <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
-              {hasSubscriberAccess
-                ? "Subscriber mode"
-                : isAuthenticated
-                  ? "Signed-in preview"
-                  : "Guest mode"}
-            </p>
-            <p className="mt-2 font-heading text-lg font-bold text-ink">
-              {hasSubscriberAccess
-                ? "Recent reporting is fully open to you."
-                : "Recent reporting now shows locked and archive states before full public release."}
-            </p>
-          </article>
-          <article className="rounded-[1rem] border border-stone-300/60 bg-paper p-4">
-            <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
-              Subscriber-only today
-            </p>
-            <p className="mt-2 font-heading text-lg font-bold text-ink">
-              {lockedCount} stories still inside the recent-access window
-            </p>
-          </article>
-          <article className="rounded-[1rem] border border-stone-300/60 bg-paper p-4">
-            <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
-              Public archive
-            </p>
-            <p className="mt-2 font-heading text-lg font-bold text-ink">
-              {archiveCount} stories are already open to all readers
-            </p>
-          </article>
-        </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           <Link to={`/article/${heroArticle.id}`} className="group">
@@ -102,9 +65,6 @@ export default function News() {
             <p className="mt-3 font-body text-base leading-relaxed text-redacted">
               {heroArticle.summary}
             </p>
-            <p className="mt-4 rounded-[1rem] border border-stone-300/50 bg-vellum/70 px-4 py-3 font-body text-sm leading-relaxed text-redacted">
-              {heroAccess.detail}
-            </p>
             <div className="mt-3 flex items-center gap-2">
               <span className="meta-text font-semibold">By {heroArticle.author}</span>
               <span className="meta-text">·</span>
@@ -127,15 +87,6 @@ export default function News() {
         </div>
 
         <div className="newspaper-rule my-8" />
-
-        <div className="rounded-[1.1rem] border border-stone-300/60 bg-vellum p-5">
-          <p className="category-label">Access note</p>
-          <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
-            Stories dated August 10, 2026 remain subscriber-only until
-            September 10, 2026. Older July 2026 reporting is already part of the
-            public archive and should open fully even for guests.
-          </p>
-        </div>
 
         <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-stone-300/50">
           {allArticles.slice(9).map((article) => (

@@ -15,7 +15,7 @@ const toneForStep = (status) => {
 
 export default function DeliveryTimelinePanel({
   title,
-  description,
+  description = null,
   items,
 }) {
   const timelineItems = items.map((item) => ({

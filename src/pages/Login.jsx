@@ -7,65 +7,16 @@ import {
   Lock,
   Mail,
   Newspaper,
-  ShieldCheck,
 } from "lucide-react";
 import { authJourneyContent, useAuth } from "@/lib/AuthContext";
 import { appClient } from "@/api/appClient";
-import { appParams } from "@/lib/app-params";
 import { getDefaultDashboardRoute } from "@/lib/dashboard-config";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 
 const journeyOptions = [
-  {
-    key: "individual",
-    icon: Newspaper,
-    title: "Individual reader",
-    detail:
-      "Reading access, payment history, and one household delivery path.",
-    highlights: [
-      "Morning briefings and curated front-page coverage",
-      "Saved articles and reading history across devices",
-      "Personal billing and next-edition delivery visibility",
-    ],
-    note:
-      "Use the reader journey for one-person subscriptions, account updates, and home delivery tracking.",
-  },
-  {
-    key: "business",
-    icon: Building2,
-    title: "Company account",
-    detail:
-      "Bulk copies, consolidated billing, and operational shipment visibility.",
-    highlights: [
-      "Shared shipment visibility across company delivery points",
-      "Invoice-friendly account access for contract and billing teams",
-      "Operational oversight for orders, locations, and upcoming runs",
-    ],
-    note:
-      "Use the business journey when your account manages multiple copies, company invoicing, or several delivery locations.",
-  },
-];
-
-const demoAccounts = [
-  {
-    key: "individual",
-    label: "Demo Reader",
-    email: appParams.readerEmail,
-    password: appParams.readerPassword,
-  },
-  {
-    key: "business",
-    label: "Demo Business",
-    email: appParams.businessEmail,
-    password: appParams.businessPassword,
-  },
-  {
-    key: "admin",
-    label: "Demo Admin",
-    email: appParams.adminEmail,
-    password: appParams.adminPassword,
-  },
+  { key: "individual", icon: Newspaper, title: "Individual reader" },
+  { key: "business", icon: Building2, title: "Company account" },
 ];
 
 export default function Login() {
@@ -79,22 +30,11 @@ export default function Login() {
   const { checkUserAuth } = useAuth();
   const journeyKey =
     searchParams.get("journey") === "business" ? "business" : "individual";
-  const selectedJourney =
-    journeyOptions.find((option) => option.key === journeyKey) ||
-    journeyOptions[0];
 
   const selectJourney = (nextJourney) => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("journey", nextJourney);
     setSearchParams(nextParams, { replace: true });
-  };
-
-  const fillDemoCredentials = (account) => {
-    setEmail(account.email);
-    setPassword(account.password);
-    if (account.key === "individual" || account.key === "business") {
-      selectJourney(account.key);
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -130,17 +70,6 @@ export default function Login() {
             <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-heritage/10 blur-3xl" />
             <div className="relative">
               <p className="category-label">Member Access</p>
-              <h1 className="mt-4 max-w-xl font-display text-4xl font-black leading-tight text-ink md:text-5xl">
-                Choose the right account path before you return to the newsroom.
-              </h1>
-              <p className="mt-5 max-w-2xl font-body text-base leading-relaxed text-redacted md:text-lg">
-                Individual subscribers and company teams share the same
-                product, but not the same onboarding and dashboard
-                expectations. Start in the journey that matches your account so
-                the next step stays clear.
-              </p>
-
-              <div className="newspaper-rule-double my-8" />
 
               <div className="grid gap-4 sm:grid-cols-2">
                 {journeyOptions.map((option) => {
@@ -171,38 +100,9 @@ export default function Login() {
                           </p>
                         </div>
                       </div>
-                      <p className="mt-4 font-body text-sm leading-6 text-redacted">
-                        {option.detail}
-                      </p>
                     </button>
                   );
                 })}
-              </div>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                {selectedJourney.highlights.map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-[1.25rem] border border-stone-300/50 bg-paper/80 p-4"
-                  >
-                    <ShieldCheck className="h-5 w-5 text-heritage" />
-                    <p className="mt-3 font-body text-sm leading-6 text-ink">
-                      {item}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 rounded-[1.5rem] border border-stone-300/50 bg-paper/80 p-6">
-                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.28em] text-heritage">
-                  Journey Note
-                </p>
-                <p className="mt-4 font-body text-lg leading-relaxed text-ink">
-                  {selectedJourney.note}
-                </p>
-                <p className="mt-3 font-sans text-xs uppercase tracking-[0.24em] text-redacted">
-                  Account Routing
-                </p>
               </div>
             </div>
           </section>
@@ -223,12 +123,6 @@ export default function Login() {
                 <KeyRound className="h-6 w-6 text-heritage" />
               </div>
             </div>
-
-            <p className="mt-4 font-body text-sm leading-6 text-redacted">
-              {journeyKey === "business"
-                ? "Enter the company account credentials used for invoicing, locations, and bulk delivery oversight."
-                : "Enter your personal subscriber email and password to continue to reading access, billing, and delivery tracking."}
-            </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
               {error ? (
@@ -304,29 +198,6 @@ export default function Login() {
                 {!loading ? <ArrowRight className="h-4 w-4" /> : null}
               </button>
             </form>
-
-            <div className="newspaper-rule my-8" />
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              {demoAccounts.map((account) => (
-                <button
-                  key={account.key}
-                  type="button"
-                  onClick={() => fillDemoCredentials(account)}
-                  className="rounded-[1.25rem] border border-stone-300/50 bg-vellum/45 p-4 text-left transition hover:border-stone-400 hover:bg-vellum/65"
-                >
-                  <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.22em] text-heritage">
-                    {account.label}
-                  </p>
-                  <p className="mt-3 break-all font-body text-sm text-ink">
-                    {account.email}
-                  </p>
-                  <p className="font-sans text-xs text-redacted">
-                    {account.password}
-                  </p>
-                </button>
-              ))}
-            </div>
 
             <div className="mt-6 text-center">
               <p className="font-sans text-xs text-redacted">

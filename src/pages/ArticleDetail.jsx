@@ -128,38 +128,6 @@ export default function ArticleDetail() {
                   </span>
                 ) : null}
               </div>
-              <div
-                className={`mt-5 rounded-[1.1rem] border px-5 py-4 ${
-                  access.key === "locked"
-                    ? "border-amber-200 bg-amber-50/80"
-                    : access.key === "subscriber"
-                      ? "border-emerald-200 bg-emerald-50/80"
-                      : "border-stone-300/60 bg-vellum"
-                }`}
-              >
-                <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
-                  Reading access
-                </p>
-                <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                  {access.detail}
-                </p>
-                {access.isLocked ? (
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <Link
-                      to="/subscriptions"
-                      className="bg-heritage px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
-                    >
-                      View subscription plans
-                    </Link>
-                    <Link
-                      to="/login"
-                      className="border border-ink px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-ink hover:text-paper"
-                    >
-                      Sign in to read now
-                    </Link>
-                  </div>
-                ) : null}
-              </div>
             </div>
 
             {article.image ? (
@@ -175,7 +143,7 @@ export default function ArticleDetail() {
               </figure>
             ) : null}
 
-            <div className="mt-10 grid grid-cols-1 gap-8 xl:grid-cols-[1fr_minmax(220px,280px)]">
+            <div className="mt-10 grid grid-cols-1 gap-8">
               <div className="font-body text-[1.05rem] leading-[1.95] text-ink">
                 <p className="drop-cap">
                   {article.summary ||
@@ -206,22 +174,6 @@ export default function ArticleDetail() {
                     <h2 className="font-display text-2xl font-black text-ink">
                       Full article stays locked until {access.publicAccessDate}.
                     </h2>
-                    <p className="mt-4 font-body text-base leading-relaxed text-redacted">
-                      You are still on the live article route, but this August
-                      2026 reporting remains part of the subscriber-only window.
-                      Guests can read the summary now and return once the public
-                      archive opens, or sign in immediately for the full story.
-                    </p>
-                    <div className="mt-5 rounded-[1rem] border border-stone-300/50 bg-paper p-4">
-                      <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.18em] text-heritage">
-                        What opens later
-                      </p>
-                      <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                        The full body, sidebar context, and comment tools remain
-                        part of the same route once the public archive date
-                        arrives on {access.publicAccessDate}.
-                      </p>
-                    </div>
                   </div>
                 )}
 
@@ -234,11 +186,6 @@ export default function ArticleDetail() {
                       {comments.length} Voices
                     </span>
                   </div>
-                  <p className="mt-2 max-w-2xl font-body text-sm leading-relaxed text-redacted">
-                    {access.canReadFull
-                      ? "A short reader panel sits under every story so the page feels like an active newsroom, not a generic article card."
-                      : "Comment tools open alongside full article access. Guests can still preview the discussion style before the archive opens."}
-                  </p>
 
                   <form className="mt-6 border border-stone-300/60 bg-vellum p-5">
                     <label className="font-sans text-xs font-bold uppercase tracking-wider text-ink">
@@ -255,11 +202,6 @@ export default function ArticleDetail() {
                       className="mt-3 w-full resize-none border border-stone-300/60 bg-paper p-3 font-body text-sm text-ink outline-none placeholder:text-redacted/60 focus:border-heritage disabled:cursor-not-allowed disabled:opacity-70"
                     />
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                      <p className="font-sans text-[0.7rem] uppercase tracking-[0.18em] text-redacted">
-                        {access.canReadFull
-                          ? "Please keep comments respectful and relevant."
-                          : "Sign in or wait for the archive-open date to comment."}
-                      </p>
                       <button
                         type="button"
                         disabled={!access.canReadFull}
@@ -290,51 +232,6 @@ export default function ArticleDetail() {
                   </div>
                 </div>
               </div>
-
-              <aside className="border border-stone-300/60 bg-vellum p-5 shadow-[0_12px_30px_rgba(0,0,0,0.05)]">
-                <h2 className="font-sans text-xs font-bold uppercase tracking-[0.2em] text-ink">
-                  In Brief
-                </h2>
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <p className="meta-text">Section</p>
-                    <p className="font-semibold text-ink">{article.category}</p>
-                  </div>
-                  <div>
-                    <p className="meta-text">Published</p>
-                    <p className="font-semibold text-ink">{article.date}</p>
-                  </div>
-                  <div>
-                    <p className="meta-text">Reporter</p>
-                    <p className="font-semibold text-ink">
-                      {article.author || "News Desk"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="meta-text">Reading Time</p>
-                    <p className="font-semibold text-ink">
-                      {article.readTime || "4 min read"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="meta-text">Access</p>
-                    <p className="font-semibold text-ink">{access.label}</p>
-                  </div>
-                  <div>
-                    <p className="meta-text">Public Open Date</p>
-                    <p className="font-semibold text-ink">
-                      {access.publicAccessDate || "Already open"}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-6 border-t border-stone-300/60 pt-4">
-                  <p className="font-body text-sm leading-relaxed text-redacted">
-                    {access.canReadFull
-                      ? "This article is readable in full on the current route, either because subscriber access is active or the archive window has already opened."
-                      : `This route remains available for discovery, but the full story stays subscriber-only until ${access.publicAccessDate}.`}
-                  </p>
-                </div>
-              </aside>
             </div>
           </div>
 

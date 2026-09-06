@@ -25,7 +25,6 @@ import {
   businessOverviewDeliveryFootprint,
   businessOverviewMetrics,
   businessOverviewQuickActions,
-  businessOverviewReminders,
   businessShipmentRouteSummaries,
 } from "@/lib/demoData";
 
@@ -55,7 +54,6 @@ export default function BusinessOverviewPage() {
       <DashboardPageHeader
         eyebrow="Business workspace"
         title="Business account command center"
-        description="The business overview should surface contract state, copy volume, invoice health, and upcoming distribution at a glance, then hand deeper work off to the dedicated operational sections."
         action={
           <Link
             to="/business-dashboard/shipments"
@@ -108,7 +106,6 @@ export default function BusinessOverviewPage() {
         />
         <DashboardPanel
           title="Delivery footprint"
-          description="Keep the distribution footprint visible without turning the overview into a full locations workspace."
           className="h-full"
         >
           <div className="grid gap-4 sm:grid-cols-3">
@@ -132,12 +129,10 @@ export default function BusinessOverviewPage() {
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <DashboardChartPanel
           title="Copy allocation by location"
-          description="This stays summary-first so account owners can spot where distribution is concentrated before opening orders or locations."
           data={businessOverviewCopyBars}
         />
         <DashboardActivityTable
           title="Recent business activity"
-          description="Operational finance, location, and shipment signals should be visible together before the user drills into dedicated sections."
           columns={activityColumns}
           rows={businessOverviewActivityRows}
         />
@@ -146,12 +141,10 @@ export default function BusinessOverviewPage() {
       <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
         <RouteSummaryPanel
           title="Route and shipment health"
-          description="The overview should show a compact logistics read without replacing the deeper shipment workspace."
           items={businessShipmentRouteSummaries.slice(0, 2)}
         />
         <DashboardPanel
           title="Quick actions"
-          description="Push deeper operational work into dedicated sections instead of expanding this overview into a multi-purpose control room."
           className="h-full"
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -182,18 +175,6 @@ export default function BusinessOverviewPage() {
             })}
           </div>
 
-          <div className="mt-5 space-y-3">
-            {businessOverviewReminders.map((item) => (
-              <div
-                key={item}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-              >
-                <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                  {item}
-                </p>
-              </div>
-            ))}
-          </div>
         </DashboardPanel>
       </section>
     </div>

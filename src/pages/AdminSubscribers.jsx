@@ -1,19 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck, Truck, Users } from "lucide-react";
+import { Truck, Users } from "lucide-react";
 import {
   DashboardActivityTable,
   DashboardFilterBar,
   DashboardMetricCard,
   DashboardPageHeader,
-  DashboardPanel,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import {
   adminSubscriberMetrics,
   adminSubscriberRows,
-  adminSubscriberSupportNotes,
-  adminSubscriberWatchlist,
 } from "@/lib/demoData";
 
 const subscriberColumns = [
@@ -74,64 +71,16 @@ export default function AdminSubscribers() {
         ))}
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.12fr_0.88fr]">
+      <section>
         <DashboardActivityTable
           title="Subscriber operations table"
           description="Keep renewal, plan, and delivery-eligibility checks together so frontline account work can be resolved without jumping across several pages."
           columns={subscriberColumns}
           rows={adminSubscriberRows}
         />
-
-        <DashboardPanel
-          title="Renewal and eligibility watchlist"
-          description="This summary zone keeps risky renewals and delivery-blocking details visible without inflating the main list."
-          className="h-full"
-        >
-          <div className="space-y-4">
-            {adminSubscriberWatchlist.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
-                      {item.title}
-                    </p>
-                    <p className="mt-2 font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                      {item.detail}
-                    </p>
-                  </div>
-                  <DashboardStatusBadge label={item.status} tone={item.tone} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </DashboardPanel>
       </section>
 
-      <DashboardPanel
-        title="Subscriber support rules"
-        description="The subscriber workspace should reinforce the service model without turning into a policy page."
-      >
-        <div className="grid gap-4 sm:grid-cols-3">
-          {adminSubscriberSupportNotes.map((item) => (
-            <div
-              key={item}
-              className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-            >
-              <div className="flex items-start gap-3">
-                <div className="dashboard-icon-badge flex h-10 w-10 items-center justify-center">
-                  <ShieldCheck className="h-4 w-4" />
-                </div>
-                <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                  {item}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </DashboardPanel>
+
     </div>
   );
 }

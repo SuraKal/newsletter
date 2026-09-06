@@ -3,10 +3,10 @@ import { DashboardPanel } from "@/components/dashboard/DashboardPrimitives";
 
 export default function DeliveryMapPanel({
   title,
-  description,
+  description = null,
   imageSrc,
   imageAlt,
-  caption,
+  caption = null,
   tags = [],
 }) {
   return (

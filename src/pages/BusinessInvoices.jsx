@@ -1,20 +1,17 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Mail, ReceiptText, ShieldCheck } from "lucide-react";
+import { ReceiptText, ShieldCheck } from "lucide-react";
 import {
   DashboardActivityTable,
   DashboardFilterBar,
   DashboardMetricCard,
   DashboardPageHeader,
-  DashboardPanel,
   DashboardSplitMetricCard,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import {
-  businessContactCards,
   businessInvoiceMetrics,
   businessInvoiceRows,
-  businessPricingNotes,
 } from "@/lib/demoData";
 
 const invoiceColumns = [
@@ -92,59 +89,6 @@ export default function BusinessInvoices() {
         />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
-        <DashboardPanel
-          title="Billing contacts and support paths"
-          description="Keep invoice follow-up clear so account owners know which commercial or finance path to use."
-          className="h-full"
-        >
-          <div className="space-y-4">
-            {businessContactCards.map((card) => (
-              <Link
-                key={card.title}
-                to={card.href.startsWith("/") ? card.href : "#"}
-                className="block rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4 transition hover:border-stone-300 hover:bg-white"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="dashboard-icon-badge flex h-10 w-10 items-center justify-center">
-                    <Mail className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
-                      {card.title}
-                    </p>
-                    <p className="mt-2 font-sans text-sm font-semibold text-stone-900 dark:text-stone-100">
-                      {card.detail}
-                    </p>
-                    <p className="dashboard-page-description mt-2 font-sans text-xs leading-5">
-                      {card.note}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </DashboardPanel>
-
-        <DashboardPanel
-          title="Invoice and pricing notes"
-          description="Billing policy belongs here so the overview and shipment pages stay focused on their own jobs."
-          className="h-full"
-        >
-          <div className="space-y-4">
-            {businessPricingNotes.map((item) => (
-              <div
-                key={item}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-              >
-                <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                  {item}
-                </p>
-              </div>
-            ))}
-          </div>
-        </DashboardPanel>
-      </section>
     </div>
   );
 }

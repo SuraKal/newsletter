@@ -6,21 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/components/AuthLayout";
-import { authJourneyContent } from "@/lib/AuthContext";
 
 const recoveryJourneys = [
-  {
-    key: "individual",
-    icon: Newspaper,
-    title: "Reader account",
-    copy: "Single-subscriber access with personal billing and one delivery destination.",
-  },
-  {
-    key: "business",
-    icon: Building2,
-    title: "Company account",
-    copy: "Shared operational access for bulk copies, invoices, and location-level delivery tracking.",
-  },
+  { key: "individual", icon: Newspaper, title: "Reader account" },
+  { key: "business", icon: Building2, title: "Company account" },
 ];
 
 export default function ForgotPassword() {
@@ -30,7 +19,6 @@ export default function ForgotPassword() {
   const [searchParams, setSearchParams] = useSearchParams();
   const journeyKey =
     searchParams.get("journey") === "business" ? "business" : "individual";
-  const journey = authJourneyContent[journeyKey];
 
   const selectJourney = (nextJourney) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -66,41 +54,28 @@ export default function ForgotPassword() {
           : "Use the personal subscriber email connected to your reading access and delivery history."
       }
       aside={
-        <div className="space-y-6">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {recoveryJourneys.map((option) => {
-              const OptionIcon = option.icon;
-              const isActive = option.key === journeyKey;
-              return (
-                <button
-                  key={option.key}
-                  type="button"
-                  onClick={() => selectJourney(option.key)}
-                  className={`rounded-[1.4rem] border p-4 text-left transition ${
-                    isActive
-                      ? "border-heritage bg-paper shadow-[0_16px_38px_rgba(76,43,8,0.08)]"
-                      : "border-stone-300/50 bg-paper/75 hover:border-stone-400"
-                  }`}
-                >
-                  <OptionIcon className="h-5 w-5 text-heritage" />
-                  <p className="mt-3 font-sans text-[0.68rem] font-bold uppercase tracking-[0.2em] text-heritage">
-                    {option.title}
-                  </p>
-                  <p className="mt-2 font-body text-sm leading-6 text-ink">
-                    {option.copy}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-          <div className="rounded-[1.5rem] border border-stone-300/50 bg-paper/80 p-5">
-            <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.22em] text-heritage">
-              Journey focus
-            </p>
-            <p className="mt-3 font-body text-base leading-7 text-ink">
-              {journey.description}
-            </p>
-          </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {recoveryJourneys.map((option) => {
+            const OptionIcon = option.icon;
+            const isActive = option.key === journeyKey;
+            return (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => selectJourney(option.key)}
+                className={`rounded-[1.4rem] border p-4 text-left transition ${
+                  isActive
+                    ? "border-heritage bg-paper shadow-[0_16px_38px_rgba(76,43,8,0.08)]"
+                    : "border-stone-300/50 bg-paper/75 hover:border-stone-400"
+                }`}
+              >
+                <OptionIcon className="h-5 w-5 text-heritage" />
+                <p className="mt-3 font-sans text-[0.68rem] font-bold uppercase tracking-[0.2em] text-heritage">
+                  {option.title}
+                </p>
+              </button>
+            );
+          })}
         </div>
       }
       footer={
@@ -118,15 +93,6 @@ export default function ForgotPassword() {
           <p className="font-body text-sm text-ink">
             If an account exists with that email, a reset link will arrive
             shortly.
-          </p>
-          <p className="font-body text-sm text-redacted">
-            {journeyKey === "business"
-              ? "Use the company operator email tied to invoices and shared shipment oversight."
-              : "Use the same personal subscriber email that unlocks your current reading and delivery access."}
-          </p>
-          <p className="font-sans text-xs text-redacted">
-            Local demo mode: open{" "}
-            <code>{`/reset-password?token=demo&journey=${journeyKey}`}</code>.
           </p>
         </div>
       ) : (

@@ -5,7 +5,6 @@ import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import { appParams } from "@/lib/app-params";
 import { useAuth } from "@/lib/AuthContext";
-import { readerCheckoutSuccessSteps } from "@/lib/demoData";
 
 const checkoutStorageKey = `${appParams.storagePrefix}_checkout_sessions`;
 
@@ -45,18 +44,7 @@ export default function SubscribeSuccess() {
       <Masthead />
       <main className="mx-auto max-w-6xl px-4 py-12 lg:py-16">
         <section className="rounded-[2rem] border border-stone-300/60 bg-vellum/75 p-8 shadow-[0_25px_80px_rgba(40,30,20,0.08)]">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="category-label">Subscription confirmed</p>
-              <h1 className="mt-4 font-display text-4xl font-black leading-tight text-ink md:text-5xl">
-                Reader checkout completed and the mocked payment return is resolved.
-              </h1>
-              <p className="mt-5 font-body text-base leading-relaxed text-redacted md:text-lg">
-                {session
-                  ? `Your ${session.plan.name} subscription was recorded with ${session.quote.billingCycle} billing and a safe payment reference.`
-                  : "No checkout session was found, so this page is showing the empty success state for the milestone flow."}
-              </p>
-            </div>
+          <div className="flex items-center justify-end">
             <div className="rounded-[1.3rem] border border-emerald-200 bg-emerald-50 px-5 py-4">
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="h-5 w-5 text-emerald-700" />
@@ -75,7 +63,7 @@ export default function SubscribeSuccess() {
 
         {session ? (
           <>
-            <section className="mt-10 grid gap-8 lg:grid-cols-[1fr_0.95fr]">
+            <section className="mt-10">
               <div className="rounded-[1.6rem] border border-stone-300/60 bg-paper p-6 shadow-[0_16px_38px_rgba(0,0,0,0.04)]">
                 <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.24em] text-heritage">
                   Confirmation details
@@ -130,32 +118,6 @@ export default function SubscribeSuccess() {
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              <div className="rounded-[1.6rem] border border-stone-300/60 bg-paper p-6 shadow-[0_16px_38px_rgba(0,0,0,0.04)]">
-                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.24em] text-heritage">
-                  What happens next
-                </p>
-                <div className="mt-6 space-y-4">
-                  {readerCheckoutSuccessSteps.map((step, index) => (
-                    <article
-                      key={step.title}
-                      className="rounded-[1.1rem] border border-stone-300/50 bg-vellum/50 p-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-heritage font-sans text-xs font-bold text-paper">
-                          {index + 1}
-                        </span>
-                        <h2 className="font-heading text-lg font-bold text-ink">
-                          {step.title}
-                        </h2>
-                      </div>
-                      <p className="mt-3 font-body text-sm leading-6 text-redacted">
-                        {step.detail}
-                      </p>
-                    </article>
-                  ))}
                 </div>
               </div>
             </section>

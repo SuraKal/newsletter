@@ -12,7 +12,7 @@ const toneClassMap = {
 export function DashboardPageHeader({
   eyebrow,
   title,
-  description,
+  description = null,
   action = null,
 }) {
   return (
@@ -65,7 +65,7 @@ export function DashboardPanel({
 export function DashboardMetricCard({
   label,
   value,
-  detail,
+  detail = null,
   accent = false,
 }) {
   return (
@@ -174,7 +174,7 @@ export function DashboardFilterBar({
 
 export function DashboardChartPanel({
   title,
-  description,
+  description = null,
   data = [],
 }) {
   const maxValue = Math.max(...data.map((item) => item.value), 1);
@@ -214,7 +214,7 @@ export function DashboardChartPanel({
 
 export function DashboardActivityTable({
   title,
-  description,
+  description = null,
   columns = [],
   rows = [],
 }) {
@@ -261,7 +261,7 @@ export function DashboardActivityTable({
 
 export function DashboardTimeline({
   title,
-  description,
+  description = null,
   items = [],
 }) {
   return (
@@ -301,7 +301,7 @@ export function DashboardTimeline({
 
 export function DashboardEmptyState({
   title,
-  description,
+  description = null,
   action = null,
 }) {
   return (

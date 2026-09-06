@@ -25,7 +25,6 @@ import ShipmentIssuePanel from "@/components/delivery/ShipmentIssuePanel";
 import ShipmentKpiSummary from "@/components/delivery/ShipmentKpiSummary";
 import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
 import {
-  readerBillingEvents,
   readerBillingQuickFacts,
   readerConsentChecklist,
   readerBillingRows,
@@ -39,10 +38,6 @@ import {
   readerHistoryRows,
   readerProfileHighlights,
   readerSavedCollections,
-  policyContacts,
-  privacyPrinciples,
-  privacyRetentionNotes,
-  privacyRights,
 } from "@/lib/demoData";
 
 const deliveryIconMap = {
@@ -110,7 +105,7 @@ export function ReaderDeliveriesPage() {
       <DashboardPageHeader
         eyebrow="Reader deliveries"
         title="Shipment timing and delivery history"
-        description="The reader delivery section should keep route state, cadence, and past drops easy to trust before the full logistics phase deepens the map and issue tooling."
+        description=""
         action={
           <Link
             to="/delivery"
@@ -134,7 +129,6 @@ export function ReaderDeliveriesPage() {
       {!subscription.isPrintSubscriber ? (
         <DashboardEmptyState
           title="No physical delivery is scheduled for the digital-only plan."
-          description="This workspace still reserves the delivery history and shipment structure, but a print route will only appear after upgrading to a print-enabled reader plan."
           action={
             <Link
               to="/subscriptions"
@@ -162,30 +156,29 @@ export function ReaderDeliveriesPage() {
           <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
             <DeliveryTimelinePanel
               title="Current shipment timeline"
-              description="A timeline should expose the route stage without forcing the subscriber into a support request or separate map page."
+              description=""
               items={mapDeliveryTimeline(readerDeliveryTimeline)}
             />
             <DeliveryMapPanel
               title="Route coverage"
-              description="The shared delivery map surface will become richer later, but the reader should already see where the route context belongs."
+              description=""
               imageSrc={IMAGES.delivery}
               imageAlt="Delivery route and newspaper distribution visual"
               tags={["Brussels cluster", "Belgium + Germany", "Route placeholder"]}
-              caption="Belgium and Germany route coverage stays visible as a reminder that shipment timing is tied to regional dispatch logic rather than individual billing timestamps."
+              caption=""
             />
           </section>
 
           <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
             <DeliveryHistoryTable
               title="Delivery history"
-              description="Keep recent drops visible in a structured table so missed or late deliveries can be spotted quickly."
+              description=""
               rows={readerDeliveryHistoryRows}
             />
             <ShipmentIssuePanel
               title="Issue states and support readiness"
-              description="Delivery exceptions, address verification, and support readiness now sit in a reusable shipment module instead of an inline reminder list."
+              description=""
               items={readerDeliveryIssueStates}
-              footer="Billing cadence stays separate from print cadence, so the same issue-state surface can serve monthly and yearly reader plans."
             />
           </section>
         </>
@@ -206,7 +199,7 @@ export function ReaderBillingPage() {
       <DashboardPageHeader
         eyebrow="Reader billing"
         title="Plan, renewal, and payment history"
-        description="Billing details should be structured enough for renewals and receipts, but still easy to scan from a subscriber point of view."
+        description=""
         action={
           <Link
             to="/subscriptions"
@@ -241,48 +234,24 @@ export function ReaderBillingPage() {
               key={metric.label}
               label={metric.label}
               value={valueMap[metric.label] || metric.value}
-              detail={metric.detail}
+              detail=""
               accent={index === 1}
             />
           );
         })}
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
-        <DashboardSplitMetricCard
-          title="Renewal snapshot"
-          leftLabel="Next charge"
-          leftValue={subscription.nextBillingDate}
-          rightLabel="Expected amount"
-          rightValue={`€${subscription.billingAmount.toFixed(2)}`}
-          footer={`Payment method on file: ${subscription.paymentMethod}`}
-        />
-        <DashboardPanel
-          title="Billing rules at a glance"
-          description="Keep the pricing model understandable before invoice exports and detailed statements arrive later."
-          className="h-full"
-        >
-          <div className="space-y-4">
-            {readerBillingEvents.map((event) => (
-              <div
-                key={event.title}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-              >
-                <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
-                  {event.title}
-                </p>
-                <p className="mt-2 font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                  {event.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </DashboardPanel>
-      </section>
+      <DashboardSplitMetricCard
+        title="Renewal snapshot"
+        leftLabel="Next charge"
+        leftValue={subscription.nextBillingDate}
+        rightLabel="Expected amount"
+        rightValue={`€${subscription.billingAmount.toFixed(2)}`}
+        footer={`Payment method on file: ${subscription.paymentMethod}`}
+      />
 
       <DashboardPanel
         title="Payment history and renewal events"
-        description="Reader billing should expose invoice activity, reminder states, and payment verification without mixing them into the overview cards."
       >
         <div className="dashboard-table-wrap overflow-x-auto">
           <table className="w-full min-w-[620px]">
@@ -327,7 +296,7 @@ export function ReaderHistoryPage() {
       <DashboardPageHeader
         eyebrow="Reader history"
         title="Saved stories and recent reading"
-        description="This route should scale beyond a simple overview teaser and give the subscriber a clear place to resume, save, and revisit reporting."
+        description=""
         action={
           <Link
             to="/news"
@@ -348,30 +317,29 @@ export function ReaderHistoryPage() {
         <DashboardMetricCard
           label="Saved stories"
           value="18"
-          detail="The queue is compact here so the route can grow later without stretching the overview."
+          detail=""
         />
         <DashboardMetricCard
           label="Read this week"
           value="47"
-          detail="Engagement can be summarized here and charted without hiding the actual article list."
+          detail=""
           accent
         />
         <DashboardMetricCard
           label="Archive transitions"
           value="3 pending"
-          detail="A few saved articles are close to moving out of the subscriber-first window."
+          detail=""
         />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
         <DashboardChartPanel
           title="Reading rhythm"
-          description="A simple activity chart helps summarize weekly usage without replacing the recent-reading list below."
+          description=""
           data={readerDashboardReadingBars}
         />
         <DashboardPanel
           title="Saved collections"
-          description="Saved content should stay grouped around what the subscriber is likely to continue next."
           className="h-full"
         >
           <div className="space-y-4">
@@ -395,7 +363,6 @@ export function ReaderHistoryPage() {
 
       <DashboardPanel
         title="Recent reading history"
-        description="The subscriber should be able to scan what was read, what was saved, and what is about to leave the subscriber-first window."
       >
         <div className="dashboard-table-wrap overflow-x-auto">
           <table className="w-full min-w-[620px]">
@@ -465,7 +432,6 @@ export function ReaderProfilePage() {
     return (
       <DashboardEmptyState
         title="Sign in to manage your reader profile."
-        description="Profile editing, address updates, and consent visibility live inside the authenticated workspace because they depend on the current account record."
         action={
           <Link
             to="/login?journey=individual"
@@ -520,7 +486,7 @@ export function ReaderProfilePage() {
       <DashboardPageHeader
         eyebrow="Reader profile"
         title="Manage account and delivery details"
-        description="The profile route should keep personal data updates separate from billing and delivery history, while still making it obvious how those fields affect subscription operations."
+        description=""
       />
 
       <section className="grid gap-4 md:grid-cols-3">
@@ -535,61 +501,19 @@ export function ReaderProfilePage() {
         ))}
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <DashboardPanel
-          title="Profile details"
-          description="Update the contact and location fields that billing support and delivery routing rely on."
-          className="h-full"
-        >
-          <ReaderProfileForm
-            form={form}
-            onChange={handleChange}
-            onSubmit={handleSubmit}
-            isSaving={isSaving}
-            error={error}
-            successMessage={successMessage}
-          />
-        </DashboardPanel>
-
-        <DashboardPanel
-          title="Why these fields matter"
-          description="The reader profile should explain why operational data exists instead of leaving the form feeling arbitrary."
-          className="h-full"
-        >
-          <div className="space-y-4">
-            {[
-              "Delivery address determines shipment routing whenever the active reader plan includes print distribution.",
-              "Contact details support renewal reminders, missed-delivery follow-up, and account governance communication.",
-              "Country and postal details help the platform stay aligned with Belgium and Germany rollout assumptions.",
-            ].map((item) => (
-              <div
-                key={item}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-              >
-                <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                  {item}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-5 rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4">
-            <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
-              Need governance controls instead?
-            </p>
-            <p className="mt-2 font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-              Consent visibility, export requests, and deletion review actions live in the privacy route so this page can stay focused on profile maintenance.
-            </p>
-            <Link
-              to="/dashboard/privacy"
-              className="mt-3 inline-flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 hover:underline"
-            >
-              Open privacy controls
-              <Search className="h-4 w-4" />
-            </Link>
-          </div>
-        </DashboardPanel>
-      </section>
+      <DashboardPanel
+        title="Profile details"
+        className="h-full"
+      >
+        <ReaderProfileForm
+          form={form}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
+          isSaving={isSaving}
+          error={error}
+          successMessage={successMessage}
+        />
+      </DashboardPanel>
     </div>
   );
 }
@@ -636,7 +560,6 @@ export function ReaderPrivacyPage() {
     return (
       <DashboardEmptyState
         title="Sign in to use privacy and governance controls."
-        description="Export requests, deletion review, and consent visibility are account-specific actions, so they only make sense inside the authenticated reader workspace."
         action={
           <Link
             to="/login?journey=individual"
@@ -716,13 +639,12 @@ export function ReaderPrivacyPage() {
       <DashboardPageHeader
         eyebrow="Reader privacy"
         title="Consent visibility and data-governance actions"
-        description="This route should make GDPR-style rights concrete inside the product by showing what the platform stores, what consent means, and how a subscriber can request export or deletion review."
+        description=""
       />
 
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <DashboardPanel
           title="Consent settings"
-          description="Keep marketing preferences separate from essential privacy and delivery coordination visibility."
           className="h-full"
         >
           <AccountConsentForm
@@ -738,7 +660,6 @@ export function ReaderPrivacyPage() {
 
         <DashboardPanel
           title="Governance requests"
-          description="Export and deletion review should be discoverable without forcing the user to leave the dashboard."
           className="h-full"
         >
           <GovernanceRequestPanel
@@ -754,92 +675,6 @@ export function ReaderPrivacyPage() {
             successMessage={requestSuccess}
           />
         </DashboardPanel>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
-        <DashboardPanel
-          title="Privacy principles in the account context"
-          description="The dashboard view should translate policy text into operationally understandable explanations."
-          className="h-full"
-        >
-          <div className="grid gap-4">
-            {privacyPrinciples.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-              >
-                <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
-                  {item.title}
-                </p>
-                <p className="mt-2 font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                  {item.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </DashboardPanel>
-
-        <div className="space-y-4">
-          <DashboardPanel
-            title="Reader rights"
-            description="Rights should be visible as actions and expectations, not buried inside a static policy page."
-          >
-            <ul className="space-y-3">
-              {privacyRights.map((right) => (
-                <li key={right} className="flex gap-3">
-                  <span className="mt-2 h-2.5 w-2.5 rounded-full bg-stone-900" />
-                  <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                    {right}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </DashboardPanel>
-
-          <DashboardPanel
-            title="Retention notes"
-            description="Deletion requests may still require operational or legal review depending on the data category."
-          >
-            <div className="space-y-3">
-              {privacyRetentionNotes.map((note) => (
-                <div
-                  key={note}
-                  className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-                >
-                  <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                    {note}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </DashboardPanel>
-
-          <DashboardPanel
-            title="Privacy contacts"
-            description="Some governance requests will still need a human follow-up path alongside self-service actions."
-          >
-            <div className="space-y-2 font-sans text-sm text-stone-700 dark:text-stone-300">
-              <p>
-                Privacy:{" "}
-                <a
-                  href={`mailto:${policyContacts.privacyEmail}`}
-                  className="text-stone-900 underline-offset-4 hover:underline dark:text-stone-100"
-                >
-                  {policyContacts.privacyEmail}
-                </a>
-              </p>
-              <p>
-                Support:{" "}
-                <a
-                  href={`mailto:${policyContacts.supportEmail}`}
-                  className="text-stone-900 underline-offset-4 hover:underline dark:text-stone-100"
-                >
-                  {policyContacts.supportEmail}
-                </a>
-              </p>
-            </div>
-          </DashboardPanel>
-        </div>
       </section>
     </div>
   );

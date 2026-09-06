@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
   Building2,
-  CheckCircle2,
   Mail,
   MapPin,
   Newspaper,
@@ -22,30 +21,8 @@ import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 
 const journeyOptions = [
-  {
-    key: "individual",
-    icon: Newspaper,
-    title: "Individual reader",
-    detail:
-      "One subscriber, one primary delivery destination, and a standard self-service subscription flow.",
-    checkpoints: [
-      "Personal reading access and saved history",
-      "Monthly or yearly subscriber billing",
-      "Home or personal office delivery details",
-    ],
-  },
-  {
-    key: "business",
-    icon: Building2,
-    title: "Company account",
-    detail:
-      "Operational setup for bulk newspaper orders, delivery locations, and invoice-friendly billing.",
-    checkpoints: [
-      "Company profile and primary contact capture",
-      "Bulk order and location planning context",
-      "Business dashboard routing after onboarding",
-    ],
-  },
+  { key: "individual", icon: Newspaper, title: "Individual reader" },
+  { key: "business", icon: Building2, title: "Company account" },
 ];
 
 export default function Register() {
@@ -66,9 +43,6 @@ export default function Register() {
   const { checkUserAuth } = useAuth();
   const journeyKey =
     searchParams.get("journey") === "business" ? "business" : "individual";
-  const selectedJourney =
-    journeyOptions.find((option) => option.key === journeyKey) ||
-    journeyOptions[0];
   const isBusinessJourney = journeyKey === "business";
 
   const updateField = (field, value) => {
@@ -131,16 +105,6 @@ export default function Register() {
             <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-heritage/10 blur-3xl" />
             <div className="relative">
               <p className="category-label">Account setup</p>
-              <h1 className="mt-4 max-w-xl font-display text-4xl font-black leading-tight text-ink md:text-5xl">
-                Open the right subscription path before the dashboard begins.
-              </h1>
-              <p className="mt-5 max-w-2xl font-body text-base leading-relaxed text-redacted md:text-lg">
-                Sign-up needs to capture different context for a personal
-                subscriber and a company account. Choose the path that matches
-                how newspapers will be billed, delivered, and managed.
-              </p>
-
-              <div className="newspaper-rule-double my-8" />
 
               <div className="grid gap-4 sm:grid-cols-2">
                 {journeyOptions.map((option) => {
@@ -171,40 +135,9 @@ export default function Register() {
                           </p>
                         </div>
                       </div>
-                      <p className="mt-4 font-body text-sm leading-6 text-redacted">
-                        {option.detail}
-                      </p>
                     </button>
                   );
                 })}
-              </div>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                {selectedJourney.checkpoints.map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-[1.25rem] border border-stone-300/50 bg-paper/80 p-4"
-                  >
-                    <CheckCircle2 className="h-5 w-5 text-heritage" />
-                    <p className="mt-3 font-body text-sm leading-6 text-ink">
-                      {item}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 rounded-[1.5rem] border border-stone-300/50 bg-paper/80 p-6">
-                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.28em] text-heritage">
-                  Data note
-                </p>
-                <p className="mt-4 font-body text-lg leading-relaxed text-ink">
-                  We capture account type, delivery context, and consent early
-                  so billing, route planning, and dashboard access stay aligned
-                  with the real customer journey.
-                </p>
-                <p className="mt-3 font-sans text-xs uppercase tracking-[0.24em] text-redacted">
-                  Onboarding Routing
-                </p>
               </div>
             </div>
           </section>
@@ -229,12 +162,6 @@ export default function Register() {
                 )}
               </div>
             </div>
-
-            <p className="mt-4 font-body text-sm leading-6 text-redacted">
-              {isBusinessJourney
-                ? "Capture the primary contact, company name, and delivery planning details required for bulk account onboarding."
-                : "Start a personal subscriber account for digital reading, payment management, and upcoming delivery access."}
-            </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
               {error ? (

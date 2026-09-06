@@ -1,10 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
-import {
-  subscriptionPlanFacts,
-  subscriptionPlans,
-} from "@/lib/demoData";
+import { subscriptionPlans } from "@/lib/demoData";
 import SectionHeader from "@/components/newspaper/SectionHeader";
 import { useLanguage } from "@/lib/LanguageContext";
 
@@ -18,22 +15,6 @@ export default function SubscriptionSection() {
           title="Subscription Plans"
           viewAllLink="/subscriptions"
         />
-
-        <div className="mb-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {subscriptionPlanFacts.map((fact) => (
-            <article
-              key={fact.title}
-              className="rounded-[1.1rem] border border-stone-300/50 bg-paper p-5 shadow-[0_12px_30px_rgba(0,0,0,0.04)]"
-            >
-              <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">
-                {t(fact.title)}
-              </p>
-              <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
-                {t(fact.detail)}
-              </p>
-            </article>
-          ))}
-        </div>
 
         <div className="grid grid-cols-1 gap-7 md:grid-cols-3 lg:gap-6">
           {subscriptionPlans.map((plan) => (

@@ -1,25 +1,17 @@
 import React, { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import {
-  AlertTriangle,
-  Building2,
-  Lock,
-  Newspaper,
-  Loader2,
-} from "lucide-react";
+import { AlertTriangle, Lock, Loader2 } from "lucide-react";
 import { appClient } from "@/api/appClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/components/AuthLayout";
-import { authJourneyContent } from "@/lib/AuthContext";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const resetToken = searchParams.get("token");
   const journeyKey =
     searchParams.get("journey") === "business" ? "business" : "individual";
-  const journey = authJourneyContent[journeyKey];
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -53,17 +45,6 @@ export default function ResetPassword() {
         title="Invalid reset link"
         subtitle="This password reset link is missing, expired, or no longer matches the selected account journey."
         panelTitle="Request another link"
-        panelSubtitle="Start over from the recovery page so we can send you back through the correct account path."
-        aside={
-          <div className="rounded-[1.5rem] border border-stone-300/50 bg-paper/80 p-5">
-            <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.22em] text-heritage">
-              Account path
-            </p>
-            <p className="mt-3 font-body text-base leading-7 text-ink">
-              {journey.description}
-            </p>
-          </div>
-        }
         footer={
           <Link
             to={`/forgot-password?journey=${journeyKey}`}
@@ -89,33 +70,6 @@ export default function ResetPassword() {
       subtitle="Set a fresh password before returning to your account workspace."
       panelTitle={
         journeyKey === "business" ? "Business credentials" : "Reader credentials"
-      }
-      panelSubtitle={
-        journeyKey === "business"
-          ? "Choose a password for the company account used for invoices, shipments, and team-level delivery oversight."
-          : "Choose a password for the personal account used for reading access, subscription history, and home delivery tracking."
-      }
-      aside={
-        <div className="rounded-[1.5rem] border border-stone-300/50 bg-paper/80 p-5">
-          <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.22em] text-heritage">
-            Journey
-          </p>
-          <div className="mt-3 flex items-start gap-3">
-            {journeyKey === "business" ? (
-              <Building2 className="mt-1 h-5 w-5 text-heritage" />
-            ) : (
-              <Newspaper className="mt-1 h-5 w-5 text-heritage" />
-            )}
-            <div>
-              <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
-                {journey.label}
-              </p>
-              <p className="mt-2 font-body text-sm leading-6 text-ink">
-                {journey.description}
-              </p>
-            </div>
-          </div>
-        </div>
       }
       footer={
         <Link

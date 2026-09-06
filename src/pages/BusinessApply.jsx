@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, CircleAlert, FileText, ShieldCheck } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import CheckoutProgress from "@/components/forms/CheckoutProgress";
-import BusinessIntakeChecklist from "@/components/forms/BusinessIntakeChecklist";
 import BusinessRequestSummary from "@/components/forms/BusinessRequestSummary";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/AuthContext";
 import { appParams } from "@/lib/app-params";
 import {
-  businessApplyBenefits,
   businessApplySteps,
   businessIntakeOptions,
-  businessOnboardingSteps,
 } from "@/lib/demoData";
 
 const businessLeadStorageKey = `${appParams.storagePrefix}_business_leads`;
@@ -148,44 +145,6 @@ export default function BusinessApply() {
         <div className="absolute inset-x-0 top-0 h-[24rem] bg-[radial-gradient(circle_at_top,_rgba(72,60,50,0.1),_transparent_62%)]" />
         <div className="mx-auto max-w-7xl px-4 py-12 lg:py-16">
           <section className="grid gap-8 lg:grid-cols-[1fr_0.95fr]">
-            <div className="rounded-[2rem] border border-stone-300/50 bg-vellum/75 p-8 shadow-[0_25px_80px_rgba(40,30,20,0.08)]">
-              <p className="category-label">Business onboarding</p>
-              <h1 className="mt-4 font-display text-4xl font-black leading-tight text-ink md:text-5xl">
-                Start a company quote request with the operational details the rollout will actually need.
-              </h1>
-              <p className="mt-5 max-w-3xl font-body text-base leading-relaxed text-redacted md:text-lg">
-                This route is separate from the consumer checkout because business accounts depend on copy volume,
-                delivery footprint, invoicing structure, and commercial follow-up before activation.
-              </p>
-
-              <div className="mt-8">
-                <BusinessIntakeChecklist items={businessApplyBenefits} />
-              </div>
-
-              <div className="mt-8 rounded-[1.3rem] border border-stone-300/50 bg-paper/80 p-5">
-                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.24em] text-heritage">
-                  Onboarding sequence
-                </p>
-                <div className="mt-4 space-y-3">
-                  {businessOnboardingSteps.map((step, index) => (
-                    <div key={step.title} className="flex items-start gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-heritage font-sans text-xs font-bold text-paper">
-                        {index + 1}
-                      </span>
-                      <div>
-                        <p className="font-heading text-base font-bold text-ink">
-                          {step.title}
-                        </p>
-                        <p className="mt-1 font-body text-sm leading-6 text-redacted">
-                          {step.detail}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
             <BusinessRequestSummary
               form={form}
               selectedRequestType={selectedRequestType}
@@ -208,9 +167,6 @@ export default function BusinessApply() {
                 <h2 className="mt-2 font-display text-2xl font-black text-ink">
                   Organization profile
                 </h2>
-                <p className="mt-3 font-body text-sm leading-6 text-redacted">
-                  Capture who is requesting the service, what type of business need this is, and which operating scope applies.
-                </p>
 
                 <div className="mt-6 grid gap-5 md:grid-cols-2">
                   <div className="space-y-2">
@@ -305,9 +261,6 @@ export default function BusinessApply() {
                 <h2 className="mt-2 font-display text-2xl font-black text-ink">
                   Fulfillment footprint
                 </h2>
-                <p className="mt-3 font-body text-sm leading-6 text-redacted">
-                  Outline the delivery complexity before the commercial team starts pricing assumptions.
-                </p>
 
                 <div className="mt-6 grid gap-5 md:grid-cols-2">
                   <div className="space-y-2">
@@ -365,9 +318,6 @@ export default function BusinessApply() {
                 <h2 className="mt-2 font-display text-2xl font-black text-ink">
                   Billing and quote readiness
                 </h2>
-                <p className="mt-3 font-body text-sm leading-6 text-redacted">
-                  Confirm invoice expectations and any details that will matter once pricing and rollout are discussed.
-                </p>
 
                 <div className="mt-6 grid gap-5">
                   <div className="space-y-2">
@@ -458,20 +408,6 @@ export default function BusinessApply() {
                   </div>
                 ) : null}
 
-                <div className="mt-5 rounded-[1.2rem] border border-stone-300/50 bg-paper/75 p-5">
-                  <div className="flex items-start gap-3">
-                    <ShieldCheck className="mt-1 h-5 w-5 text-heritage" />
-                    <div>
-                      <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
-                        Intake note
-                      </p>
-                      <p className="mt-2 font-body text-sm leading-6 text-redacted">
-                        This milestone stores a mocked business request locally so the success route can reflect a realistic quote submission without needing a live backend intake endpoint yet.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <Button
                     type="submit"
@@ -494,35 +430,6 @@ export default function BusinessApply() {
             </div>
           </form>
 
-          <section className="mt-6 rounded-[1.2rem] border border-amber-200 bg-amber-50/80 p-5">
-            <div className="flex items-start gap-3">
-              <CircleAlert className="mt-1 h-5 w-5 text-amber-700" />
-              <p className="font-body text-sm leading-6 text-amber-900">
-                This route is a frontend onboarding stub for milestone work. It demonstrates a dedicated B2B intake flow with organization details, quote context, fulfillment inputs, and submission states before a live `/api/business/leads` backend exists.
-              </p>
-            </div>
-          </section>
-
-          <section className="mt-6 rounded-[1.4rem] border border-stone-300/60 bg-vellum/75 p-6">
-            <div className="flex items-start gap-3">
-              <FileText className="mt-1 h-5 w-5 text-heritage" />
-              <div>
-                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.24em] text-heritage">
-                  Reader subscriptions
-                </p>
-                <p className="mt-2 font-body text-sm leading-6 text-redacted">
-                  If your need is a personal subscription rather than organizational rollout, use the reader plan and checkout flow instead of the company intake path.
-                </p>
-                <Link
-                  to="/subscriptions"
-                  className="mt-3 inline-flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage hover:underline"
-                >
-                  Compare reader plans
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-          </section>
         </div>
       </main>
       <Footer />

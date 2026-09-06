@@ -13,7 +13,6 @@ import {
   businessTeamInviteCards,
   businessTeamMetrics,
   businessTeamRows,
-  businessTeamRules,
 } from "@/lib/demoData";
 
 const teamColumns = [
@@ -115,23 +114,6 @@ export default function BusinessTeam() {
         </DashboardPanel>
       </section>
 
-      <DashboardPanel
-        title="Team operating rules"
-        description="The account overview should stay concise, so access expectations and role boundaries live here instead."
-      >
-        <div className="grid gap-4 sm:grid-cols-3">
-          {businessTeamRules.map((item) => (
-            <div
-              key={item}
-              className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-            >
-              <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                {item}
-              </p>
-            </div>
-          ))}
-        </div>
-      </DashboardPanel>
     </div>
   );
 }

@@ -39,7 +39,6 @@ export default function Delivery() {
         <DashboardPageHeader
           eyebrow="Public delivery view"
           title="Follow the newspaper delivery cycle"
-          description="The public delivery page now uses the same operational component language as the reader workspace so shipment status feels consistent across surfaces."
           action={
             <Link
               to="/dashboard/deliveries"
@@ -70,30 +69,23 @@ export default function Delivery() {
         <section className="mt-6 grid gap-4 xl:grid-cols-[1fr_0.95fr]">
           <DeliveryTimelinePanel
             title="Route progress"
-            description="The same timeline structure used in the reader workspace is now visible publicly, keeping the delivery story consistent."
             items={timelineItems}
           />
           <DeliveryMapPanel
             title="Coverage visual"
-            description="A richer route map can follow later without changing the public page structure again."
             imageSrc={IMAGES.delivery}
             imageAlt="Delivery route illustration"
-            tags={["Belgium routes", "Germany routes", "Fleet-linked placeholder"]}
-            caption="This page stays public, but the same shipment structure will also power the deeper reader, business, and admin logistics views."
           />
         </section>
 
         <section className="mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
           <DeliveryHistoryTable
             title="Recent delivery history"
-            description="Delivered editions stay visible here as a public-facing proof of cadence and route consistency."
             rows={readerDeliveryHistoryRows}
           />
           <ShipmentIssuePanel
             title="Route health and issue states"
-            description="The public route keeps the same operational issue language as the reader workspace instead of hiding it inside generic policy notes."
             items={readerDeliveryIssueStates}
-            footer="Active print subscribers are grouped into shared regional dispatch cycles, and future live fleet signals can replace these placeholders without redesigning the page."
           />
         </section>
       </main>

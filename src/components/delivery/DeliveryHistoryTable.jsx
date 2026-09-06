@@ -19,7 +19,7 @@ const columns = [
 
 export default function DeliveryHistoryTable({
   title,
-  description,
+  description = null,
   rows,
 }) {
   return (

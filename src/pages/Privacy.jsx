@@ -1,9 +1,7 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import {
-  businessGovernanceActionNotes,
   policyContacts,
   privacyPrinciples,
   privacyRetentionNotes,
@@ -20,13 +18,6 @@ export default function Privacy() {
           <h1 className="mt-3 font-display text-4xl font-black leading-tight text-ink md:text-5xl">
             Privacy needs to explain billing, delivery, and consent together.
           </h1>
-          <p className="mt-4 max-w-3xl font-body text-lg leading-relaxed text-redacted">
-            This platform collects more than a normal news login because it also
-            manages recurring billing, physical newspaper delivery, and account
-            routing across Belgium and Germany. That means the privacy story has
-            to be explicit about payment handling, delivery-address sharing, and
-            GDPR rights.
-          </p>
           <p className="meta-text mt-4">Last updated: August 11, 2026</p>
         </section>
 
@@ -55,12 +46,6 @@ export default function Privacy() {
               <h2 className="mt-2 font-display text-3xl font-black text-ink">
                 Readers and business contacts need clear self-service rights.
               </h2>
-              <p className="mt-4 font-body text-base leading-relaxed text-redacted">
-                Because the service handles EU personal data, the account
-                experience needs a clear path for access, export, deletion
-                requests, and transparency around delivery-partner or payment
-                processor involvement.
-              </p>
             </div>
 
             <div className="rounded-[1.2rem] border border-stone-300/50 bg-paper p-6 shadow-[0_12px_28px_rgba(0,0,0,0.04)]">
@@ -123,89 +108,6 @@ export default function Privacy() {
                 </p>
               </div>
             </article>
-          </div>
-        </section>
-
-        <section className="bg-vellum py-16">
-          <div className="mx-auto max-w-7xl px-4">
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-              <div>
-                <p className="category-label">Self-service controls</p>
-                <h2 className="mt-2 font-display text-3xl font-black text-ink">
-                  Privacy should also be actionable inside the account workspace.
-                </h2>
-                <p className="mt-4 font-body text-base leading-relaxed text-redacted">
-                  The reader dashboard and business workspace now expose
-                  account-level privacy controls so both subscribers and company
-                  contacts can review consent state, request export, and start
-                  retention or deletion review without relying only on static
-                  policy copy.
-                </p>
-              </div>
-
-              <div className="rounded-[1.2rem] border border-stone-300/50 bg-paper p-6 shadow-[0_12px_28px_rgba(0,0,0,0.04)]">
-                <div className="space-y-4">
-                  <div className="rounded-[1rem] border border-stone-300/50 bg-vellum p-4">
-                    <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
-                      Reader profile
-                    </p>
-                    <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                      Update contact and delivery data used for billing support
-                      and shipment routing.
-                    </p>
-                  </div>
-                  <div className="rounded-[1rem] border border-stone-300/50 bg-vellum p-4">
-                    <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
-                      Privacy and governance
-                    </p>
-                    <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                      Review consent settings, request export, and start a
-                      deletion review from the dashboard privacy route.
-                    </p>
-                  </div>
-                  <div className="rounded-[1rem] border border-stone-300/50 bg-vellum p-4">
-                    <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
-                      Business settings
-                    </p>
-                    <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                      Company account owners can manage logistics-sharing
-                      consent, request company export packages, and review
-                      retention guidance inside the business workspace.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-6 rounded-[1rem] border border-stone-300/50 bg-vellum p-4">
-                  <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
-                    Admin and support review
-                  </p>
-                  <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                    {businessGovernanceActionNotes[2].detail}
-                  </p>
-                </div>
-
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <Link
-                    to="/dashboard/profile"
-                    className="inline-flex items-center justify-center rounded-2xl bg-heritage px-5 py-3 font-sans text-xs font-bold uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ink"
-                  >
-                    Open profile route
-                  </Link>
-                  <Link
-                    to="/dashboard/privacy"
-                    className="inline-flex items-center justify-center rounded-2xl border-2 border-ink px-5 py-3 font-sans text-xs font-bold uppercase tracking-[0.18em] text-ink transition-colors hover:bg-ink hover:text-paper"
-                  >
-                    Open privacy controls
-                  </Link>
-                  <Link
-                    to="/business-dashboard/settings"
-                    className="inline-flex items-center justify-center rounded-2xl border-2 border-heritage px-5 py-3 font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage transition-colors hover:bg-heritage hover:text-paper"
-                  >
-                    Open business settings
-                  </Link>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
       </main>

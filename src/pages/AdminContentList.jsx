@@ -1,18 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, CirclePlus, PenSquare } from "lucide-react";
+import { CalendarDays, CirclePlus } from "lucide-react";
 import {
   DashboardActivityTable,
   DashboardFilterBar,
   DashboardMetricCard,
   DashboardPageHeader,
-  DashboardPanel,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import {
   adminContentMetrics,
   adminContentRows,
-  adminContentTemplates,
 } from "@/lib/demoData";
 
 const contentColumns = [
@@ -73,43 +71,13 @@ export default function AdminContentList() {
         ))}
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <section>
         <DashboardActivityTable
           title="Article states"
           description="Editorial teams should be able to scan status and publish timing without opening each story first."
           columns={contentColumns}
           rows={adminContentRows}
         />
-
-        <DashboardPanel
-          title="Sector-aware templates"
-          description="Template differences should stay visible because politics, business, sports, and events do not share identical editorial fields."
-          className="h-full"
-        >
-          <div className="space-y-4">
-            {adminContentTemplates.map((template) => (
-              <Link
-                key={template.id}
-                to={`/admin/content/${template.sampleId}`}
-                className="block rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4 transition hover:border-stone-300 hover:bg-white"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
-                      {template.label}
-                    </p>
-                    <p className="mt-2 font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-                      {template.detail}
-                    </p>
-                  </div>
-                  <div className="dashboard-icon-badge flex h-10 w-10 items-center justify-center">
-                    <PenSquare className="h-4 w-4" />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </DashboardPanel>
       </section>
     </div>
   );

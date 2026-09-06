@@ -25,9 +25,6 @@ export default function BusinessContactSection() {
               Dedicated Business Contact
             </h2>
           </div>
-          <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
-            Talk to sales, billing, or rollout planning from one place.
-          </p>
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowRight, CircleAlert, LockKeyhole, ShieldCheck } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import CheckoutProgress from "@/components/forms/CheckoutProgress";
@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { appParams } from "@/lib/app-params";
 import { useAuth } from "@/lib/AuthContext";
 import {
-  readerCheckoutBenefits,
   readerCheckoutPlans,
   readerCheckoutSteps,
   readerPaymentMethods,
@@ -269,29 +268,6 @@ export default function SubscribeCheckout() {
         <div className="absolute inset-x-0 top-0 h-[24rem] bg-[radial-gradient(circle_at_top,_rgba(72,60,50,0.1),_transparent_62%)]" />
         <div className="mx-auto max-w-7xl px-4 py-12 lg:py-16">
           <section className="grid gap-8 lg:grid-cols-[1fr_0.95fr]">
-            <div className="rounded-[2rem] border border-stone-300/50 bg-vellum/75 p-8 shadow-[0_25px_80px_rgba(40,30,20,0.08)]">
-              <p className="category-label">Reader checkout</p>
-              <h1 className="mt-4 font-display text-4xl font-black leading-tight text-ink md:text-5xl">
-                Finish a reader subscription with the real billing and delivery rules visible.
-              </h1>
-              <p className="mt-5 max-w-3xl font-body text-base leading-relaxed text-redacted md:text-lg">
-                This checkout path is for individual readers only. Choose a reader plan,
-                confirm monthly or yearly billing, provide delivery details, and complete
-                a mocked payment return that mirrors a production subscription handoff.
-              </p>
-
-              <div className="mt-8 space-y-3">
-                {readerCheckoutBenefits.map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-[1.2rem] border border-stone-300/50 bg-paper/80 p-4"
-                  >
-                    <p className="font-body text-sm leading-6 text-ink">{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <SubscriptionOrderSummary
               plan={selectedPlan}
               billingCycle={billingCycle}
@@ -320,9 +296,6 @@ export default function SubscribeCheckout() {
                     </h2>
                   </div>
                 </div>
-                <p className="mt-3 font-body text-sm leading-6 text-redacted">
-                  Monthly and yearly reader billing are separate from the fixed two-week print cadence.
-                </p>
 
                 <div className="mt-6">
                   <ReaderPlanPicker
@@ -342,9 +315,6 @@ export default function SubscribeCheckout() {
                 <h2 className="mt-2 font-display text-2xl font-black text-ink">
                   Contact and delivery
                 </h2>
-                <p className="mt-3 font-body text-sm leading-6 text-redacted">
-                  Delivery details help the platform coordinate shipment routing and account support, even when the selected plan is digital-only today.
-                </p>
 
                 <div className="mt-6 grid gap-5 md:grid-cols-2">
                   <div className="space-y-2">
@@ -423,9 +393,6 @@ export default function SubscribeCheckout() {
                 <h2 className="mt-2 font-display text-2xl font-black text-ink">
                   Payment selection
                 </h2>
-                <p className="mt-3 font-body text-sm leading-6 text-redacted">
-                  Card details are expected to be vaulted by a PCI-compliant processor, so this frontend mock only captures the payment path and a safe reference.
-                </p>
 
                 <div className="mt-6 space-y-4">
                   {readerPaymentMethods.map((method) => {
@@ -554,20 +521,6 @@ export default function SubscribeCheckout() {
                   </div>
                 ) : null}
 
-                <div className="mt-5 rounded-[1.2rem] border border-stone-300/50 bg-paper/75 p-5">
-                  <div className="flex items-start gap-3">
-                    <ShieldCheck className="mt-1 h-5 w-5 text-heritage" />
-                    <div>
-                      <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
-                        Payment note
-                      </p>
-                      <p className="mt-2 font-body text-sm leading-6 text-redacted">
-                        This demo frontend simulates a processor return rather than charging a real card. In production, the platform should store only the payment reference, not raw card data.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <Button
                     type="submit"
@@ -590,37 +543,6 @@ export default function SubscribeCheckout() {
             </div>
           </form>
 
-          <section className="mt-10 rounded-[1.4rem] border border-stone-300/60 bg-vellum/75 p-6">
-            <div className="flex items-start gap-3">
-              <LockKeyhole className="mt-1 h-5 w-5 text-heritage" />
-              <div>
-                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.24em] text-heritage">
-                  Reader-only path
-                </p>
-                <p className="mt-2 font-body text-sm leading-6 text-redacted">
-                  Business and bulk subscriptions should not use this checkout. If you need volume pricing,
-                  consolidated invoicing, or multi-location delivery planning, use the business path instead.
-                </p>
-                <Link
-                  to="/business"
-                  className="mt-3 inline-flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage hover:underline"
-                >
-                  Compare business onboarding
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-          </section>
-
-          <section className="mt-6 rounded-[1.2rem] border border-amber-200 bg-amber-50/80 p-5">
-            <div className="flex items-start gap-3">
-              <CircleAlert className="mt-1 h-5 w-5 text-amber-700" />
-              <p className="font-body text-sm leading-6 text-amber-900">
-                This route is a frontend checkout stub for milestone work. It demonstrates plan selection,
-                address capture, payment method choice, validation, and a mocked payment return without contacting a live billing processor.
-              </p>
-            </div>
-          </section>
         </div>
       </main>
       <Footer />
