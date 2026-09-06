@@ -1,5 +1,13 @@
 import React from "react";
-import { Bell, CircleHelp, Home, LogOut, Search } from "lucide-react";
+import {
+  Bell,
+  CircleHelp,
+  Ellipsis,
+  Home,
+  LogOut,
+  Search,
+  X,
+} from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { dashboardWorkspaces } from "@/lib/dashboard-config";
@@ -30,11 +38,10 @@ const getSectionPillClass = (isActive) =>
     .filter(Boolean)
     .join(" ");
 
-const getMobileRailClass = (isActive) =>
+const getBottomNavClass = (isActive) =>
   [
-    "dashboard-mobile-rail-button",
-    "inline-flex min-w-[88px] items-center gap-2 px-3 py-2 font-sans text-xs font-medium",
-    isActive ? "dashboard-mobile-rail-button-active" : "",
+    "dashboard-bottom-nav-item",
+    isActive ? "dashboard-bottom-nav-item-active" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -42,6 +49,7 @@ const getMobileRailClass = (isActive) =>
 export default function DashboardShell({ workspaceKey, children }) {
   const workspace = dashboardWorkspaces[workspaceKey];
   const { user, logout } = useAuth();
+  const [moreOpen, setMoreOpen] = React.useState(false);
 
   if (!workspace) {
     return null;
@@ -148,25 +156,6 @@ export default function DashboardShell({ workspaceKey, children }) {
                 </div>
 
                 <nav
-                  className="dashboard-mobile-rail mt-4 overflow-x-auto md:hidden"
-                  aria-label={`${workspace.label} sections`}
-                >
-                  <ul className="flex min-w-max gap-2 pb-1">
-                    {workspace.sections.map((section) => (
-                      <li key={section.path}>
-                        <NavLink
-                          to={section.path}
-                          className={({ isActive }) => getMobileRailClass(isActive)}
-                        >
-                          <section.icon className="h-3.5 w-3.5" />
-                          <span>{section.label}</span>
-                        </NavLink>
-                      </li>
-                    ))}
-                  </ul>
-                </nav>
-
-                <nav
                   className="mt-5 hidden overflow-x-auto md:block"
                   aria-label={`${workspace.label} sections`}
                 >
@@ -188,12 +177,87 @@ export default function DashboardShell({ workspaceKey, children }) {
               <main
                 id="main-content"
                 tabIndex={-1}
-                className="dashboard-main space-y-6 px-4 py-5 focus:outline-none sm:px-6 sm:py-6"
+                className="dashboard-main space-y-6 px-4 pb-24 pt-5 focus:outline-none sm:px-6 sm:py-6 md:pb-6"
               >
                 {children}
               </main>
             </div>
           </div>
+
+          <nav
+            className="dashboard-bottom-nav md:hidden"
+            aria-label={`${workspace.label} mobile navigation`}
+          >
+            <div className="grid grid-cols-5 gap-1">
+              {workspace.sections.slice(0, 4).map((section) => (
+                <NavLink
+                  key={section.path}
+                  to={section.path}
+                  className={({ isActive }) => getBottomNavClass(isActive)}
+                  onClick={() => setMoreOpen(false)}
+                >
+                  <section.icon className="h-4 w-4" />
+                  <span>{section.label}</span>
+                </NavLink>
+              ))}
+              <button
+                type="button"
+                className={`dashboard-bottom-nav-item ${moreOpen ? "dashboard-bottom-nav-item-active" : ""}`}
+                onClick={() => setMoreOpen((open) => !open)}
+                aria-expanded={moreOpen}
+              >
+                {moreOpen ? <X className="h-4 w-4" /> : <Ellipsis className="h-4 w-4" />}
+                <span>More</span>
+              </button>
+            </div>
+          </nav>
+
+          {moreOpen ? (
+            <div className="dashboard-more-overlay md:hidden" role="presentation" onClick={() => setMoreOpen(false)}>
+              <div
+                className="dashboard-more-sheet"
+                role="dialog"
+                aria-modal="true"
+                aria-label="More workspace links"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <p className="dashboard-page-eyebrow font-sans text-[0.65rem] font-bold uppercase tracking-[0.2em]">
+                      Workspace menu
+                    </p>
+                    <h2 className="mt-1 font-display text-2xl font-black text-stone-900 dark:text-stone-100">
+                      More destinations
+                    </h2>
+                  </div>
+                  <button type="button" className="dashboard-utility-button flex h-10 w-10 items-center justify-center" onClick={() => setMoreOpen(false)} aria-label="Close more menu">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {workspace.sections.slice(4).map((section) => (
+                    <NavLink
+                      key={section.path}
+                      to={section.path}
+                      className={({ isActive }) => `dashboard-more-link ${isActive ? "dashboard-more-link-active" : ""}`}
+                      onClick={() => setMoreOpen(false)}
+                    >
+                      <section.icon className="h-4 w-4" />
+                      <span>{section.label}</span>
+                    </NavLink>
+                  ))}
+                  <NavLink to="/" className="dashboard-more-link" onClick={() => setMoreOpen(false)}>
+                    <Home className="h-4 w-4" />
+                    <span>Public site</span>
+                  </NavLink>
+                  <button type="button" className="dashboard-more-link text-rose-700" onClick={() => { setMoreOpen(false); logout(false); }}>
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign out</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

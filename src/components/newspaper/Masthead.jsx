@@ -1,13 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import {
   Search,
-  Menu,
   X,
   Globe,
   ChevronDown,
   ArrowRight,
   Clock3,
+  Home,
+  Newspaper,
+  Tags,
+  CreditCard,
+  Ellipsis,
 } from "lucide-react";
 import { NAV_LINKS, CATEGORIES } from "@/lib/constants";
 import DarkModeToggle from "@/components/DarkModeToggle";
@@ -20,6 +24,13 @@ const SOCIAL_LINKS = [
   { name: "TikTok", slug: "tiktok", href: "https://tiktok.com" },
   { name: "Instagram", slug: "instagram", href: "https://instagram.com" },
   { name: "X", slug: "x", href: "https://x.com" },
+];
+
+const MOBILE_PRIMARY_LINKS = [
+  { ...NAV_LINKS[0], icon: Home },
+  { ...NAV_LINKS[1], icon: Newspaper },
+  { ...NAV_LINKS[2], icon: Tags },
+  { ...NAV_LINKS[3], icon: CreditCard },
 ];
 
 export default function Masthead() {
@@ -182,10 +193,11 @@ export default function Masthead() {
   });
 
   return (
-    <header
-      id="masthead"
-      className="sticky top-0 z-50 overflow-visible border-b border-stone-300/40 bg-paper/95 backdrop-blur-sm"
-    >
+    <>
+      <header
+        id="masthead"
+        className="sticky top-0 z-50 overflow-visible border-b border-stone-300/40 bg-paper/95 backdrop-blur-sm"
+      >
       <div className="mx-auto max-w-7xl overflow-visible">
         <div
           className={`overflow-hidden border-b border-stone-300/30 transition-all duration-300 ${
@@ -278,18 +290,6 @@ export default function Masthead() {
                 >
                   {strings.signIn}
                 </Link>
-                <button
-                  onClick={toggleMenu}
-                   className="inline-flex h-10 w-10 items-center justify-center border border-stone-400 text-ink transition-colors hover:border-heritage hover:text-heritage md:hidden md:h-11 md:w-11"
-                  aria-label="Menu"
-                  aria-expanded={menuOpen}
-                >
-                  {menuOpen ? (
-                    <X className="h-5 w-5" />
-                  ) : (
-                    <Menu className="h-5 w-5" />
-                  )}
-                </button>
               </div>
             </div>
           </div>
@@ -415,33 +415,73 @@ export default function Masthead() {
             </ul>
           </div>
         </nav>
-        <HeritageOrnament className="h-8 w-full" />
         <div className="newspaper-rule" />
 
-        {menuOpen && (
-          <div className="border-t border-paper/20 bg-heritage md:hidden">
-            <div className="px-4 py-4">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setMenuOpen(false)}
-                  className="block border-b border-paper/20 py-3 font-sans text-sm font-semibold uppercase tracking-wider text-paper transition-colors hover:bg-paper hover:text-heritage"
-                >
+      </div>
+
+      <div className="masthead-ornament-strip" aria-hidden="true">
+        <HeritageOrnament className="h-8 w-full" />
+      </div>
+    </header>
+
+    <nav className="public-bottom-nav md:hidden" aria-label="Mobile site navigation">
+        <div className="grid grid-cols-5 gap-1">
+          {MOBILE_PRIMARY_LINKS.map((link) => {
+            const Icon = link.icon;
+            return (
+              <NavLink
+                key={link.path}
+                to={link.path}
+                onClick={() => setMenuOpen(false)}
+                className={({ isActive }) =>
+                  `public-bottom-nav-item ${isActive ? "public-bottom-nav-item-active" : ""}`
+                }
+              >
+                <Icon className="h-4 w-4" />
+                <span>{t(link.label)}</span>
+              </NavLink>
+            );
+          })}
+          <button
+            type="button"
+            className={`public-bottom-nav-item ${menuOpen ? "public-bottom-nav-item-active" : ""}`}
+            onClick={toggleMenu}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? <X className="h-4 w-4" /> : <Ellipsis className="h-4 w-4" />}
+            <span>{t("More")}</span>
+          </button>
+        </div>
+      </nav>
+
+      {menuOpen ? (
+        <div className="public-more-overlay md:hidden" role="presentation" onClick={() => setMenuOpen(false)}>
+          <div className="public-more-sheet" role="dialog" aria-modal="true" aria-label="More site links" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.2em] text-heritage">Explore</p>
+                <h2 className="mt-1 font-display text-2xl font-black text-ink">More from ንቐደም</h2>
+              </div>
+              <button type="button" className="public-more-close" onClick={() => setMenuOpen(false)} aria-label="Close more menu">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {NAV_LINKS.slice(4).map((link) => (
+                <Link key={link.path} to={link.path} onClick={() => setMenuOpen(false)} className="public-more-link">
                   {t(link.label)}
                 </Link>
               ))}
-              <Link
-                to="/login"
-                onClick={() => setMenuOpen(false)}
-                className="block py-3 font-sans text-sm font-medium uppercase tracking-wider text-paper/75 transition-colors hover:text-paper"
-              >
+              <Link to="/login" onClick={() => setMenuOpen(false)} className="public-more-link">
                 {strings.signIn}
+              </Link>
+              <Link to="/delivery" onClick={() => setMenuOpen(false)} className="public-more-link">
+                {t("Track Delivery")}
               </Link>
             </div>
           </div>
-        )}
-      </div>
-    </header>
+        </div>
+      ) : null}
+    </>
   );
 }
