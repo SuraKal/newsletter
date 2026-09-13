@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ReceiptText, ShieldCheck } from "lucide-react";
 import {
+  DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
@@ -9,11 +10,22 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { useTableQuery } from "@/lib/useTableQuery";
+import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import { businessInvoiceRows } from "@/lib/demoData";
 
 const invoiceColumns = [
-  { key: "invoice", label: "Invoice" },
+  {
+    key: "invoice",
+    label: "Invoice",
+    render: (value, row) => (
+      <Link
+        to={`/business-dashboard/invoices/${row.id}`}
+        className="font-medium text-stone-900 transition-colors hover:text-heritage dark:text-stone-100"
+      >
+        {value}
+      </Link>
+    ),
+  },
   { key: "scope", label: "Scope" },
   { key: "amount", label: "Amount" },
   {
@@ -29,6 +41,8 @@ const matchesSearch = (row, query) =>
   [row.invoice, row.scope, row.amount, row.status].some((value) =>
     String(value ?? "").toLowerCase().includes(query),
   );
+
+const invoiceFilterGroups = [{ key: "status", label: "Status" }];
 
 const relatedLinks = [
   { label: "Team", to: "/business-dashboard/team" },
@@ -46,7 +60,14 @@ const snapshotRows = [
 
 export default function BusinessInvoices() {
   const [query, setQuery] = useState("");
-  const table = useTableQuery({ rows: businessInvoiceRows, query, predicate: matchesSearch });
+  const { activeFilters, setFilter, clearFilters } = useTableFilters();
+  const table = useTableQuery({
+    rows: businessInvoiceRows,
+    query,
+    predicate: matchesSearch,
+    activeFilters,
+    filterGroups: invoiceFilterGroups,
+  });
 
   return (
     <div className="space-y-6">
@@ -73,7 +94,12 @@ export default function BusinessInvoices() {
         searchPlaceholder="Search invoice, purchase order, or billing note"
         searchValue={query}
         onSearchChange={setQuery}
-        resultCount={query.trim() ? table.total : null}
+        resultCount={query.trim() || table.hasActiveFilters ? table.total : null}
+        filterGroups={invoiceFilterGroups}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        filterOptions={table.filterOptions}
         filters={["Monthly consolidated invoice", "VAT-aware billing", "1 follow-up note"]}
         action={
           <Link
@@ -102,38 +128,45 @@ export default function BusinessInvoices() {
       </DashboardPanel>
 
       <DashboardPanel title="Invoice history" className="p-5 sm:p-6">
-        <div className="dashboard-table-wrap overflow-x-auto">
-          <table className="w-full min-w-[620px]">
-            <thead>
-              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                {invoiceColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {table.rows.map((row) => (
-                <tr key={row.id} className="border-b last:border-b-0">
+        {table.total ? (
+          <div className="dashboard-table-wrap overflow-x-auto">
+            <table className="w-full min-w-[620px]">
+              <thead>
+                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
                   {invoiceColumns.map((column) => (
-                    <td
+                    <th
                       key={column.key}
-                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
                     >
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : row[column.key]}
-                    </td>
+                      {column.label}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {table.rows.map((row) => (
+                  <tr key={row.id} className="border-b last:border-b-0">
+                    {invoiceColumns.map((column) => (
+                      <td
+                        key={column.key}
+                        className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                      >
+                        {column.render
+                          ? column.render(row[column.key], row)
+                          : row[column.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <DashboardEmptyState
+            title="No matching invoices"
+            description="Try clearing the status filter to see the full invoice history."
+          />
+        )}
         <DashboardPagination
           page={table.page}
           pageCount={table.pageCount}

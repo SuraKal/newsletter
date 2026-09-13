@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, CirclePlus } from "lucide-react";
 import {
+  DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
@@ -9,7 +10,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { useTableQuery } from "@/lib/useTableQuery";
+import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import { getAdminContentRows, getPlacementLabel } from "@/lib/content-store";
 
 const contentColumns = [
@@ -61,6 +62,11 @@ const matchesSearch = (row, query) =>
     (value) => String(value ?? "").toLowerCase().includes(query),
   );
 
+const contentFilterGroups = [
+  { key: "category", label: "Category" },
+  { key: "status", label: "State" },
+];
+
 const relatedLinks = [
   { label: "Schedule", to: "/admin/schedule" },
   { label: "Subscribers", to: "/admin/subscribers" },
@@ -73,7 +79,14 @@ const relatedLinks = [
 export default function AdminContentList() {
   const adminContentRows = getAdminContentRows();
   const [query, setQuery] = useState("");
-  const table = useTableQuery({ rows: adminContentRows, query, predicate: matchesSearch });
+  const { activeFilters, setFilter, clearFilters } = useTableFilters();
+  const table = useTableQuery({
+    rows: adminContentRows,
+    query,
+    predicate: matchesSearch,
+    activeFilters,
+    filterGroups: contentFilterGroups,
+  });
 
   const draftCount = adminContentRows.filter(
     (row) => row.status === "Draft",
@@ -110,7 +123,12 @@ export default function AdminContentList() {
         searchPlaceholder="Search headline, placement, or category"
         searchValue={query}
         onSearchChange={setQuery}
-        resultCount={query.trim() ? table.total : null}
+        resultCount={query.trim() || table.hasActiveFilters ? table.total : null}
+        filterGroups={contentFilterGroups}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        filterOptions={table.filterOptions}
         filters={[
           `${draftCount} drafts`,
           `${scheduledCount} scheduled`,
@@ -128,45 +146,54 @@ export default function AdminContentList() {
       />
 
       <DashboardPanel title="Article queue" className="p-5 sm:p-6">
-        <div className="dashboard-table-wrap overflow-x-auto">
-          <table className="w-full min-w-[620px]">
-            <thead>
-              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                {contentColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {table.rows.map((row) => (
-                <tr key={row.id} className="border-b last:border-b-0">
-                  {contentColumns.map((column) => (
-                    <td
-                      key={column.key}
-                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                    >
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : row[column.key]}
-                    </td>
+        {table.total ? (
+          <>
+            <div className="dashboard-table-wrap overflow-x-auto">
+              <table className="w-full min-w-[620px]">
+                <thead>
+                  <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
+                    {contentColumns.map((column) => (
+                      <th
+                        key={column.key}
+                        className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
+                      >
+                        {column.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {table.rows.map((row) => (
+                    <tr key={row.id} className="border-b last:border-b-0">
+                      {contentColumns.map((column) => (
+                        <td
+                          key={column.key}
+                          className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                        >
+                          {column.render
+                            ? column.render(row[column.key], row)
+                            : row[column.key]}
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <DashboardPagination
-          page={table.page}
-          pageCount={table.pageCount}
-          total={table.total}
-          pageSize={table.pageSize}
-          onPageChange={table.setPage}
-        />
+                </tbody>
+              </table>
+            </div>
+            <DashboardPagination
+              page={table.page}
+              pageCount={table.pageCount}
+              total={table.total}
+              pageSize={table.pageSize}
+              onPageChange={table.setPage}
+            />
+          </>
+        ) : (
+          <DashboardEmptyState
+            title="No matching articles"
+            description="Try clearing the category or state filters to see the full publishing queue."
+          />
+        )}
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

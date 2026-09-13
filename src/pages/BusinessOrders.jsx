@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { CirclePlus, Truck } from "lucide-react";
 import {
+  DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
@@ -9,11 +10,22 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { useTableQuery } from "@/lib/useTableQuery";
+import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import { businessOrderRows } from "@/lib/demoData";
 
 const orderColumns = [
-  { key: "order", label: "Order plan" },
+  {
+    key: "order",
+    label: "Order plan",
+    render: (value, row) => (
+      <Link
+        to={`/business-dashboard/orders/${row.id}`}
+        className="font-medium text-stone-900 transition-colors hover:text-heritage dark:text-stone-100"
+      >
+        {value}
+      </Link>
+    ),
+  },
   { key: "copies", label: "Copies" },
   { key: "cadence", label: "Cadence" },
   {
@@ -30,6 +42,11 @@ const matchesSearch = (row, query) =>
     String(value ?? "").toLowerCase().includes(query),
   );
 
+const orderFilterGroups = [
+  { key: "status", label: "Status" },
+  { key: "cadence", label: "Cadence" },
+];
+
 const relatedLinks = [
   { label: "Team", to: "/business-dashboard/team" },
   { label: "Invoices", to: "/business-dashboard/invoices" },
@@ -40,7 +57,14 @@ const relatedLinks = [
 
 export default function BusinessOrders() {
   const [query, setQuery] = useState("");
-  const table = useTableQuery({ rows: businessOrderRows, query, predicate: matchesSearch });
+  const { activeFilters, setFilter, clearFilters } = useTableFilters();
+  const table = useTableQuery({
+    rows: businessOrderRows,
+    query,
+    predicate: matchesSearch,
+    activeFilters,
+    filterGroups: orderFilterGroups,
+  });
 
   return (
     <div className="space-y-6">
@@ -67,7 +91,12 @@ export default function BusinessOrders() {
         searchPlaceholder="Search order plan, cadence, or destination set"
         searchValue={query}
         onSearchChange={setQuery}
-        resultCount={query.trim() ? table.total : null}
+        resultCount={query.trim() || table.hasActiveFilters ? table.total : null}
+        filterGroups={orderFilterGroups}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        filterOptions={table.filterOptions}
         filters={["475 copies recurring", "Biweekly print cycle", "Regional Team pricing"]}
         action={
           <button
@@ -81,38 +110,45 @@ export default function BusinessOrders() {
       />
 
       <DashboardPanel title="Recurring order plans" className="p-5 sm:p-6">
-        <div className="dashboard-table-wrap overflow-x-auto">
-          <table className="w-full min-w-[620px]">
-            <thead>
-              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                {orderColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {table.rows.map((row) => (
-                <tr key={row.id} className="border-b last:border-b-0">
+        {table.total ? (
+          <div className="dashboard-table-wrap overflow-x-auto">
+            <table className="w-full min-w-[620px]">
+              <thead>
+                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
                   {orderColumns.map((column) => (
-                    <td
+                    <th
                       key={column.key}
-                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
                     >
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : row[column.key]}
-                    </td>
+                      {column.label}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {table.rows.map((row) => (
+                  <tr key={row.id} className="border-b last:border-b-0">
+                    {orderColumns.map((column) => (
+                      <td
+                        key={column.key}
+                        className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                      >
+                        {column.render
+                          ? column.render(row[column.key], row)
+                          : row[column.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <DashboardEmptyState
+            title="No matching order plans"
+            description="Try clearing the status or cadence filters to see the full recurring plan set."
+          />
+        )}
         <DashboardPagination
           page={table.page}
           pageCount={table.pageCount}

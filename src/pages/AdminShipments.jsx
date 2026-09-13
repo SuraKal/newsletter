@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Users } from "lucide-react";
 import {
+  DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
@@ -9,11 +10,22 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { useTableQuery } from "@/lib/useTableQuery";
+import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import { adminShipmentRows } from "@/lib/demoData";
 
 const shipmentColumns = [
-  { key: "shipmentId", label: "Run ID" },
+  {
+    key: "shipmentId",
+    label: "Run ID",
+    render: (value, row) => (
+      <Link
+        to={`/admin/shipments/${row.id}`}
+        className="font-medium text-stone-900 transition-colors hover:text-heritage dark:text-stone-100"
+      >
+        {value}
+      </Link>
+    ),
+  },
   { key: "label", label: "Label" },
   { key: "route", label: "Route" },
   { key: "scope", label: "Scope" },
@@ -37,6 +49,11 @@ const matchesSearch = (row, query) =>
     row.eta,
   ].some((value) => String(value ?? "").toLowerCase().includes(query));
 
+const shipmentFilterGroups = [
+  { key: "status", label: "State" },
+  { key: "route", label: "Route" },
+];
+
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
   { label: "Schedule", to: "/admin/schedule" },
@@ -48,7 +65,14 @@ const relatedLinks = [
 
 export default function AdminShipments() {
   const [query, setQuery] = useState("");
-  const table = useTableQuery({ rows: adminShipmentRows, query, predicate: matchesSearch });
+  const { activeFilters, setFilter, clearFilters } = useTableFilters();
+  const table = useTableQuery({
+    rows: adminShipmentRows,
+    query,
+    predicate: matchesSearch,
+    activeFilters,
+    filterGroups: shipmentFilterGroups,
+  });
 
   return (
     <div className="space-y-6">
@@ -75,7 +99,12 @@ export default function AdminShipments() {
         searchPlaceholder="Search run ID, route cluster, or dispatch state"
         searchValue={query}
         onSearchChange={setQuery}
-        resultCount={query.trim() ? table.total : null}
+        resultCount={query.trim() || table.hasActiveFilters ? table.total : null}
+        filterGroups={shipmentFilterGroups}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        filterOptions={table.filterOptions}
         filters={["17 runs today", "3 clusters", "2 delays flagged"]}
         action={
           <Link
@@ -89,45 +118,54 @@ export default function AdminShipments() {
       />
 
       <DashboardPanel title="Consolidated shipment runs" className="p-5 sm:p-6">
-        <div className="dashboard-table-wrap overflow-x-auto">
-          <table className="w-full min-w-[720px]">
-            <thead>
-              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                {shipmentColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {table.rows.map((row) => (
-                <tr key={row.id} className="border-b last:border-b-0">
-                  {shipmentColumns.map((column) => (
-                    <td
-                      key={column.key}
-                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                    >
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : row[column.key]}
-                    </td>
+        {table.total ? (
+          <>
+            <div className="dashboard-table-wrap overflow-x-auto">
+              <table className="w-full min-w-[720px]">
+                <thead>
+                  <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
+                    {shipmentColumns.map((column) => (
+                      <th
+                        key={column.key}
+                        className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
+                      >
+                        {column.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {table.rows.map((row) => (
+                    <tr key={row.id} className="border-b last:border-b-0">
+                      {shipmentColumns.map((column) => (
+                        <td
+                          key={column.key}
+                          className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                        >
+                          {column.render
+                            ? column.render(row[column.key], row)
+                            : row[column.key]}
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <DashboardPagination
-          page={table.page}
-          pageCount={table.pageCount}
-          total={table.total}
-          pageSize={table.pageSize}
-          onPageChange={table.setPage}
-        />
+                </tbody>
+              </table>
+            </div>
+            <DashboardPagination
+              page={table.page}
+              pageCount={table.pageCount}
+              total={table.total}
+              pageSize={table.pageSize}
+              onPageChange={table.setPage}
+            />
+          </>
+        ) : (
+          <DashboardEmptyState
+            title="No matching shipment runs"
+            description="Try clearing the state or route filters to see the full delivery surface."
+          />
+        )}
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

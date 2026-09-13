@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, Truck } from "lucide-react";
 import {
+  DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
@@ -9,7 +10,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { useTableQuery } from "@/lib/useTableQuery";
+import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import { adminPricingRows } from "@/lib/demoData";
 
 const pricingColumns = [
@@ -30,6 +31,8 @@ const matchesSearch = (row, query) =>
     String(value ?? "").toLowerCase().includes(query),
   );
 
+const pricingFilterGroups = [{ key: "status", label: "Status" }];
+
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
   { label: "Schedule", to: "/admin/schedule" },
@@ -41,7 +44,14 @@ const relatedLinks = [
 
 export default function AdminPricing() {
   const [query, setQuery] = useState("");
-  const table = useTableQuery({ rows: adminPricingRows, query, predicate: matchesSearch });
+  const { activeFilters, setFilter, clearFilters } = useTableFilters();
+  const table = useTableQuery({
+    rows: adminPricingRows,
+    query,
+    predicate: matchesSearch,
+    activeFilters,
+    filterGroups: pricingFilterGroups,
+  });
 
   return (
     <div className="space-y-6">
@@ -68,7 +78,12 @@ export default function AdminPricing() {
         searchPlaceholder="Search tier, volume band, or billing model"
         searchValue={query}
         onSearchChange={setQuery}
-        resultCount={query.trim() ? table.total : null}
+        resultCount={query.trim() || table.hasActiveFilters ? table.total : null}
+        filterGroups={pricingFilterGroups}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        filterOptions={table.filterOptions}
         filters={["3 pricing bands", "12 cross-border contracts", "6 reviews in progress"]}
         action={
           <Link
@@ -82,38 +97,45 @@ export default function AdminPricing() {
       />
 
       <DashboardPanel title="Pricing tier matrix" className="p-5 sm:p-6">
-        <div className="dashboard-table-wrap overflow-x-auto">
-          <table className="w-full min-w-[620px]">
-            <thead>
-              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                {pricingColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {table.rows.map((row) => (
-                <tr key={row.id} className="border-b last:border-b-0">
+        {table.total ? (
+          <div className="dashboard-table-wrap overflow-x-auto">
+            <table className="w-full min-w-[620px]">
+              <thead>
+                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
                   {pricingColumns.map((column) => (
-                    <td
+                    <th
                       key={column.key}
-                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
                     >
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : row[column.key]}
-                    </td>
+                      {column.label}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {table.rows.map((row) => (
+                  <tr key={row.id} className="border-b last:border-b-0">
+                    {pricingColumns.map((column) => (
+                      <td
+                        key={column.key}
+                        className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                      >
+                        {column.render
+                          ? column.render(row[column.key], row)
+                          : row[column.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <DashboardEmptyState
+            title="No matching pricing tiers"
+            description="Try clearing the status filter to see the full pricing band matrix."
+          />
+        )}
         <DashboardPagination
           page={table.page}
           pageCount={table.pageCount}

@@ -25,6 +25,7 @@ const baseRecord = (current) => ({
   status: current.status,
   tone: current.tone,
   eta: current.eta,
+  date: current.date,
   destination: current.destination,
   note: current.note,
 });

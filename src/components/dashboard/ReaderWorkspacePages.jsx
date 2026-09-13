@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { CreditCard, Package, Search, Truck } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, CreditCard, Package, Search, Truck } from "lucide-react";
 import { appClient } from "@/api/appClient";
 import { useAuth } from "@/lib/AuthContext";
 import { appParams } from "@/lib/app-params";
 import {
   DashboardEmptyState,
+  DashboardFactList,
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
@@ -13,7 +14,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { useTableQuery } from "@/lib/useTableQuery";
+import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import ReaderProfileForm from "@/components/forms/ReaderProfileForm";
 import AccountConsentForm from "@/components/forms/AccountConsentForm";
 import GovernanceRequestPanel from "@/components/forms/GovernanceRequestPanel";
@@ -21,6 +22,7 @@ import DeliveryStatusHero from "@/components/delivery/DeliveryStatusHero";
 import DeliveryHistoryTable from "@/components/delivery/DeliveryHistoryTable";
 import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
 import { getReadingHistoryRows } from "@/lib/reading-history";
+import { getDeliveryByTrackingCode } from "@/lib/delivery-store";
 import {
   readerConsentChecklist,
   readerBillingRows,
@@ -76,6 +78,13 @@ const matchesReadingSearch = (row, query) =>
   [row.item, row.category, row.status, row.date].some((value) =>
     String(value ?? "").toLowerCase().includes(query),
   );
+
+const billingFilterGroups = [{ key: "status", label: "Status" }];
+
+const readingFilterGroups = [
+  { key: "category", label: "Category" },
+  { key: "status", label: "Status" },
+];
 
 const readerRelatedLinks = (current) => [
   { label: "Deliveries", to: "/dashboard/deliveries" },
@@ -158,10 +167,126 @@ export function ReaderDeliveriesPage() {
             <DeliveryHistoryTable
               title=""
               rows={readerDeliveryHistoryRows}
+              trackingHref={(row) => `/dashboard/deliveries/${row.trackingId}`}
             />
           </DashboardPanel>
         </>
       )}
+
+      <DashboardRelatedLinks title="Quick links" items={readerRelatedLinks("Deliveries")} />
+    </div>
+  );
+}
+
+export function ReaderDeliveryDetailPage() {
+  const { user } = useAuth();
+  const { trackingCode } = useParams();
+  const subscription = useMemo(
+    () => getReaderSubscriptionSnapshot(user?.email),
+    [user?.email],
+  );
+  const delivery = getDeliveryByTrackingCode(trackingCode) || null;
+
+  if (!subscription.isPrintSubscriber) {
+    return (
+      <div className="space-y-6">
+        <DashboardPageHeader
+          eyebrow="Reader delivery"
+          title="Delivery detail"
+          breadcrumbs={makeBreadcrumbs("Deliveries")}
+        />
+        <DashboardEmptyState
+          title="No physical delivery is scheduled for the digital-only plan."
+          action={
+            <Link
+              to="/subscriptions"
+              className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-stone-700"
+            >
+              Upgrade plan
+              <Truck className="h-4 w-4" />
+            </Link>
+          }
+        />
+        <DashboardRelatedLinks title="Quick links" items={readerRelatedLinks("Deliveries")} />
+      </div>
+    );
+  }
+
+  if (!delivery) {
+    return (
+      <div className="space-y-6">
+        <DashboardPageHeader
+          eyebrow="Reader delivery"
+          title="Delivery not found"
+          breadcrumbs={[
+            { label: "Reader workspace", to: "/dashboard/overview" },
+            { label: "Deliveries", to: "/dashboard/deliveries" },
+          ]}
+          action={
+            <Link
+              to="/dashboard/deliveries"
+              className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition-colors hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to deliveries
+            </Link>
+          }
+        />
+        <DashboardPanel title="Delivery history">
+          <DashboardEmptyState title="No delivery matches this tracking ID." />
+        </DashboardPanel>
+        <DashboardRelatedLinks title="Quick links" items={readerRelatedLinks("Deliveries")} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <DashboardPageHeader
+        eyebrow="Reader delivery"
+        title={delivery.edition}
+        description="Delivery record for one subscriber edition."
+        breadcrumbs={[
+          { label: "Reader workspace", to: "/dashboard/overview" },
+          { label: "Deliveries", to: "/dashboard/deliveries" },
+          { label: delivery.trackingId },
+        ]}
+        action={
+          <Link
+            to="/dashboard/deliveries"
+            className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition-colors hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to deliveries
+          </Link>
+        }
+      />
+
+      <DeliveryStatusHero
+        edition={delivery.edition}
+        trackingId={delivery.trackingId}
+        status={delivery.status}
+        tone={delivery.tone}
+        destination={subscription.locationSummary}
+        eta={delivery.eta || delivery.date}
+        note={delivery.note}
+      />
+
+      <DashboardPanel title="Delivery summary" className="p-5 sm:p-6">
+        <DashboardFactList
+          items={[
+            { label: "Edition", value: delivery.edition },
+            { label: "Tracking ID", value: delivery.trackingId },
+            { label: "Destination", value: subscription.locationSummary },
+            {
+              label: "Delivery status",
+              value: (
+                <DashboardStatusBadge label={delivery.status} tone={delivery.tone} />
+              ),
+            },
+          ]}
+        />
+      </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={readerRelatedLinks("Deliveries")} />
     </div>
@@ -175,10 +300,13 @@ export function ReaderBillingPage() {
     [user?.email],
   );
   const [query, setQuery] = useState("");
+  const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const table = useTableQuery({
     rows: readerBillingRows,
     query,
     predicate: matchesBillingSearch,
+    activeFilters,
+    filterGroups: billingFilterGroups,
   });
 
   return (
@@ -256,43 +384,55 @@ export function ReaderBillingPage() {
         searchPlaceholder="Search payment item, amount, status, or date"
         searchValue={query}
         onSearchChange={setQuery}
-        resultCount={query.trim() ? table.total : null}
+        resultCount={query.trim() || table.hasActiveFilters ? table.total : null}
+        filterGroups={billingFilterGroups}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        filterOptions={table.filterOptions}
         filters={[subscription.planName, subscription.billingCycle]}
       />
 
       <DashboardPanel title="Payment history and renewal events" className="p-5 sm:p-6">
-        <div className="dashboard-table-wrap overflow-x-auto">
-          <table className="w-full min-w-[620px]">
-            <thead>
-              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                {invoiceColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {table.rows.map((row) => (
-                <tr key={row.id} className="border-b last:border-b-0">
+        {table.total ? (
+          <div className="dashboard-table-wrap overflow-x-auto">
+            <table className="w-full min-w-[620px]">
+              <thead>
+                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
                   {invoiceColumns.map((column) => (
-                    <td
+                    <th
                       key={column.key}
-                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
                     >
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : row[column.key]}
-                    </td>
+                      {column.label}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {table.rows.map((row) => (
+                  <tr key={row.id} className="border-b last:border-b-0">
+                    {invoiceColumns.map((column) => (
+                      <td
+                        key={column.key}
+                        className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                      >
+                        {column.render
+                          ? column.render(row[column.key], row)
+                          : row[column.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <DashboardEmptyState
+            title="No matching payment events"
+            description="Try clearing the status filter to see the full payment history."
+          />
+        )}
         <DashboardPagination
           page={table.page}
           pageCount={table.pageCount}
@@ -310,10 +450,13 @@ export function ReaderBillingPage() {
 export function ReaderHistoryPage() {
   const readingRows = getReadingHistoryRows();
   const [query, setQuery] = useState("");
+  const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const table = useTableQuery({
     rows: readingRows,
     query,
     predicate: matchesReadingSearch,
+    activeFilters,
+    filterGroups: readingFilterGroups,
   });
 
   return (
@@ -359,43 +502,55 @@ export function ReaderHistoryPage() {
         searchPlaceholder="Search article, desk, status, or date"
         searchValue={query}
         onSearchChange={setQuery}
-        resultCount={query.trim() ? table.total : null}
+        resultCount={query.trim() || table.hasActiveFilters ? table.total : null}
+        filterGroups={readingFilterGroups}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        filterOptions={table.filterOptions}
         filters={[`${readingRows.length} stories in history`]}
       />
 
       <DashboardPanel title="Recent reading history" className="p-5 sm:p-6">
-        <div className="dashboard-table-wrap overflow-x-auto">
-          <table className="w-full min-w-[620px]">
-            <thead>
-              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                {readingColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {table.rows.map((row) => (
-                <tr key={row.id} className="border-b last:border-b-0">
+        {table.total ? (
+          <div className="dashboard-table-wrap overflow-x-auto">
+            <table className="w-full min-w-[620px]">
+              <thead>
+                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
                   {readingColumns.map((column) => (
-                    <td
+                    <th
                       key={column.key}
-                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
                     >
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : row[column.key]}
-                    </td>
+                      {column.label}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {table.rows.map((row) => (
+                  <tr key={row.id} className="border-b last:border-b-0">
+                    {readingColumns.map((column) => (
+                      <td
+                        key={column.key}
+                        className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                      >
+                        {column.render
+                          ? column.render(row[column.key], row)
+                          : row[column.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <DashboardEmptyState
+            title="No matching reading history"
+            description="Try clearing the category or status filters to see your full reading history."
+          />
+        )}
         <DashboardPagination
           page={table.page}
           pageCount={table.pageCount}

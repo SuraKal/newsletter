@@ -113,6 +113,11 @@ export function getCompanyAccounts() {
   );
 }
 
+export function getCompanyEntityById(id) {
+  if (!id) return null;
+  return readAll().find((entity) => entity.id === id) || null;
+}
+
 export function getBusinessCompanySnapshot(userEmail) {
   const email = String(
     userEmail || appParams.businessEmail || "",

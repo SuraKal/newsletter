@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTableQuery } from "@/lib/useTableQuery";
 
@@ -263,6 +269,27 @@ export function DashboardStatusBadge({ label, tone = "neutral" }) {
   );
 }
 
+export function DashboardFactList({ items = [] }) {
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((item) => (
+        <div key={item.label}>
+          <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
+            {item.label}
+          </p>
+          <div className="mt-1.5 font-sans text-sm font-medium leading-5 text-stone-900 dark:text-stone-100">
+            {item.value}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function DashboardFilterBar({
   searchPlaceholder = "Search",
   filters = [],
@@ -270,7 +297,16 @@ export function DashboardFilterBar({
   searchValue = "",
   onSearchChange = null,
   resultCount = null,
+  filterGroups = [],
+  activeFilters = {},
+  onFilterChange = (key, value) => {},
+  onClearFilters = null,
+  filterOptions = {},
 }) {
+  const hasActiveFilters = Object.keys(activeFilters).some(
+    (key) => Boolean(activeFilters[key]) && filterGroups.some((group) => group.key === key),
+  );
+
   return (
     <div className="dashboard-filter-bar flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
@@ -297,7 +333,52 @@ export function DashboardFilterBar({
             </div>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {filterGroups.length ? (
+            <>
+              {filterGroups.map((group) => {
+                const options = group.options || filterOptions[group.key] || [];
+                const selected = activeFilters[group.key] || "";
+                const isActive = Boolean(selected);
+                return (
+                  <label
+                    key={group.key}
+                    className={`dashboard-filter-pill inline-flex items-center gap-1.5 px-2.5 py-2 ${
+                      isActive ? "ring-1 ring-inset ring-stone-700/20" : ""
+                    }`.trim()}
+                  >
+                    <span className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.16em] text-stone-400">
+                      {group.label}
+                    </span>
+                    <select
+                      value={selected}
+                      onChange={(event) =>
+                        onFilterChange(group.key, event.target.value)
+                      }
+                      className="bg-transparent font-sans text-xs font-semibold text-stone-700 focus:outline-none dark:text-stone-200"
+                    >
+                      <option value="">All</option>
+                      {options.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              })}
+              {hasActiveFilters && onClearFilters ? (
+                <button
+                  type="button"
+                  onClick={onClearFilters}
+                  className="inline-flex items-center gap-1 rounded-full border border-stone-300 bg-white px-3 py-2 font-sans text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Clear
+                </button>
+              ) : null}
+            </>
+          ) : null}
           {resultCount != null ? (
             <span className="dashboard-filter-pill inline-flex items-center px-3 py-2 font-sans text-xs font-medium">
               {resultCount} {resultCount === 1 ? "result" : "results"}

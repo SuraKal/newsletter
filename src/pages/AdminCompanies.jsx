@@ -10,7 +10,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { useTableQuery } from "@/lib/useTableQuery";
+import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import {
   approveCompanyLead,
   declineCompanyLead,
@@ -20,7 +20,18 @@ import {
 } from "@/lib/company-store";
 
 const companyColumns = [
-  { key: "company", label: "Company" },
+  {
+    key: "company",
+    label: "Company",
+    render: (value, row) => (
+      <Link
+        to={`/admin/companies/${row.id}`}
+        className="font-medium text-stone-900 transition-colors hover:text-heritage dark:text-stone-100"
+      >
+        {value}
+      </Link>
+    ),
+  },
   { key: "tier", label: "Tier" },
   { key: "volume", label: "Volume" },
   {
@@ -58,20 +69,38 @@ const relatedLinks = [
   { label: "Pricing", to: "/admin/pricing" },
 ];
 
+const companyFilterGroups = [
+  {
+    key: "status",
+    label: "Status",
+    options: ["Pending review", "Onboarding", "Active", "Invoice review"],
+  },
+  {
+    key: "tier",
+    label: "Tier",
+    options: ["Single Office", "Regional Team", "Enterprise Route"],
+  },
+];
+
 export default function AdminCompanies() {
   const [, setRevision] = useState(0);
   const [query, setQuery] = useState("");
+  const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const leads = getCompanyLeads();
   const accounts = getCompanyAccounts();
   const leadsTable = useTableQuery({
     rows: leads,
     query,
     predicate: matchesLeadSearch,
+    activeFilters,
+    filterGroups: companyFilterGroups,
   });
   const accountsTable = useTableQuery({
     rows: accounts,
     query,
     predicate: matchesAccountSearch,
+    activeFilters,
+    filterGroups: companyFilterGroups,
   });
 
   const handleApprove = (id) => {
@@ -110,8 +139,16 @@ export default function AdminCompanies() {
         searchValue={query}
         onSearchChange={setQuery}
         resultCount={
-          query.trim() ? leadsTable.total + accountsTable.total : null
+          query.trim() ||
+          accountsTable.hasActiveFilters ||
+          leadsTable.hasActiveFilters
+            ? leadsTable.total + accountsTable.total
+            : null
         }
+        filterGroups={companyFilterGroups}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
         filters={[
           `${accounts.length} company accounts`,
           `${leads.length} pending requests`,
@@ -164,9 +201,12 @@ export default function AdminCompanies() {
                     className="border-b last:border-b-0"
                   >
                     <td className="py-3 pr-3">
-                      <p className="font-sans text-sm font-semibold text-stone-900 dark:text-stone-100">
+                      <Link
+                        to={`/admin/companies/${lead.id}`}
+                        className="font-sans text-sm font-semibold text-stone-900 transition-colors hover:text-heritage dark:text-stone-100"
+                      >
                         {lead.company}
-                      </p>
+                      </Link>
                       <p className="mt-0.5 font-sans text-xs text-stone-500">
                         {lead.lead?.requestType}
                       </p>

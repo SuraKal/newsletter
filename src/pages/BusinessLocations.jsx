@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, Truck } from "lucide-react";
 import {
+  DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
@@ -9,11 +10,22 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { useTableQuery } from "@/lib/useTableQuery";
+import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import { businessLocationRows } from "@/lib/demoData";
 
 const locationColumns = [
-  { key: "location", label: "Site" },
+  {
+    key: "location",
+    label: "Site",
+    render: (value, row) => (
+      <Link
+        to={`/business-dashboard/locations/${row.id}`}
+        className="font-medium text-stone-900 transition-colors hover:text-heritage dark:text-stone-100"
+      >
+        {value}
+      </Link>
+    ),
+  },
   { key: "region", label: "Region" },
   { key: "copies", label: "Copies / cycle" },
   { key: "contact", label: "Receiving contact" },
@@ -31,6 +43,11 @@ const matchesSearch = (row, query) =>
     (value) => String(value ?? "").toLowerCase().includes(query),
   );
 
+const locationFilterGroups = [
+  { key: "region", label: "Region" },
+  { key: "status", label: "Status" },
+];
+
 const relatedLinks = [
   { label: "Team", to: "/business-dashboard/team" },
   { label: "Orders", to: "/business-dashboard/orders" },
@@ -41,7 +58,14 @@ const relatedLinks = [
 
 export default function BusinessLocations() {
   const [query, setQuery] = useState("");
-  const table = useTableQuery({ rows: businessLocationRows, query, predicate: matchesSearch });
+  const { activeFilters, setFilter, clearFilters } = useTableFilters();
+  const table = useTableQuery({
+    rows: businessLocationRows,
+    query,
+    predicate: matchesSearch,
+    activeFilters,
+    filterGroups: locationFilterGroups,
+  });
 
   return (
     <div className="space-y-6">
@@ -68,7 +92,12 @@ export default function BusinessLocations() {
         searchPlaceholder="Search site, city, or receiving contact"
         searchValue={query}
         onSearchChange={setQuery}
-        resultCount={query.trim() ? table.total : null}
+        resultCount={query.trim() || table.hasActiveFilters ? table.total : null}
+        filterGroups={locationFilterGroups}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        filterOptions={table.filterOptions}
         filters={["9 active locations", "Belgium + Germany", "1 review state"]}
         action={
           <Link
@@ -82,38 +111,45 @@ export default function BusinessLocations() {
       />
 
       <DashboardPanel title="Location status" className="p-5 sm:p-6">
-        <div className="dashboard-table-wrap overflow-x-auto">
-          <table className="w-full min-w-[760px]">
-            <thead>
-              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                {locationColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {table.rows.map((row) => (
-                <tr key={row.id} className="border-b last:border-b-0">
+        {table.total ? (
+          <div className="dashboard-table-wrap overflow-x-auto">
+            <table className="w-full min-w-[760px]">
+              <thead>
+                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
                   {locationColumns.map((column) => (
-                    <td
+                    <th
                       key={column.key}
-                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
                     >
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : row[column.key]}
-                    </td>
+                      {column.label}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {table.rows.map((row) => (
+                  <tr key={row.id} className="border-b last:border-b-0">
+                    {locationColumns.map((column) => (
+                      <td
+                        key={column.key}
+                        className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                      >
+                        {column.render
+                          ? column.render(row[column.key], row)
+                          : row[column.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <DashboardEmptyState
+            title="No matching locations"
+            description="Try clearing the region or status filters to see the full destination list."
+          />
+        )}
         <DashboardPagination
           page={table.page}
           pageCount={table.pageCount}

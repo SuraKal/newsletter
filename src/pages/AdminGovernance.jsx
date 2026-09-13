@@ -10,7 +10,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { useTableQuery } from "@/lib/useTableQuery";
+import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import { appClient } from "@/api/appClient";
 
 const statusTone = {
@@ -52,6 +52,12 @@ const matchesSearch = (row, query) =>
     row.requester?.email,
   ].some((value) => String(value ?? "").toLowerCase().includes(query));
 
+const governanceFilterGroups = [
+  { key: "status", label: "Status" },
+  { key: "type", label: "Request type" },
+  { key: "scopeLabel", label: "Scope" },
+];
+
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
   { label: "Companies", to: "/admin/companies" },
@@ -65,7 +71,14 @@ export default function AdminGovernance() {
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [actionError, setActionError] = useState("");
-  const table = useTableQuery({ rows: requests, query, predicate: matchesSearch });
+  const { activeFilters, setFilter, clearFilters } = useTableFilters();
+  const table = useTableQuery({
+    rows: requests,
+    query,
+    predicate: matchesSearch,
+    activeFilters,
+    filterGroups: governanceFilterGroups,
+  });
 
   const refreshRequests = useCallback(async () => {
     try {
@@ -128,7 +141,12 @@ export default function AdminGovernance() {
         searchPlaceholder="Search request type, requester, or notes"
         searchValue={query}
         onSearchChange={setQuery}
-        resultCount={query.trim() ? table.total : null}
+        resultCount={query.trim() || table.hasActiveFilters ? table.total : null}
+        filterGroups={governanceFilterGroups}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        filterOptions={table.filterOptions}
         filters={[
           `${openRequests} open requests`,
           `${completedRequests} completed`,
@@ -154,7 +172,7 @@ export default function AdminGovernance() {
           <div className="dashboard-empty-state px-6 py-10 text-center">
             <p className="font-sans text-sm text-stone-500">Loading requests...</p>
           </div>
-        ) : requests.length ? (
+        ) : requests.length && table.total ? (
           <div className="dashboard-table-wrap overflow-x-auto">
             <table className="w-full min-w-[840px]">
               <thead>
@@ -241,8 +259,12 @@ export default function AdminGovernance() {
           </div>
         ) : (
           <DashboardEmptyState
-            title="No governance requests"
-            description="Data export and deletion requests submitted from the reader and business privacy workspaces will appear here for review and processing."
+            title={requests.length ? "No matching requests" : "No governance requests"}
+            description={
+              requests.length
+                ? "Try clearing a search or filter to see the full governance queue."
+                : "Data export and deletion requests submitted from the reader and business privacy workspaces will appear here for review and processing."
+            }
           />
         )}
         <DashboardPagination

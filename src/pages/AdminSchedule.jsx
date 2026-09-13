@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { PenSquare, Truck } from "lucide-react";
 import {
+  DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
@@ -9,7 +10,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { useTableQuery } from "@/lib/useTableQuery";
+import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import { getAdminScheduleRows } from "@/lib/content-store";
 
 const scheduleColumns = [
@@ -42,6 +43,11 @@ const matchesSearch = (row, query) =>
     (value) => String(value ?? "").toLowerCase().includes(query),
   );
 
+const scheduleFilterGroups = [
+  { key: "sector", label: "Sector" },
+  { key: "status", label: "State" },
+];
+
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
   { label: "Subscribers", to: "/admin/subscribers" },
@@ -54,7 +60,14 @@ const relatedLinks = [
 export default function AdminSchedule() {
   const adminScheduleRows = getAdminScheduleRows();
   const [query, setQuery] = useState("");
-  const table = useTableQuery({ rows: adminScheduleRows, query, predicate: matchesSearch });
+  const { activeFilters, setFilter, clearFilters } = useTableFilters();
+  const table = useTableQuery({
+    rows: adminScheduleRows,
+    query,
+    predicate: matchesSearch,
+    activeFilters,
+    filterGroups: scheduleFilterGroups,
+  });
 
   return (
     <div className="space-y-6">
@@ -81,7 +94,12 @@ export default function AdminSchedule() {
         searchPlaceholder="Search release slot, sector, or headline"
         searchValue={query}
         onSearchChange={setQuery}
-        resultCount={query.trim() ? table.total : null}
+        resultCount={query.trim() || table.hasActiveFilters ? table.total : null}
+        filterGroups={scheduleFilterGroups}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        filterOptions={table.filterOptions}
         filters={["8 scheduled items", "3 print-linked releases", "2 review holds"]}
         action={
           <Link
@@ -95,45 +113,54 @@ export default function AdminSchedule() {
       />
 
       <DashboardPanel title="Scheduled publishing queue" className="p-5 sm:p-6">
-        <div className="dashboard-table-wrap overflow-x-auto">
-          <table className="w-full min-w-[860px]">
-            <thead>
-              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                {scheduleColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {table.rows.map((row) => (
-                <tr key={row.id} className="border-b last:border-b-0">
-                  {scheduleColumns.map((column) => (
-                    <td
-                      key={column.key}
-                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                    >
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : row[column.key]}
-                    </td>
+        {table.total ? (
+          <>
+            <div className="dashboard-table-wrap overflow-x-auto">
+              <table className="w-full min-w-[860px]">
+                <thead>
+                  <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
+                    {scheduleColumns.map((column) => (
+                      <th
+                        key={column.key}
+                        className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
+                      >
+                        {column.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {table.rows.map((row) => (
+                    <tr key={row.id} className="border-b last:border-b-0">
+                      {scheduleColumns.map((column) => (
+                        <td
+                          key={column.key}
+                          className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                        >
+                          {column.render
+                            ? column.render(row[column.key], row)
+                            : row[column.key]}
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <DashboardPagination
-          page={table.page}
-          pageCount={table.pageCount}
-          total={table.total}
-          pageSize={table.pageSize}
-          onPageChange={table.setPage}
-        />
+                </tbody>
+              </table>
+            </div>
+            <DashboardPagination
+              page={table.page}
+              pageCount={table.pageCount}
+              total={table.total}
+              pageSize={table.pageSize}
+              onPageChange={table.setPage}
+            />
+          </>
+        ) : (
+          <DashboardEmptyState
+            title="No matching schedule items"
+            description="Try clearing the sector or state filters to see the full release queue."
+          />
+        )}
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

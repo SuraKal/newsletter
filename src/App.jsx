@@ -51,6 +51,21 @@ const AdminSubscribers = lazy(() => import("@/pages/AdminSubscribers"));
 const AdminCompanies = lazy(() => import("@/pages/AdminCompanies"));
 const AdminGovernance = lazy(() => import("@/pages/AdminGovernance"));
 const AdminPricing = lazy(() => import("@/pages/AdminPricing"));
+const AdminShipmentDetail = lazy(() => import("@/pages/AdminShipmentDetail"));
+const AdminCompanyDetail = lazy(() => import("@/pages/AdminCompanyDetail"));
+const AdminSubscriberDetail = lazy(
+  () => import("@/pages/AdminSubscriberDetail"),
+);
+const BusinessShipmentDetail = lazy(
+  () => import("@/pages/BusinessShipmentDetail"),
+);
+const BusinessLocationDetail = lazy(
+  () => import("@/pages/BusinessLocationDetail"),
+);
+const BusinessOrderDetail = lazy(() => import("@/pages/BusinessOrderDetail"));
+const BusinessInvoiceDetail = lazy(
+  () => import("@/pages/BusinessInvoiceDetail"),
+);
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
 const ReaderOverviewPage = lazy(
@@ -85,6 +100,11 @@ const ReaderProfilePage = lazy(() =>
 const ReaderPrivacyPage = lazy(() =>
   import("@/components/dashboard/ReaderWorkspacePages").then((module) => ({
     default: module.ReaderPrivacyPage,
+  })),
+);
+const ReaderDeliveryDetailPage = lazy(() =>
+  import("@/components/dashboard/ReaderWorkspacePages").then((module) => ({
+    default: module.ReaderDeliveryDetailPage,
   })),
 );
 
@@ -163,6 +183,10 @@ const AuthenticatedApp = () => {
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<ReaderOverviewPage />} />
           <Route path="deliveries" element={<ReaderDeliveriesPage />} />
+          <Route
+            path="deliveries/:trackingCode"
+            element={<ReaderDeliveryDetailPage />}
+          />
           <Route path="billing" element={<ReaderBillingPage />} />
           <Route path="history" element={<ReaderHistoryPage />} />
           <Route path="profile" element={<ReaderProfilePage />} />
@@ -173,9 +197,25 @@ const AuthenticatedApp = () => {
           <Route path="overview" element={<BusinessOverviewPage />} />
           <Route path="team" element={<BusinessTeam />} />
           <Route path="orders" element={<BusinessOrders />} />
+          <Route
+            path="orders/:orderId"
+            element={<BusinessOrderDetail />}
+          />
           <Route path="invoices" element={<BusinessInvoices />} />
+          <Route
+            path="invoices/:invoiceId"
+            element={<BusinessInvoiceDetail />}
+          />
           <Route path="locations" element={<BusinessLocations />} />
+          <Route
+            path="locations/:locationId"
+            element={<BusinessLocationDetail />}
+          />
           <Route path="shipments" element={<BusinessShipments />} />
+          <Route
+            path="shipments/:shipmentId"
+            element={<BusinessShipmentDetail />}
+          />
           <Route path="settings" element={<BusinessSettings />} />
         </Route>
         <Route path="/admin" element={<AdminDashboard />}>
@@ -186,9 +226,21 @@ const AuthenticatedApp = () => {
           <Route path="content/:id" element={<AdminContentEditor />} />
           <Route path="schedule" element={<AdminSchedule />} />
           <Route path="subscribers" element={<AdminSubscribers />} />
+          <Route
+            path="subscribers/:subscriberId"
+            element={<AdminSubscriberDetail />}
+          />
           <Route path="companies" element={<AdminCompanies />} />
+          <Route
+            path="companies/:companyId"
+            element={<AdminCompanyDetail />}
+          />
           <Route path="governance" element={<AdminGovernance />} />
           <Route path="shipments" element={<AdminShipments />} />
+          <Route
+            path="shipments/:shipmentId"
+            element={<AdminShipmentDetail />}
+          />
           <Route path="pricing" element={<AdminPricing />} />
         </Route>
         <Route path="/privacy" element={<Privacy />} />
