@@ -285,7 +285,7 @@ export default function Masthead() {
         id="masthead"
         className="sticky top-0 z-50 overflow-visible border-b border-stone-300/40 bg-paper/95 backdrop-blur-sm"
       >
-      <div className="mx-auto max-w-7xl overflow-visible">
+      <div className="w-full overflow-visible">
         <div
           className={`overflow-hidden border-b border-stone-300/30 transition-all duration-300 ${
             compactHeader ? "max-h-0 opacity-0" : "max-h-16 opacity-100"

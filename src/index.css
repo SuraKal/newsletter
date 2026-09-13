@@ -548,8 +548,9 @@
     color: #ffffff;
   }
 
-  .dashboard-topbar {
+.dashboard-topbar {
     border-bottom: 1px solid var(--dashboard-border);
+    background: var(--dashboard-frame);
   }
 
   .dashboard-search-shell {
