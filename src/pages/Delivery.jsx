@@ -1,6 +1,6 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { MapPin, Package, Truck } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { MapPin, Package, Search, Truck } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import DeliveryStatusHero from "@/components/delivery/DeliveryStatusHero";
@@ -9,15 +9,24 @@ import DeliveryHistoryTable from "@/components/delivery/DeliveryHistoryTable";
 import DeliveryMapPanel from "@/components/delivery/DeliveryMapPanel";
 import ShipmentIssuePanel from "@/components/delivery/ShipmentIssuePanel";
 import ShipmentKpiSummary from "@/components/delivery/ShipmentKpiSummary";
-import { DashboardPageHeader } from "@/components/dashboard/DashboardPrimitives";
-import { IMAGES } from "@/lib/constants";
 import {
-  readerDeliveryCurrent,
-  readerDeliveryHistoryRows,
-  readerDeliveryIssueStates,
-  readerDeliveryKpis,
-  readerDeliveryTimeline,
-} from "@/lib/demoData";
+  DashboardEmptyState,
+  DashboardPageHeader,
+  DashboardPanel,
+} from "@/components/dashboard/DashboardPrimitives";
+import { IMAGES } from "@/lib/constants";
+import { useAuth } from "@/lib/AuthContext";
+import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
+import {
+  DELIVERY_SAMPLE_CODES,
+  getCurrentDelivery,
+  getDeliveryByTrackingCode,
+  getDeliveryIssueStates,
+  getDeliveryKpis,
+  getRecentDeliveries,
+  isValidTrackingCode,
+  normalizeTrackingCode,
+} from "@/lib/delivery-store";
 
 const deliveryIconMap = {
   Clock: Package,
@@ -26,12 +35,83 @@ const deliveryIconMap = {
   MapPin,
 };
 
-const timelineItems = readerDeliveryTimeline.map((item) => ({
-  ...item,
-  icon: deliveryIconMap[item.icon] || Package,
-}));
-
 export default function Delivery() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedCode =
+    searchParams.get("trackingId") || getCurrentDelivery().trackingId;
+  const [inputValue, setInputValue] = useState(requestedCode);
+  const [error, setError] = useState("");
+
+  const { user } = useAuth();
+  const subscription = useMemo(
+    () => getReaderSubscriptionSnapshot(user?.email),
+    [user?.email],
+  );
+
+  const delivery = getDeliveryByTrackingCode(requestedCode);
+  const currentDelivery = getCurrentDelivery();
+  const isCurrentEdition = delivery?.trackingId === currentDelivery.trackingId;
+  const hasMatchedSession = Boolean(subscription?.session);
+  const isPrintSubscriber = hasMatchedSession && subscription?.isPrintSubscriber;
+
+  const hero = delivery
+    ? {
+        edition: delivery.edition,
+        trackingId: delivery.trackingId,
+        status:
+          isCurrentEdition && hasMatchedSession && !isPrintSubscriber
+            ? "No print route"
+            : delivery.status,
+        tone:
+          isCurrentEdition && hasMatchedSession && !isPrintSubscriber
+            ? "neutral"
+            : delivery.tone,
+        destination: hasMatchedSession
+          ? subscription.locationSummary
+          : delivery.destination,
+        eta: delivery.eta,
+        note:
+          isCurrentEdition && hasMatchedSession && !isPrintSubscriber
+            ? "Your current plan does not schedule physical newspaper drops yet."
+            : hasMatchedSession && isPrintSubscriber
+              ? "The next print cycle is scheduled for your saved delivery profile."
+              : delivery.note,
+      }
+    : null;
+
+  const timelineItems = (delivery?.timeline || []).map((item) => ({
+    ...item,
+    icon: deliveryIconMap[item.icon] || Package,
+  }));
+
+  const updateTracking = (nextCode) => {
+    const cleanCode = normalizeTrackingCode(nextCode);
+    setInputValue(cleanCode);
+
+    if (!cleanCode) {
+      setError("Enter a tracking ID to follow a delivery.");
+      return;
+    }
+
+    if (!isValidTrackingCode(cleanCode)) {
+      setError(`The tracking ID format looks off. Try ${DELIVERY_SAMPLE_CODES[0]}.`);
+      return;
+    }
+
+    if (!getDeliveryByTrackingCode(cleanCode)) {
+      setError(`No shipment found for ${cleanCode} yet. Please check the ID and try again.`);
+      return;
+    }
+
+    setError("");
+    setSearchParams({ trackingId: cleanCode }, { replace: true });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    updateTracking(inputValue);
+  };
+
   return (
     <div className="min-h-screen bg-paper">
       <Masthead />
@@ -51,43 +131,108 @@ export default function Delivery() {
         />
 
         <section className="mt-6">
-          <ShipmentKpiSummary items={readerDeliveryKpis} />
+          <DashboardPanel
+            title="Track a delivery"
+            description="Enter a Nekedem tracking ID to follow a specific print edition."
+          >
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col gap-3 sm:flex-row sm:items-center"
+            >
+              <label htmlFor="tracking-code" className="sr-only">
+                Tracking ID
+              </label>
+              <input
+                id="tracking-code"
+                type="text"
+                value={inputValue}
+                onChange={(event) => setInputValue(event.target.value)}
+                placeholder={`e.g. ${DELIVERY_SAMPLE_CODES[0]}`}
+                className="w-full rounded-lg border border-stone-300 bg-white px-4 py-2.5 font-sans text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-400 sm:max-w-sm"
+              />
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-stone-900 px-5 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-stone-700"
+              >
+                <Search className="h-4 w-4" />
+                Track shipment
+              </button>
+            </form>
+            {error ? (
+              <p className="mt-3 font-sans text-xs font-medium text-red-600">
+                {error}
+              </p>
+            ) : null}
+            <p className="mt-3 font-sans text-xs text-stone-500">
+              Try {DELIVERY_SAMPLE_CODES.join(" or ")} to see the tracking flow.
+            </p>
+          </DashboardPanel>
         </section>
 
-        <section className="mt-6">
-          <DeliveryStatusHero
-            edition={readerDeliveryCurrent.edition}
-            trackingId={readerDeliveryCurrent.trackingId}
-            status={readerDeliveryCurrent.status}
-            tone={readerDeliveryCurrent.tone}
-            destination={readerDeliveryCurrent.destination}
-            eta={readerDeliveryCurrent.eta}
-            note={readerDeliveryCurrent.note}
-          />
-        </section>
+        {delivery && hero ? (
+          <>
+            <section className="mt-6">
+              <ShipmentKpiSummary items={getDeliveryKpis()} />
+            </section>
 
-        <section className="mt-6 grid gap-4 xl:grid-cols-[1fr_0.95fr]">
-          <DeliveryTimelinePanel
-            title="Route progress"
-            items={timelineItems}
-          />
-          <DeliveryMapPanel
-            title="Coverage visual"
-            imageSrc={IMAGES.delivery}
-            imageAlt="Delivery route illustration"
-          />
-        </section>
+            <section className="mt-6">
+              <DeliveryStatusHero
+                edition={hero.edition}
+                trackingId={hero.trackingId}
+                status={hero.status}
+                tone={hero.tone}
+                destination={hero.destination}
+                eta={hero.eta}
+                note={hero.note}
+              />
+            </section>
 
-        <section className="mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-          <DeliveryHistoryTable
-            title="Recent delivery history"
-            rows={readerDeliveryHistoryRows}
-          />
-          <ShipmentIssuePanel
-            title="Route health and issue states"
-            items={readerDeliveryIssueStates}
-          />
-        </section>
+            <section className="mt-6 grid gap-4 xl:grid-cols-[1fr_0.95fr]">
+              <DeliveryTimelinePanel
+                title="Route progress"
+                items={timelineItems}
+              />
+              <DeliveryMapPanel
+                title="Coverage visual"
+                imageSrc={IMAGES.delivery}
+                imageAlt="Delivery route illustration"
+              />
+            </section>
+
+            <section className="mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+              <DeliveryHistoryTable
+                title="Recent delivery history"
+                rows={getRecentDeliveries()}
+              />
+              <ShipmentIssuePanel
+                title="Route health and issue states"
+                items={getDeliveryIssueStates()}
+              />
+            </section>
+          </>
+        ) : (
+          <section className="mt-6">
+            <DashboardPanel title="Tracking lookup" className="p-0">
+              <DashboardEmptyState
+                title="No shipment found"
+                description={`We could not find a delivery for ${requestedCode}. Double-check the tracking ID or clear the lookup to return to the current edition.`}
+                action={
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError("");
+                      setInputValue(getCurrentDelivery().trackingId);
+                      setSearchParams({});
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-5 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-stone-700"
+                  >
+                    Clear tracking
+                  </button>
+                }
+              />
+            </DashboardPanel>
+          </section>
+        )}
       </main>
       <Footer />
     </div>

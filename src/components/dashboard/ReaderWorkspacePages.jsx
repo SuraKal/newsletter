@@ -17,13 +17,13 @@ import GovernanceRequestPanel from "@/components/forms/GovernanceRequestPanel";
 import DeliveryStatusHero from "@/components/delivery/DeliveryStatusHero";
 import DeliveryHistoryTable from "@/components/delivery/DeliveryHistoryTable";
 import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
+import { getReadingHistoryRows } from "@/lib/reading-history";
 import {
   readerConsentChecklist,
   readerBillingRows,
   readerDeliveryCurrent,
   readerDeliveryHistoryRows,
   readerGovernanceActionNotes,
-  readerHistoryRows,
   readerSavedCollections,
 } from "@/lib/demoData";
 
@@ -41,7 +41,18 @@ const invoiceColumns = [
 ];
 
 const readingColumns = [
-  { key: "item", label: "Article" },
+  {
+    key: "item",
+    label: "Article",
+    render: (value, row) => (
+      <Link
+        to={`/article/${row.articleId || row.id}`}
+        className="font-medium text-stone-900 transition-colors hover:text-heritage dark:text-stone-100"
+      >
+        {value}
+      </Link>
+    ),
+  },
   { key: "category", label: "Desk" },
   {
     key: "status",
@@ -263,6 +274,8 @@ export function ReaderBillingPage() {
 }
 
 export function ReaderHistoryPage() {
+  const readingRows = getReadingHistoryRows();
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
@@ -318,7 +331,7 @@ export function ReaderHistoryPage() {
               </tr>
             </thead>
             <tbody>
-              {readerHistoryRows.map((row) => (
+              {readingRows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {readingColumns.map((column) => (
                     <td

@@ -537,7 +537,8 @@ export default function Masthead() {
                     {[
                       { label: "Today's Front Page", path: "/news" },
                       { label: "Reader Dashboard", path: "/dashboard" },
-                      { label: "Business Coverage", path: "/business" },
+                      { label: "Business Workspace", path: "/business-dashboard" },
+                      { label: "Admin Console", path: "/admin" },
                     ].map((item) => (
                       <Link
                         key={item.path}

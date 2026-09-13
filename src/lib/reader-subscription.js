@@ -28,16 +28,16 @@ export const getLatestReaderCheckout = (userEmail) => {
         new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
     );
 
-  if (userEmail) {
-    const matched = sessions.find(
-      (session) => session.customer.email.toLowerCase() === userEmail.toLowerCase(),
-    );
-    if (matched) {
-      return matched;
-    }
+  if (!userEmail) {
+    return sessions[0] || null;
   }
 
-  return sessions[0] || null;
+  return (
+    sessions.find(
+      (session) =>
+        session.customer.email.toLowerCase() === userEmail.toLowerCase(),
+    ) || null
+  );
 };
 
 export const hasActiveReaderSubscription = (user) => {

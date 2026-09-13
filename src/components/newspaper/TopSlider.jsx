@@ -6,10 +6,32 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
-import { topSliderSlides } from "@/lib/demoData";
+import { getHeroArticle, getPublicListingArticles } from "@/lib/content-store";
+import { IMAGES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/LanguageContext";
+
+const SLIDER_FALLBACK_IMAGES = [IMAGES.hero, IMAGES.politics, IMAGES.economy, IMAGES.culture];
+
+function buildSliderSlides() {
+  const hero = getHeroArticle();
+  const listings = getPublicListingArticles();
+  return [hero, ...listings]
+    .filter(Boolean)
+    .slice(0, 4)
+    .map((article, index) => ({
+      id: article.id,
+      image: article.image || SLIDER_FALLBACK_IMAGES[index % SLIDER_FALLBACK_IMAGES.length],
+      category: article.category || "News",
+      headline: article.headline,
+      summary: article.summary,
+      cta: index === 0 ? "Read full coverage" : "Read the story",
+      href: `/article/${article.id}`,
+    }));
+}
+
+const topSliderSlides = buildSliderSlides();
 
 export default function TopSlider() {
   const { t } = useLanguage();

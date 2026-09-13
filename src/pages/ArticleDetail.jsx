@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Bookmark, Clock, Share2 } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
@@ -8,6 +8,12 @@ import NewsCard from "@/components/newspaper/NewsCard";
 import { useAuth } from "@/lib/AuthContext";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
 import { getArticleById, getHeroArticle, getPublicListingArticles } from "@/lib/content-store";
+import {
+  isArticleSaved,
+  recordArticleShare,
+  recordArticleView,
+  toggleArticleSaved,
+} from "@/lib/reading-history";
 import { getArticleAccessState } from "@/lib/demoData";
 
 export default function ArticleDetail() {
@@ -22,6 +28,67 @@ export default function ArticleDetail() {
     hasActiveReaderSubscription(user),
   );
   const articleBody = article.body || [];
+
+  const [saved, setSaved] = useState(() => isArticleSaved(article?.id));
+  const [actionMessage, setActionMessage] = useState("");
+  const messageTimer = useRef(null);
+  const trackedArticleId = useRef(null);
+
+  useEffect(() => {
+    setSaved(isArticleSaved(article?.id));
+    if (article?.id && article?.id !== trackedArticleId.current) {
+      trackedArticleId.current = article?.id;
+      recordArticleView(article);
+    }
+  }, [article?.id]);
+
+  useEffect(
+    () => () => {
+      if (messageTimer.current) window.clearTimeout(messageTimer.current);
+    },
+    [],
+  );
+
+  const notify = (message) => {
+    setActionMessage(message);
+    if (messageTimer.current) window.clearTimeout(messageTimer.current);
+    messageTimer.current = window.setTimeout(() => setActionMessage(""), 2500);
+  };
+
+  const handleShare = async () => {
+    if (!article?.id) return;
+    recordArticleShare(article);
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: article.headline,
+          text: article.summary,
+          url: typeof window !== "undefined" ? window.location.href : "",
+        });
+        notify("Shared to reading history");
+        return;
+      } catch {
+        // Fall through to clipboard copy when the user cancels the sheet.
+      }
+    }
+
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.clipboard?.writeText &&
+      typeof window !== "undefined"
+    ) {
+      await navigator.clipboard.writeText(window.location.href).catch(() => {});
+    }
+    notify("Link copied");
+  };
+
+  const handleBookmark = () => {
+    if (!article?.id) return;
+    const nextSaved = toggleArticleSaved(article);
+    setSaved(nextSaved);
+    notify(nextSaved ? "Saved to reading history" : "Removed from saved stories");
+  };
   const comments = [
     {
       id: "c1",
@@ -63,17 +130,31 @@ export default function ArticleDetail() {
               Back to Newsroom
             </Link>
             <div className="flex items-center gap-3">
+              {actionMessage ? (
+                <span
+                  role="status"
+                  aria-live="polite"
+                  className="font-sans text-xs font-medium text-heritage"
+                >
+                  {actionMessage}
+                </span>
+              ) : null}
               <button
                 className="p-2 transition-colors hover:text-heritage"
-                aria-label="Share"
+                aria-label="Share this story"
+                onClick={handleShare}
               >
                 <Share2 className="h-4 w-4" />
               </button>
               <button
-                className="p-2 transition-colors hover:text-heritage"
-                aria-label="Bookmark"
+                className={`p-2 transition-colors ${
+                  saved ? "text-heritage" : "hover:text-heritage"
+                }`}
+                aria-label={saved ? "Remove bookmark" : "Bookmark this story"}
+                aria-pressed={saved}
+                onClick={handleBookmark}
               >
-                <Bookmark className="h-4 w-4" />
+                <Bookmark className={`h-4 w-4 ${saved ? "fill-current" : ""}`} />
               </button>
             </div>
           </div>
@@ -161,6 +242,12 @@ export default function ArticleDetail() {
                     <h2 className="font-display text-2xl font-black text-ink">
                       Full article stays locked until {access.publicAccessDate}.
                     </h2>
+                    <Link
+                      to="/subscribe/checkout"
+                      className="mt-4 inline-block bg-heritage px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
+                    >
+                      Subscribe now
+                    </Link>
                   </div>
                 )}
 

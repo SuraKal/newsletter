@@ -39,7 +39,9 @@ const footerSections = [
     links: [
       { label: "Delivery Tracking", path: "/delivery" },
       { label: "Help Center", path: "/contact" },
-      { label: "Manage Account", path: "/dashboard" },
+      { label: "Reader Dashboard", path: "/dashboard" },
+      { label: "Business Workspace", path: "/business-dashboard" },
+      { label: "Admin Console", path: "/admin" },
       { label: "Privacy Policy", path: "/privacy" },
       { label: "Terms of Service", path: "/terms" },
     ],

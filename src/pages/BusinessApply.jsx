@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/AuthContext";
 import { appParams } from "@/lib/app-params";
+import { submitCompanyLead } from "@/lib/company-store";
 import {
   businessApplySteps,
   businessIntakeOptions,
@@ -128,6 +129,7 @@ export default function BusinessApply() {
         ...form,
       };
       writeBusinessLeads(leads);
+      submitCompanyLead(leads[requestId]);
 
       navigate(`/business/apply/success?request=${requestId}`, {
         replace: true,
