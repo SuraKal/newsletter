@@ -59,9 +59,9 @@
     --dashboard-border: rgba(231, 229, 228, 0.95);
     --dashboard-accent: #4A2A08;
     --dashboard-accent-strong: #4A2A08;
-    --dashboard-radius-shell: 2rem;
-    --dashboard-radius-panel: 1.6rem;
-    --dashboard-radius-card: 1.2rem;
+    --dashboard-radius-shell: 1.5rem;
+    --dashboard-radius-panel: 1.1rem;
+    --dashboard-radius-card: 0.9rem;
     --dashboard-radius-pill: 999px;
     --dashboard-shadow-shell: 0 30px 80px rgba(15, 23, 42, 0.06);
     --dashboard-shadow-panel: 0 18px 40px rgba(15, 23, 42, 0.05);
@@ -506,16 +506,36 @@
     color: var(--dashboard-text);
   }
 
-  .dashboard-frame {
-    border-radius: var(--dashboard-radius-shell);
-    border: 1px solid var(--dashboard-border);
-    background: var(--dashboard-frame);
-    box-shadow: var(--dashboard-shadow-shell);
-  }
-
-  .dashboard-rail {
+  .dashboard-sidebar {
     border-right: 1px solid var(--dashboard-border);
     background: var(--dashboard-rail);
+  }
+
+  .dashboard-sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--dashboard-muted);
+    transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+  }
+
+  .dashboard-sidebar-link:hover,
+  .dashboard-sidebar-link:focus-visible {
+    color: var(--dashboard-text);
+  }
+
+  .dashboard-sidebar-link-active {
+    background: color-mix(in srgb, var(--dashboard-accent) 12%, var(--dashboard-panel));
+    color: var(--dashboard-accent-strong);
+  }
+
+  .dashboard-nav-group-label {
+    color: var(--dashboard-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 0.6rem;
+    padding: 0 0.75rem;
   }
 
   .dashboard-home-mark {
