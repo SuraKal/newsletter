@@ -2,21 +2,17 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, CirclePlus } from "lucide-react";
 import {
-  DashboardActivityTable,
   DashboardFilterBar,
-  DashboardMetricCard,
   DashboardPageHeader,
+  DashboardPanel,
+  DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import {
-  adminContentMetrics,
-  adminContentRows,
-} from "@/lib/demoData";
+import { adminContentRows } from "@/lib/demoData";
 
 const contentColumns = [
   { key: "headline", label: "Headline" },
   { key: "sector", label: "Sector" },
-  { key: "editor", label: "Editor" },
   {
     key: "status",
     label: "State",
@@ -24,7 +20,14 @@ const contentColumns = [
       <DashboardStatusBadge label={value} tone={row.tone} />
     ),
   },
-  { key: "publishWindow", label: "Publish window" },
+];
+
+const relatedLinks = [
+  { label: "Schedule", to: "/admin/schedule" },
+  { label: "Subscribers", to: "/admin/subscribers" },
+  { label: "Companies", to: "/admin/companies" },
+  { label: "Shipments", to: "/admin/shipments" },
+  { label: "Pricing", to: "/admin/pricing" },
 ];
 
 export default function AdminContentList() {
@@ -32,7 +35,12 @@ export default function AdminContentList() {
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Admin content"
-        title="Publishing queue and article inventory"
+        title="Publishing queue"
+        description="Review article drafts, scheduled items, and recently published pieces."
+        breadcrumbs={[
+          { label: "Admin workspace", to: "/admin/overview" },
+          { label: "Content" },
+        ]}
         action={
           <Link
             to="/admin/content/new"
@@ -58,24 +66,42 @@ export default function AdminContentList() {
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {adminContentMetrics.map((metric) => (
-          <DashboardMetricCard
-            key={metric.label}
-            label={metric.label}
-            value={metric.value}
-            accent={metric.accent}
-          />
-        ))}
-      </section>
+      <DashboardPanel title="Article states" className="p-5 sm:p-6">
+        <div className="dashboard-table-wrap overflow-x-auto">
+          <table className="w-full min-w-[620px]">
+            <thead>
+              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
+                {contentColumns.map((column) => (
+                  <th
+                    key={column.key}
+                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
+                  >
+                    {column.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {adminContentRows.map((row) => (
+                <tr key={row.id} className="border-b last:border-b-0">
+                  {contentColumns.map((column) => (
+                    <td
+                      key={column.key}
+                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                    >
+                      {column.render
+                        ? column.render(row[column.key], row)
+                        : row[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </DashboardPanel>
 
-      <section>
-        <DashboardActivityTable
-          title="Article states"
-          columns={contentColumns}
-          rows={adminContentRows}
-        />
-      </section>
+      <DashboardRelatedLinks title="Quick links" items={relatedLinks} />
     </div>
   );
 }

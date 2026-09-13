@@ -2,16 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Building2, Truck } from "lucide-react";
 import {
-  DashboardActivityTable,
   DashboardFilterBar,
-  DashboardMetricCard,
   DashboardPageHeader,
+  DashboardPanel,
+  DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import {
-  adminPricingMetrics,
-  adminPricingRows,
-} from "@/lib/demoData";
+import { adminPricingRows } from "@/lib/demoData";
 
 const pricingColumns = [
   { key: "tier", label: "Tier" },
@@ -24,7 +21,14 @@ const pricingColumns = [
       <DashboardStatusBadge label={value} tone={row.tone} />
     ),
   },
-  { key: "coverage", label: "Coverage fit" },
+];
+
+const relatedLinks = [
+  { label: "Content", to: "/admin/content" },
+  { label: "Schedule", to: "/admin/schedule" },
+  { label: "Subscribers", to: "/admin/subscribers" },
+  { label: "Companies", to: "/admin/companies" },
+  { label: "Shipments", to: "/admin/shipments" },
 ];
 
 export default function AdminPricing() {
@@ -32,7 +36,12 @@ export default function AdminPricing() {
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Admin pricing"
-        title="Business pricing tiers and contract guidance"
+        title="Pricing tier matrix"
+        description="Review business pricing tiers and volume bands."
+        breadcrumbs={[
+          { label: "Admin workspace", to: "/admin/overview" },
+          { label: "Pricing" },
+        ]}
         action={
           <Link
             to="/admin/companies"
@@ -58,26 +67,42 @@ export default function AdminPricing() {
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {adminPricingMetrics.map((metric) => (
-          <DashboardMetricCard
-            key={metric.label}
-            label={metric.label}
-            value={metric.value}
-            accent={metric.accent}
-          />
-        ))}
-      </section>
+      <DashboardPanel title="Pricing tier matrix" className="p-5 sm:p-6">
+        <div className="dashboard-table-wrap overflow-x-auto">
+          <table className="w-full min-w-[620px]">
+            <thead>
+              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
+                {pricingColumns.map((column) => (
+                  <th
+                    key={column.key}
+                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
+                  >
+                    {column.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {adminPricingRows.map((row) => (
+                <tr key={row.id} className="border-b last:border-b-0">
+                  {pricingColumns.map((column) => (
+                    <td
+                      key={column.key}
+                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                    >
+                      {column.render
+                        ? column.render(row[column.key], row)
+                        : row[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </DashboardPanel>
 
-      <section>
-        <DashboardActivityTable
-          title="Pricing tier matrix"
-          columns={pricingColumns}
-          rows={adminPricingRows}
-        />
-      </section>
-
-
+      <DashboardRelatedLinks title="Quick links" items={relatedLinks} />
     </div>
   );
 }

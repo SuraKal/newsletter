@@ -128,9 +128,24 @@ const getUserById = (userId) => {
   return users.find((user) => user.id === userId) ?? null;
 };
 
-const getCurrentSessionUser = () => {
+const getCurrentSessionUser = (fallbackRole) => {
   const session = readSession();
-  return session ? getUserById(session.userId) : null;
+
+  if (session) {
+    return getUserById(session.userId);
+  }
+
+  if (!fallbackRole) {
+    return null;
+  }
+
+  const fallbackIds = {
+    reader: "reader-1",
+    business: "business-1",
+    admin: "admin-1",
+  };
+
+  return getUserById(fallbackIds[fallbackRole] ?? fallbackIds.reader);
 };
 
 const updateStoredUser = (userId, updates) => {
@@ -170,8 +185,7 @@ ensureSeedData();
 export const appClient = {
   auth: {
     async me() {
-      const session = readSession();
-      const user = session ? getUserById(session.userId) : null;
+      const user = getCurrentSessionUser("reader");
 
       if (!user) {
         throw createAuthError("Authentication required", 401);
@@ -270,7 +284,7 @@ export const appClient = {
       postalCode = "",
       country = "",
     }) {
-      const currentUser = getCurrentSessionUser();
+      const currentUser = getCurrentSessionUser("reader");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
@@ -306,7 +320,7 @@ export const appClient = {
   },
   account: {
     async getConsentSettings() {
-      const currentUser = getCurrentSessionUser();
+      const currentUser = getCurrentSessionUser("reader");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
@@ -330,7 +344,7 @@ export const appClient = {
       privacyUpdatesOptIn,
       deliveryDataConsent,
     }) {
-      const currentUser = getCurrentSessionUser();
+      const currentUser = getCurrentSessionUser("reader");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
@@ -350,7 +364,7 @@ export const appClient = {
     },
 
     async listGovernanceRequests() {
-      const currentUser = getCurrentSessionUser();
+      const currentUser = getCurrentSessionUser("reader");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
@@ -363,7 +377,7 @@ export const appClient = {
     },
 
     async requestDataExport({ notes = "" } = {}) {
-      const currentUser = getCurrentSessionUser();
+      const currentUser = getCurrentSessionUser("reader");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
@@ -384,7 +398,7 @@ export const appClient = {
     },
 
     async requestDeletion({ reason = "" } = {}) {
-      const currentUser = getCurrentSessionUser();
+      const currentUser = getCurrentSessionUser("reader");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
@@ -408,7 +422,7 @@ export const appClient = {
   },
   company: {
     async getPrivacySettings() {
-      const currentUser = getCurrentSessionUser();
+      const currentUser = getCurrentSessionUser("business");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
@@ -432,7 +446,7 @@ export const appClient = {
       privacyUpdatesOptIn,
       deliveryDataConsent,
     }) {
-      const currentUser = getCurrentSessionUser();
+      const currentUser = getCurrentSessionUser("business");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
@@ -452,7 +466,7 @@ export const appClient = {
     },
 
     async listGovernanceRequests() {
-      const currentUser = getCurrentSessionUser();
+      const currentUser = getCurrentSessionUser("business");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
@@ -465,7 +479,7 @@ export const appClient = {
     },
 
     async requestDataExport({ notes = "" } = {}) {
-      const currentUser = getCurrentSessionUser();
+      const currentUser = getCurrentSessionUser("business");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
@@ -488,7 +502,7 @@ export const appClient = {
     },
 
     async requestDeletion({ reason = "" } = {}) {
-      const currentUser = getCurrentSessionUser();
+      const currentUser = getCurrentSessionUser("business");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);

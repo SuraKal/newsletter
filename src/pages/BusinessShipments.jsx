@@ -1,36 +1,49 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Building2, MapPin } from "lucide-react";
-import DeliveryMapPanel from "@/components/delivery/DeliveryMapPanel";
-import ShipmentActivityTable from "@/components/delivery/ShipmentActivityTable";
-import LocationStatusTable from "@/components/delivery/LocationStatusTable";
-import MultiShipmentTable from "@/components/delivery/MultiShipmentTable";
-import RouteSummaryPanel from "@/components/delivery/RouteSummaryPanel";
-import ShipmentIssuePanel from "@/components/delivery/ShipmentIssuePanel";
-import ShipmentKpiSummary from "@/components/delivery/ShipmentKpiSummary";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
+  DashboardPanel,
+  DashboardRelatedLinks,
+  DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { IMAGES } from "@/lib/constants";
-import {
-  businessShipmentActivityRows,
-  businessShipmentIssueStates,
-  businessShipmentKpis,
-  businessShipmentLocationRows,
-  businessShipmentRouteSummaries,
-  businessShipmentRows,
-} from "@/lib/demoData";
+import { businessShipmentRows } from "@/lib/demoData";
 
-const stripDetail = (items) =>
-  items.map(({ detail, ...item }) => item);
+const shipmentColumns = [
+  { key: "shipmentId", label: "Run ID" },
+  { key: "label", label: "Account" },
+  { key: "route", label: "Route cluster" },
+  { key: "scope", label: "Scope" },
+  {
+    key: "status",
+    label: "Status",
+    render: (value, row) => (
+      <DashboardStatusBadge label={value} tone={row.tone} />
+    ),
+  },
+  { key: "eta", label: "Delivery window" },
+];
+
+const relatedLinks = [
+  { label: "Team", to: "/business-dashboard/team" },
+  { label: "Orders", to: "/business-dashboard/orders" },
+  { label: "Invoices", to: "/business-dashboard/invoices" },
+  { label: "Locations", to: "/business-dashboard/locations" },
+  { label: "Settings", to: "/business-dashboard/settings" },
+];
 
 export default function BusinessShipments() {
   return (
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Business shipments"
-        title="Consolidated delivery visibility across your locations"
+        title="Consolidated shipment runs"
+        description="Review outbound shipment runs and their coverage scope."
+        breadcrumbs={[
+          { label: "Business workspace", to: "/business-dashboard/overview" },
+          { label: "Shipments" },
+        ]}
         action={
           <Link
             to="/business-dashboard/locations"
@@ -56,45 +69,42 @@ export default function BusinessShipments() {
         }
       />
 
-      <ShipmentKpiSummary items={stripDetail(businessShipmentKpis)} />
+      <DashboardPanel title="Consolidated shipment runs" className="p-5 sm:p-6">
+        <div className="dashboard-table-wrap overflow-x-auto">
+          <table className="w-full min-w-[840px]">
+            <thead>
+              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
+                {shipmentColumns.map((column) => (
+                  <th
+                    key={column.key}
+                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
+                  >
+                    {column.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {businessShipmentRows.map((row) => (
+                <tr key={row.id} className="border-b last:border-b-0">
+                  {shipmentColumns.map((column) => (
+                    <td
+                      key={column.key}
+                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                    >
+                      {column.render
+                        ? column.render(row[column.key], row)
+                        : row[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </DashboardPanel>
 
-      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <MultiShipmentTable
-          title="Consolidated shipment runs"
-          description=""
-          rows={businessShipmentRows}
-        />
-        <RouteSummaryPanel
-          title="Regional route summaries"
-          items={businessShipmentRouteSummaries}
-        />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
-        <LocationStatusTable
-          title="Location-level delivery status"
-          description=""
-          rows={businessShipmentLocationRows}
-        />
-        <ShipmentIssuePanel
-          title="Exceptions and receiving notes"
-          items={stripDetail(businessShipmentIssueStates)}
-        />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <DeliveryMapPanel
-          title="Coverage and receiving footprint"
-          imageSrc={IMAGES.delivery}
-          imageAlt="Business delivery network coverage"
-          tags={["Brussels", "Antwerp", "Cologne", "Berlin"]}
-        />
-        <ShipmentActivityTable
-          title="Recent logistics activity"
-          description=""
-          rows={businessShipmentActivityRows}
-        />
-      </section>
+      <DashboardRelatedLinks title="Quick links" items={relatedLinks} />
     </div>
   );
 }

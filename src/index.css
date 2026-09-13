@@ -538,6 +538,23 @@
     padding: 0 0.75rem;
   }
 
+  .dashboard-shortcut {
+    border-radius: calc(var(--dashboard-radius-card) + 0.15rem);
+    border: 1px solid var(--dashboard-border);
+    background: var(--dashboard-panel);
+    padding: 0.9rem 1rem;
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .dashboard-shortcut:hover,
+  .dashboard-shortcut:focus-visible {
+    border-color: color-mix(in srgb, var(--dashboard-accent) 35%, var(--dashboard-border));
+    box-shadow: var(--dashboard-shadow-soft);
+  }
+
   .dashboard-home-mark {
     border-radius: calc(var(--dashboard-radius-card) + 0.3rem);
     background: var(--dashboard-accent);

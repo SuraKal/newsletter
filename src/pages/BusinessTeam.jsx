@@ -1,19 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { MailPlus, ShieldCheck, Truck, Users } from "lucide-react";
+import { MailPlus } from "lucide-react";
 import {
-  DashboardActivityTable,
   DashboardFilterBar,
-  DashboardMetricCard,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import {
-  businessTeamInviteCards,
-  businessTeamMetrics,
-  businessTeamRows,
-} from "@/lib/demoData";
+import { businessTeamRows } from "@/lib/demoData";
 
 const teamColumns = [
   { key: "name", label: "Team member" },
@@ -26,7 +21,14 @@ const teamColumns = [
       <DashboardStatusBadge label={value} tone={row.tone} />
     ),
   },
-  { key: "updated", label: "Updated" },
+];
+
+const relatedLinks = [
+  { label: "Orders", to: "/business-dashboard/orders" },
+  { label: "Invoices", to: "/business-dashboard/invoices" },
+  { label: "Locations", to: "/business-dashboard/locations" },
+  { label: "Shipments", to: "/business-dashboard/shipments" },
+  { label: "Settings", to: "/business-dashboard/settings" },
 ];
 
 export default function BusinessTeam() {
@@ -34,25 +36,16 @@ export default function BusinessTeam() {
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Business team"
-        title="Roles, seats, and operational access"
-        action={
-          <Link
-            to="/business-dashboard/invoices"
-            className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-stone-700"
-          >
-            Open invoices
-            <ShieldCheck className="h-4 w-4" />
-          </Link>
-        }
-      />
-
-      <DashboardFilterBar
-        searchPlaceholder="Search member, role, or location scope"
-        filters={["12 active seats", "1 pending invite", "Ops + finance roles"]}
+        title="Team access roster"
+        description="Review who has access to the business workspace."
+        breadcrumbs={[
+          { label: "Business workspace", to: "/business-dashboard/overview" },
+          { label: "Team" },
+        ]}
         action={
           <Link
             to="/business-dashboard/settings"
-            className="inline-flex items-center gap-2 rounded-full border border-stone-200/80 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition-colors hover:bg-stone-50"
+            className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-stone-700"
           >
             Invite workflow
             <MailPlus className="h-4 w-4" />
@@ -60,53 +53,47 @@ export default function BusinessTeam() {
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {businessTeamMetrics.map((metric) => (
-          <DashboardMetricCard
-            key={metric.label}
-            label={metric.label}
-            value={metric.value}
-            accent={metric.accent}
-          />
-        ))}
-      </section>
+      <DashboardFilterBar
+        searchPlaceholder="Search member, role, or location scope"
+        filters={["12 active seats", "1 pending invite", "Ops + finance roles"]}
+      />
 
-      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <DashboardActivityTable
-          title="Team access roster"
-          columns={teamColumns}
-          rows={businessTeamRows}
-        />
-        <DashboardPanel
-          title="Role and invitation guidance"
-          className="h-full"
-        >
-          <div className="space-y-4">
-            {businessTeamInviteCards.map((card) => (
-              <div
-                key={card.title}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="dashboard-icon-badge flex h-10 w-10 items-center justify-center">
-                    {card.icon === "receiving" ? (
-                      <Truck className="h-4 w-4" />
-                    ) : (
-                      <Users className="h-4 w-4" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
-                      {card.title}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </DashboardPanel>
-      </section>
+      <DashboardPanel title="Team members" className="p-5 sm:p-6">
+        <div className="dashboard-table-wrap overflow-x-auto">
+          <table className="w-full min-w-[620px]">
+            <thead>
+              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
+                {teamColumns.map((column) => (
+                  <th
+                    key={column.key}
+                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
+                  >
+                    {column.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {businessTeamRows.map((row) => (
+                <tr key={row.id} className="border-b last:border-b-0">
+                  {teamColumns.map((column) => (
+                    <td
+                      key={column.key}
+                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                    >
+                      {column.render
+                        ? column.render(row[column.key], row)
+                        : row[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </DashboardPanel>
 
+      <DashboardRelatedLinks title="Quick links" items={relatedLinks} />
     </div>
   );
 }

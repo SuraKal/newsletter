@@ -1,59 +1,54 @@
 import React from "react";
 import {
   ArrowRight,
-  Building2,
   FileText,
+  LayoutDashboard,
   MapPinned,
   Package,
+  ShieldCheck,
+  Truck,
   Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
-  DashboardActivityTable,
-  DashboardChartPanel,
-  DashboardFilterBar,
-  DashboardMetricCard,
   DashboardPageHeader,
   DashboardPanel,
-  DashboardSplitMetricCard,
-  DashboardStatusBadge,
+  DashboardShortcuts,
+  DashboardRelatedLinks,
 } from "@/components/dashboard/DashboardPrimitives";
-import RouteSummaryPanel from "@/components/delivery/RouteSummaryPanel";
 import {
-  businessOverviewActivityRows,
-  businessOverviewCopyBars,
-  businessOverviewDeliveryFootprint,
   businessOverviewMetrics,
-  businessOverviewQuickActions,
-  businessShipmentRouteSummaries,
 } from "@/lib/demoData";
 
-const quickActionIconMap = {
+const sectionIconMap = {
+  overview: LayoutDashboard,
   team: Users,
   orders: Package,
   invoices: FileText,
   locations: MapPinned,
-  shipments: Building2,
+  shipments: Truck,
+  settings: ShieldCheck,
 };
 
-const activityColumns = [
-  { key: "item", label: "Activity" },
-  {
-    key: "status",
-    label: "Status",
-    render: (value, row) => (
-      <DashboardStatusBadge label={value} tone={row.tone} />
-    ),
-  },
-  { key: "date", label: "Date" },
-];
-
 export default function BusinessOverviewPage() {
+  const shortcuts = [
+    { id: "team", label: "Team", to: "/business-dashboard/team" },
+    { id: "orders", label: "Orders", to: "/business-dashboard/orders" },
+    { id: "invoices", label: "Invoices", to: "/business-dashboard/invoices" },
+    { id: "locations", label: "Locations", to: "/business-dashboard/locations" },
+    { id: "shipments", label: "Shipments", to: "/business-dashboard/shipments" },
+    { id: "settings", label: "Settings", to: "/business-dashboard/settings" },
+  ].map((tool) => ({
+    ...tool,
+    icon: sectionIconMap[tool.id],
+  }));
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Business workspace"
-        title="Business account command center"
+        title="Business account"
+        breadcrumbs={[{ label: "Business workspace" }, { label: "Overview" }]}
         action={
           <Link
             to="/business-dashboard/shipments"
@@ -65,111 +60,35 @@ export default function BusinessOverviewPage() {
         }
       />
 
-      <DashboardFilterBar
-        searchPlaceholder="Search locations, invoices, or shipment runs"
-        filters={[
-          "Regional Team contract",
-          "475 copies per cycle",
-          "Belgium + Germany coverage",
-        ]}
-        action={
-          <Link
-            to="/business-dashboard/orders"
-            className="inline-flex items-center gap-2 rounded-full border border-stone-200/80 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition-colors hover:bg-stone-50"
-          >
-            Review bulk orders
-            <Package className="h-4 w-4" />
-          </Link>
-        }
+      <DashboardShortcuts
+        title="Quick links"
+        description="Open a focused operational section instead of one page with everything at once."
+        items={shortcuts}
+        columns={3}
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {businessOverviewMetrics.map((metric) => (
-          <DashboardMetricCard
-            key={metric.label}
-            label={metric.label}
-            value={metric.value}
-            accent={metric.accent}
-          />
-        ))}
-      </section>
+      <DashboardPanel title="At a glance" className="p-5 sm:p-6">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-5">
+          {businessOverviewMetrics.map((metric) => (
+            <div key={metric.label}>
+              <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
+                {metric.label}
+              </p>
+              <p className="mt-1.5 font-sans text-lg font-semibold text-stone-900 dark:text-stone-100">
+                {metric.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      </DashboardPanel>
 
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <DashboardSplitMetricCard
-          title="Contract snapshot"
-          leftLabel="Commercial tier"
-          leftValue="Regional Team"
-          rightLabel="Invoice model"
-          rightValue="Monthly consolidated"
-          footer=""
-        />
-        <DashboardPanel
-          title="Delivery footprint"
-          className="h-full"
-        >
-          <div className="grid gap-4 sm:grid-cols-3">
-            {businessOverviewDeliveryFootprint.map((item) => (
-              <div key={item.label} className="dashboard-panel-soft p-4">
-                <p className="dashboard-kpi-label font-sans text-[0.65rem] font-bold uppercase tracking-[0.22em]">
-                  {item.label}
-                </p>
-                <p className="dashboard-kpi-value mt-2 font-sans text-2xl font-semibold">
-                  {item.value}
-                </p>
-              </div>
-            ))}
-          </div>
-        </DashboardPanel>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <DashboardChartPanel
-          title="Copy allocation by location"
-          data={businessOverviewCopyBars}
-        />
-        <DashboardActivityTable
-          title="Recent business activity"
-          columns={activityColumns}
-          rows={businessOverviewActivityRows}
-        />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
-        <RouteSummaryPanel
-          title="Route and shipment health"
-          items={businessShipmentRouteSummaries.slice(0, 2)}
-        />
-        <DashboardPanel
-          title="Quick actions"
-          className="h-full"
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            {businessOverviewQuickActions.map((action) => {
-              const Icon = quickActionIconMap[action.id] || Building2;
-
-              return (
-                <Link
-                  key={action.route}
-                  to={action.route}
-                  className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4 transition hover:border-stone-300 hover:bg-white"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="dashboard-icon-badge flex h-10 w-10 items-center justify-center">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
-                        {action.label}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-
-        </DashboardPanel>
-      </section>
+      <DashboardRelatedLinks
+        title="Related links"
+        items={[
+          { label: "Public business page", to: "/business" },
+          { label: "Business partner application", to: "/business/apply" },
+        ]}
+      />
     </div>
   );
 }

@@ -1,51 +1,35 @@
 import React, { useMemo } from "react";
-import { Clock3, Newspaper, Route, Sparkles, Truck } from "lucide-react";
+import {
+  BookOpenText,
+  CreditCard,
+  ShieldCheck,
+  Sparkles,
+  Truck,
+  UserRound,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import {
-  DashboardActivityTable,
-  DashboardChartPanel,
-  DashboardMetricCard,
   DashboardPageHeader,
+  DashboardShortcuts,
   DashboardPanel,
-  DashboardSplitMetricCard,
-  DashboardStatusBadge,
-  DashboardTimeline,
+  DashboardRelatedLinks,
 } from "@/components/dashboard/DashboardPrimitives";
-import {
-  readerDashboardActivityRows,
-  readerDashboardDeliveryTimeline,
-  readerDashboardQuickActions,
-  readerDashboardReadingBars,
-  readerDashboardReadingList,
-} from "@/lib/demoData";
 import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
 
-const timelineItems = readerDashboardDeliveryTimeline.map((item, index) => {
-  const iconMap = [Newspaper, Route, Truck, Clock3];
-  return {
-    ...item,
-    icon: iconMap[index] || Route,
-    description: "",
-    badge: (
-      <DashboardStatusBadge
-        label={item.badge}
-        tone={item.completed ? "success" : "neutral"}
-      />
-    ),
-  };
-});
+const sectionIconMap = {
+  deliveries: Truck,
+  billing: CreditCard,
+  history: BookOpenText,
+  profile: UserRound,
+  privacy: ShieldCheck,
+};
 
-const activityColumns = [
-  { key: "item", label: "Item" },
-  {
-    key: "status",
-    label: "Status",
-    render: (value, row) => (
-      <DashboardStatusBadge label={value} tone={row.tone} />
-    ),
-  },
-  { key: "date", label: "Date" },
+const factRows = [
+  { key: "plan", label: "Current plan", get: (s) => s.planName },
+  { key: "billing", label: "Next billing", get: (s) => s.nextBillingDate },
+  { key: "delivery", label: "Next delivery", get: (s) => s.nextDeliveryDate },
+  { key: "access", label: "Access state", get: (s) => s.accessState },
 ];
 
 export default function ReaderOverviewPage() {
@@ -55,14 +39,24 @@ export default function ReaderOverviewPage() {
     () => getReaderSubscriptionSnapshot(user?.email),
     [user?.email],
   );
-  const savedStoriesCount = overview.isPrintSubscriber ? "18" : "12";
-  const weeklyReadingCount = overview.isPrintSubscriber ? "47" : "34";
+
+  const shortcuts = [
+    { id: "deliveries", label: "Deliveries", to: "/dashboard/deliveries" },
+    { id: "billing", label: "Billing", to: "/dashboard/billing" },
+    { id: "history", label: "Reading", to: "/dashboard/history" },
+    { id: "profile", label: "Profile", to: "/dashboard/profile" },
+    { id: "privacy", label: "Privacy", to: "/dashboard/privacy" },
+  ].map((tool) => ({
+    ...tool,
+    icon: sectionIconMap[tool.id],
+  }));
 
   return (
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Subscriber workspace"
         title={`Welcome back${user?.name ? `, ${user.name.split(" ")[0]}` : ""}`}
+        breadcrumbs={[{ label: "Reader workspace" }, { label: "Overview" }]}
         action={
           <Link
             to="/subscriptions"
@@ -74,135 +68,34 @@ export default function ReaderOverviewPage() {
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <DashboardMetricCard
-          label="Subscription status"
-          value={overview.subscriptionStatus}
-          detail=""
-        />
-        <DashboardMetricCard
-          label="Next billing"
-          value={overview.nextBillingDate}
-          detail=""
-        />
-        <DashboardMetricCard
-          label="Next delivery"
-          value={overview.nextDeliveryDate}
-          detail=""
-          accent
-        />
-        <DashboardMetricCard
-          label="Access state"
-          value={overview.accessState}
-          detail=""
-        />
-      </section>
+      <DashboardShortcuts
+        title="Quick links"
+        description="Open a focused section instead of scanning everything on one page."
+        items={shortcuts}
+      />
 
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <DashboardSplitMetricCard
-          title="Subscription health"
-          leftLabel="Current plan"
-          leftValue={overview.planName}
-          rightLabel="Payment path"
-          rightValue={overview.paymentMethod}
-          footer={overview.deliveryMode}
-        />
-        <DashboardPanel
-          title="Reader profile snapshot"
-          className="h-full"
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="dashboard-panel-soft p-4">
-              <p className="dashboard-kpi-label font-sans text-[0.65rem] font-bold uppercase tracking-[0.22em]">
-                Delivery profile
-              </p>
-              <p className="dashboard-kpi-value mt-2 font-sans text-2xl font-semibold">
-                {overview.locationSummary}
-              </p>
-              <p className="dashboard-page-description mt-2 font-sans text-xs leading-5">
-                {overview.deliveryWindow}
-              </p>
+      <DashboardPanel title="At a glance" className="p-5 sm:p-6">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+          {factRows.map((row) => (
+            <div key={row.key}>
+              <dt className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
+                {row.label}
+              </dt>
+              <dd className="mt-1.5 font-sans text-base font-semibold text-stone-900 dark:text-stone-100">
+                {row.get(overview)}
+              </dd>
             </div>
-            <div className="dashboard-panel-soft p-4">
-              <p className="dashboard-kpi-label font-sans text-[0.65rem] font-bold uppercase tracking-[0.22em]">
-                Reading rhythm
-              </p>
-              <p className="dashboard-kpi-value mt-2 font-sans text-2xl font-semibold">
-                {weeklyReadingCount} articles
-              </p>
-              <p className="dashboard-page-description mt-2 font-sans text-xs leading-5">
-                {savedStoriesCount} stories saved for later.
-              </p>
-            </div>
-          </div>
-        </DashboardPanel>
-      </section>
+          ))}
+        </dl>
+      </DashboardPanel>
 
-      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <DashboardChartPanel
-          title="Weekly reading activity"
-          description=""
-          data={readerDashboardReadingBars}
-        />
-        <DashboardTimeline
-          title="Next print cycle"
-          description=""
-          items={timelineItems}
-        />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <DashboardActivityTable
-          title="Recent account activity"
-          description=""
-          columns={activityColumns}
-          rows={readerDashboardActivityRows}
-        />
-        <DashboardPanel
-          title="Saved reading queue"
-          className="h-full"
-        >
-          <div className="space-y-4">
-            {readerDashboardReadingList.map((item) => (
-              <Link
-                key={item.id}
-                to={item.route}
-                className="block rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4 transition hover:border-stone-300 hover:bg-white"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-sans text-sm font-semibold text-stone-900 dark:text-stone-100">
-                      {item.title}
-                    </h3>
-                  </div>
-                  <DashboardStatusBadge label={item.status} tone={item.tone} />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </DashboardPanel>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <DashboardPanel
-          title="Quick actions"
-          className="h-full"
-        >
-          <div className="grid gap-4 sm:grid-cols-3">
-            {readerDashboardQuickActions.map((action) => (
-              <Link
-                key={action.route}
-                to={action.route}
-                className="rounded-[1rem] border border-stone-200/80 bg-stone-50/80 p-4 transition hover:border-stone-300 hover:bg-white"
-              >
-                <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-900 dark:text-stone-100">
-                  {action.label}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </DashboardPanel>
-      </section>
+      <DashboardRelatedLinks
+        title="Related links"
+        items={[
+          { label: "Public delivery page", to: "/delivery" },
+          { label: "Compare subscription plans", to: "/subscriptions" },
+        ]}
+      />
     </div>
   );
 }

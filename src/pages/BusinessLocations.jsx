@@ -3,25 +3,46 @@ import { Link } from "react-router-dom";
 import { Building2, Truck } from "lucide-react";
 import {
   DashboardFilterBar,
-  DashboardMetricCard,
   DashboardPageHeader,
+  DashboardPanel,
+  DashboardRelatedLinks,
+  DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import DeliveryMapPanel from "@/components/delivery/DeliveryMapPanel";
-import LocationStatusTable from "@/components/delivery/LocationStatusTable";
-import RouteSummaryPanel from "@/components/delivery/RouteSummaryPanel";
-import { IMAGES } from "@/lib/constants";
-import {
-  businessLocationMetrics,
-  businessLocationRows,
-  businessShipmentRouteSummaries,
-} from "@/lib/demoData";
+import { businessLocationRows } from "@/lib/demoData";
+
+const locationColumns = [
+  { key: "location", label: "Site" },
+  { key: "region", label: "Region" },
+  { key: "copies", label: "Copies / cycle" },
+  { key: "contact", label: "Receiving contact" },
+  {
+    key: "status",
+    label: "Status",
+    render: (value, row) => (
+      <DashboardStatusBadge label={value} tone={row.tone} />
+    ),
+  },
+];
+
+const relatedLinks = [
+  { label: "Team", to: "/business-dashboard/team" },
+  { label: "Orders", to: "/business-dashboard/orders" },
+  { label: "Invoices", to: "/business-dashboard/invoices" },
+  { label: "Shipments", to: "/business-dashboard/shipments" },
+  { label: "Settings", to: "/business-dashboard/settings" },
+];
 
 export default function BusinessLocations() {
   return (
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Business locations"
-        title="Delivery destinations and receiving readiness"
+        title="Delivery destinations"
+        description="Review receiving sites and their readiness status."
+        breadcrumbs={[
+          { label: "Business workspace", to: "/business-dashboard/overview" },
+          { label: "Locations" },
+        ]}
         action={
           <Link
             to="/business-dashboard/shipments"
@@ -47,37 +68,45 @@ export default function BusinessLocations() {
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {businessLocationMetrics.map((metric) => (
-          <DashboardMetricCard
-            key={metric.label}
-            label={metric.label}
-            value={metric.value}
-            accent={metric.accent}
-          />
-        ))}
-      </section>
+      <DashboardPanel title="Location status" className="p-5 sm:p-6">
+        <div className="dashboard-table-wrap overflow-x-auto">
+          <table className="w-full min-w-[760px]">
+            <thead>
+              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
+                {locationColumns.map((column) => (
+                  <th
+                    key={column.key}
+                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
+                  >
+                    {column.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {businessLocationRows.map((row) => (
+                <tr key={row.id} className="border-b last:border-b-0">
+                  {locationColumns.map((column) => (
+                    <td
+                      key={column.key}
+                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                    >
+                      {column.render
+                        ? column.render(row[column.key], row)
+                        : row[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </DashboardPanel>
 
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <LocationStatusTable
-          title="Location status"
-          description=""
-          rows={businessLocationRows}
-        />
-        <RouteSummaryPanel
-          title="Route alignment preview"
-          items={businessShipmentRouteSummaries}
-        />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <DeliveryMapPanel
-          title="Destination coverage"
-          imageSrc={IMAGES.delivery}
-          imageAlt="Business delivery destination coverage"
-          tags={["Brussels", "Antwerp", "Cologne", "Berlin"]}
-        />
-      </section>
+      <DashboardRelatedLinks
+        title="Related links"
+        items={[{ label: "View coverage map", to: "/delivery" }, ...relatedLinks]}
+      />
     </div>
   );
 }

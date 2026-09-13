@@ -2,22 +2,18 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { CreditCard, Truck } from "lucide-react";
 import {
-  DashboardActivityTable,
   DashboardFilterBar,
-  DashboardMetricCard,
   DashboardPageHeader,
+  DashboardPanel,
+  DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import {
-  adminCompanyMetrics,
-  adminCompanyRows,
-} from "@/lib/demoData";
+import { adminCompanyRows } from "@/lib/demoData";
 
 const companyColumns = [
   { key: "company", label: "Company" },
   { key: "tier", label: "Tier" },
   { key: "volume", label: "Volume" },
-  { key: "billing", label: "Billing" },
   {
     key: "status",
     label: "Status",
@@ -25,7 +21,14 @@ const companyColumns = [
       <DashboardStatusBadge label={value} tone={row.tone} />
     ),
   },
-  { key: "region", label: "Region" },
+];
+
+const relatedLinks = [
+  { label: "Content", to: "/admin/content" },
+  { label: "Schedule", to: "/admin/schedule" },
+  { label: "Subscribers", to: "/admin/subscribers" },
+  { label: "Shipments", to: "/admin/shipments" },
+  { label: "Pricing", to: "/admin/pricing" },
 ];
 
 export default function AdminCompanies() {
@@ -33,7 +36,12 @@ export default function AdminCompanies() {
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Admin companies"
-        title="Business account summaries and contract health"
+        title="Company accounts"
+        description="Review business account tiers and contract health."
+        breadcrumbs={[
+          { label: "Admin workspace", to: "/admin/overview" },
+          { label: "Companies" },
+        ]}
         action={
           <Link
             to="/admin/pricing"
@@ -59,26 +67,42 @@ export default function AdminCompanies() {
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {adminCompanyMetrics.map((metric) => (
-          <DashboardMetricCard
-            key={metric.label}
-            label={metric.label}
-            value={metric.value}
-            accent={metric.accent}
-          />
-        ))}
-      </section>
+      <DashboardPanel title="Company account table" className="p-5 sm:p-6">
+        <div className="dashboard-table-wrap overflow-x-auto">
+          <table className="w-full min-w-[620px]">
+            <thead>
+              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
+                {companyColumns.map((column) => (
+                  <th
+                    key={column.key}
+                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
+                  >
+                    {column.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {adminCompanyRows.map((row) => (
+                <tr key={row.id} className="border-b last:border-b-0">
+                  {companyColumns.map((column) => (
+                    <td
+                      key={column.key}
+                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                    >
+                      {column.render
+                        ? column.render(row[column.key], row)
+                        : row[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </DashboardPanel>
 
-      <section>
-        <DashboardActivityTable
-          title="Company account table"
-          columns={companyColumns}
-          rows={adminCompanyRows}
-        />
-      </section>
-
-
+      <DashboardRelatedLinks title="Quick links" items={relatedLinks} />
     </div>
   );
 }
