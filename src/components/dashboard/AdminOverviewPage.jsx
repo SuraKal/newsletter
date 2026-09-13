@@ -6,6 +6,7 @@ import {
   CreditCard,
   LayoutDashboard,
   PenSquare,
+  ShieldCheck,
   Truck,
   Users,
 } from "lucide-react";
@@ -24,6 +25,7 @@ const sectionIconMap = {
   schedule: CalendarDays,
   subscribers: Users,
   companies: Building2,
+  governance: ShieldCheck,
   shipments: Truck,
   pricing: CreditCard,
 };
@@ -34,6 +36,7 @@ export default function AdminOverviewPage() {
     { id: "schedule", label: "Schedule", to: "/admin/schedule" },
     { id: "subscribers", label: "Subscribers", to: "/admin/subscribers" },
     { id: "companies", label: "Companies", to: "/admin/companies" },
+    { id: "governance", label: "Governance", to: "/admin/governance" },
     { id: "shipments", label: "Shipments", to: "/admin/shipments" },
     { id: "pricing", label: "Pricing", to: "/admin/pricing" },
   ].map((tool) => ({

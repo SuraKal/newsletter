@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Truck, Users } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardPagination,
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import { useTableQuery } from "@/lib/useTableQuery";
 import { adminSubscriberRows } from "@/lib/demoData";
 
 const subscriberColumns = [
@@ -23,15 +25,24 @@ const subscriberColumns = [
   },
 ];
 
+const matchesSearch = (row, query) =>
+  [row.name, row.plan, row.renewal, row.status].some((value) =>
+    String(value ?? "").toLowerCase().includes(query),
+  );
+
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
   { label: "Schedule", to: "/admin/schedule" },
   { label: "Companies", to: "/admin/companies" },
   { label: "Shipments", to: "/admin/shipments" },
+  { label: "Governance", to: "/admin/governance" },
   { label: "Pricing", to: "/admin/pricing" },
 ];
 
 export default function AdminSubscribers() {
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({ rows: adminSubscriberRows, query, predicate: matchesSearch });
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
@@ -55,6 +66,9 @@ export default function AdminSubscribers() {
 
       <DashboardFilterBar
         searchPlaceholder="Search subscriber, renewal state, or address watch"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={query.trim() ? table.total : null}
         filters={["24.3k active", "37 review cases", "Print + digital watchlist"]}
         action={
           <Link
@@ -83,7 +97,7 @@ export default function AdminSubscribers() {
               </tr>
             </thead>
             <tbody>
-              {adminSubscriberRows.map((row) => (
+              {table.rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {subscriberColumns.map((column) => (
                     <td
@@ -100,6 +114,13 @@ export default function AdminSubscribers() {
             </tbody>
           </table>
         </div>
+        <DashboardPagination
+          page={table.page}
+          pageCount={table.pageCount}
+          total={table.total}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+        />
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

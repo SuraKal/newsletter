@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, Truck } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardPagination,
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import { useTableQuery } from "@/lib/useTableQuery";
 import { adminPricingRows } from "@/lib/demoData";
 
 const pricingColumns = [
@@ -23,15 +25,24 @@ const pricingColumns = [
   },
 ];
 
+const matchesSearch = (row, query) =>
+  [row.tier, row.volume, row.billing, row.status].some((value) =>
+    String(value ?? "").toLowerCase().includes(query),
+  );
+
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
   { label: "Schedule", to: "/admin/schedule" },
   { label: "Subscribers", to: "/admin/subscribers" },
   { label: "Companies", to: "/admin/companies" },
   { label: "Shipments", to: "/admin/shipments" },
+  { label: "Governance", to: "/admin/governance" },
 ];
 
 export default function AdminPricing() {
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({ rows: adminPricingRows, query, predicate: matchesSearch });
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
@@ -55,6 +66,9 @@ export default function AdminPricing() {
 
       <DashboardFilterBar
         searchPlaceholder="Search tier, volume band, or billing model"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={query.trim() ? table.total : null}
         filters={["3 pricing bands", "12 cross-border contracts", "6 reviews in progress"]}
         action={
           <Link
@@ -83,7 +97,7 @@ export default function AdminPricing() {
               </tr>
             </thead>
             <tbody>
-              {adminPricingRows.map((row) => (
+              {table.rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {pricingColumns.map((column) => (
                     <td
@@ -100,6 +114,13 @@ export default function AdminPricing() {
             </tbody>
           </table>
         </div>
+        <DashboardPagination
+          page={table.page}
+          pageCount={table.pageCount}
+          total={table.total}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+        />
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

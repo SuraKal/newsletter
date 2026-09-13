@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { MailPlus } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardPagination,
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import { useTableQuery } from "@/lib/useTableQuery";
 import { businessTeamRows } from "@/lib/demoData";
 
 const teamColumns = [
@@ -23,6 +25,11 @@ const teamColumns = [
   },
 ];
 
+const matchesSearch = (row, query) =>
+  [row.name, row.role, row.scope, row.status].some((value) =>
+    String(value ?? "").toLowerCase().includes(query),
+  );
+
 const relatedLinks = [
   { label: "Orders", to: "/business-dashboard/orders" },
   { label: "Invoices", to: "/business-dashboard/invoices" },
@@ -32,6 +39,9 @@ const relatedLinks = [
 ];
 
 export default function BusinessTeam() {
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({ rows: businessTeamRows, query, predicate: matchesSearch });
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
@@ -55,6 +65,9 @@ export default function BusinessTeam() {
 
       <DashboardFilterBar
         searchPlaceholder="Search member, role, or location scope"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={query.trim() ? table.total : null}
         filters={["12 active seats", "1 pending invite", "Ops + finance roles"]}
       />
 
@@ -74,7 +87,7 @@ export default function BusinessTeam() {
               </tr>
             </thead>
             <tbody>
-              {businessTeamRows.map((row) => (
+              {table.rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {teamColumns.map((column) => (
                     <td
@@ -91,6 +104,13 @@ export default function BusinessTeam() {
             </tbody>
           </table>
         </div>
+        <DashboardPagination
+          page={table.page}
+          pageCount={table.pageCount}
+          total={table.total}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+        />
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

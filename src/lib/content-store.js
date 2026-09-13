@@ -121,8 +121,50 @@ function categoryKeyFor(category) {
   return null;
 }
 
+export const ARTICLE_PLACEMENTS = [
+  {
+    value: "latest",
+    label: "Latest news",
+    note: "Rendered under the 'Latest News' grid on the home page and in the News lead secondary stories.",
+  },
+  {
+    value: "hero",
+    label: "Hero story",
+    note: "Rendered as the first slide of the front-page 'Top stories carousel'. Only the first Published hero article shows.",
+  },
+  {
+    value: "sidebar",
+    label: "Sidebar rail",
+    note: "Rendered in the 'News Desk — Stories worth keeping' rail below the front-page hero.",
+  },
+  {
+    value: "featured",
+    label: "Featured story",
+    note: "Rendered in the 'Editor's Selection' banner on the home page. Only the first Published featured article shows.",
+  },
+  {
+    value: "editorial",
+    label: "Opinion & Analysis",
+    note: "Rendered in the 'Opinion & Analysis' grid on the home page.",
+  },
+  {
+    value: "admin",
+    label: "General news listing",
+    note: "Rendered in the 'All News' listing on the News page and the related-story rails.",
+  },
+];
+
+export function getPlacementLabel(source) {
+  const placement = ARTICLE_PLACEMENTS.find(
+    (option) => option.value === source,
+  );
+  return placement ? placement.label : "General news listing";
+}
+
 export function getAllArticles() {
-  return readAll().map(toRenderArticle);
+  return readAll()
+    .filter((item) => item.status === "Published")
+    .map(toRenderArticle);
 }
 
 export function getArticleById(id) {
@@ -137,36 +179,42 @@ export function getRawArticleById(id) {
 }
 
 export function getHeroArticle() {
-  const hero = readAll().find((item) => item.source === "hero");
+  const hero = readAll().find(
+    (item) => item.source === "hero" && item.status === "Published",
+  );
   return toRenderArticle(hero || buildSeedArticles()[0]);
 }
 
 export function getRightColumnArticle() {
-  const right = readAll().find((item) => item.source === "right");
+  const right = readAll().find(
+    (item) => item.source === "right" && item.status === "Published",
+  );
   return toRenderArticle(right || heroArticle);
 }
 
 export function getFeaturedStory() {
-  const featured = readAll().find((item) => item.source === "featured");
+  const featured = readAll().find(
+    (item) => item.source === "featured" && item.status === "Published",
+  );
   return toRenderArticle(featured || featuredStory);
 }
 
 export function getSidebarArticles() {
   return readAll()
-    .filter((item) => item.source === "sidebar")
+    .filter((item) => item.source === "sidebar" && item.status === "Published")
     .map(toRenderArticle);
 }
 
 export function getLatestNews() {
   return readAll()
-    .filter((item) => item.source === "latest")
+    .filter((item) => item.source === "latest" && item.status === "Published")
     .sort(byDateDesc)
     .map(toRenderArticle);
 }
 
 export function getEditorials() {
   return readAll()
-    .filter((item) => item.source === "editorial")
+    .filter((item) => item.source === "editorial" && item.status === "Published")
     .map(toRenderArticle);
 }
 
@@ -212,15 +260,20 @@ export function resetContentStore() {
 }
 
 export function getAdminContentRows() {
-  return readAll().map((article) => ({
-    id: article.id,
-    headline: article.headline,
-    sector: article.sector || article.category || "News",
-    editor: article.editor,
-    status: article.status,
-    tone: article.tone,
-    publishWindow: article.publishWindow || publishWindowFor(article),
-  }));
+  return readAll()
+    .sort(byDateDesc)
+    .map((article) => ({
+      id: article.id,
+      headline: article.headline,
+      sector: article.sector || article.category || "News",
+      editor: article.editor,
+      status: article.status,
+      tone: article.tone,
+      publishWindow: article.publishWindow || publishWindowFor(article),
+      image: article.image || null,
+      category: article.category || article.sector || "News",
+      source: article.source || "admin",
+    }));
 }
 
 function releaseLabelFor(article) {

@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ReceiptText, ShieldCheck } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardPagination,
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import { useTableQuery } from "@/lib/useTableQuery";
 import { businessInvoiceRows } from "@/lib/demoData";
 
 const invoiceColumns = [
@@ -22,6 +24,11 @@ const invoiceColumns = [
     ),
   },
 ];
+
+const matchesSearch = (row, query) =>
+  [row.invoice, row.scope, row.amount, row.status].some((value) =>
+    String(value ?? "").toLowerCase().includes(query),
+  );
 
 const relatedLinks = [
   { label: "Team", to: "/business-dashboard/team" },
@@ -38,6 +45,9 @@ const snapshotRows = [
 ];
 
 export default function BusinessInvoices() {
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({ rows: businessInvoiceRows, query, predicate: matchesSearch });
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
@@ -61,6 +71,9 @@ export default function BusinessInvoices() {
 
       <DashboardFilterBar
         searchPlaceholder="Search invoice, purchase order, or billing note"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={query.trim() ? table.total : null}
         filters={["Monthly consolidated invoice", "VAT-aware billing", "1 follow-up note"]}
         action={
           <Link
@@ -104,7 +117,7 @@ export default function BusinessInvoices() {
               </tr>
             </thead>
             <tbody>
-              {businessInvoiceRows.map((row) => (
+              {table.rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {invoiceColumns.map((column) => (
                     <td
@@ -121,6 +134,13 @@ export default function BusinessInvoices() {
             </tbody>
           </table>
         </div>
+        <DashboardPagination
+          page={table.page}
+          pageCount={table.pageCount}
+          total={table.total}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+        />
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

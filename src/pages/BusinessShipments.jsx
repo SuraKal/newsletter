@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, MapPin } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardPagination,
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import { useTableQuery } from "@/lib/useTableQuery";
 import { businessShipmentRows } from "@/lib/demoData";
 
 const shipmentColumns = [
@@ -25,6 +27,16 @@ const shipmentColumns = [
   { key: "eta", label: "Delivery window" },
 ];
 
+const matchesSearch = (row, query) =>
+  [
+    row.shipmentId,
+    row.label,
+    row.route,
+    row.scope,
+    row.status,
+    row.eta,
+  ].some((value) => String(value ?? "").toLowerCase().includes(query));
+
 const relatedLinks = [
   { label: "Team", to: "/business-dashboard/team" },
   { label: "Orders", to: "/business-dashboard/orders" },
@@ -34,6 +46,9 @@ const relatedLinks = [
 ];
 
 export default function BusinessShipments() {
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({ rows: businessShipmentRows, query, predicate: matchesSearch });
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
@@ -57,6 +72,9 @@ export default function BusinessShipments() {
 
       <DashboardFilterBar
         searchPlaceholder="Search shipment, branch, or route cluster"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={query.trim() ? table.total : null}
         filters={["9 delivery points", "Belgium + Germany", "Contract shipment mode"]}
         action={
           <Link
@@ -85,7 +103,7 @@ export default function BusinessShipments() {
               </tr>
             </thead>
             <tbody>
-              {businessShipmentRows.map((row) => (
+              {table.rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {shipmentColumns.map((column) => (
                     <td
@@ -102,6 +120,13 @@ export default function BusinessShipments() {
             </tbody>
           </table>
         </div>
+        <DashboardPagination
+          page={table.page}
+          pageCount={table.pageCount}
+          total={table.total}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+        />
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

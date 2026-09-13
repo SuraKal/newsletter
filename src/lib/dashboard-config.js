@@ -146,6 +146,12 @@ export const dashboardWorkspaces = {
         icon: Building2,
       },
       {
+        id: "governance",
+        label: "Governance",
+        path: "/admin/governance",
+        icon: ShieldCheck,
+      },
+      {
         id: "shipments",
         label: "Shipments",
         path: "/admin/shipments",

@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { CirclePlus, Truck } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardPagination,
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import { useTableQuery } from "@/lib/useTableQuery";
 import { businessOrderRows } from "@/lib/demoData";
 
 const orderColumns = [
@@ -23,6 +25,11 @@ const orderColumns = [
   },
 ];
 
+const matchesSearch = (row, query) =>
+  [row.order, row.copies, row.cadence, row.status].some((value) =>
+    String(value ?? "").toLowerCase().includes(query),
+  );
+
 const relatedLinks = [
   { label: "Team", to: "/business-dashboard/team" },
   { label: "Invoices", to: "/business-dashboard/invoices" },
@@ -32,6 +39,9 @@ const relatedLinks = [
 ];
 
 export default function BusinessOrders() {
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({ rows: businessOrderRows, query, predicate: matchesSearch });
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
@@ -55,6 +65,9 @@ export default function BusinessOrders() {
 
       <DashboardFilterBar
         searchPlaceholder="Search order plan, cadence, or destination set"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={query.trim() ? table.total : null}
         filters={["475 copies recurring", "Biweekly print cycle", "Regional Team pricing"]}
         action={
           <button
@@ -83,7 +96,7 @@ export default function BusinessOrders() {
               </tr>
             </thead>
             <tbody>
-              {businessOrderRows.map((row) => (
+              {table.rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {orderColumns.map((column) => (
                     <td
@@ -100,6 +113,13 @@ export default function BusinessOrders() {
             </tbody>
           </table>
         </div>
+        <DashboardPagination
+          page={table.page}
+          pageCount={table.pageCount}
+          total={table.total}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+        />
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

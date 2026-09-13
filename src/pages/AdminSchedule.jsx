@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { PenSquare, Truck } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardPagination,
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import { useTableQuery } from "@/lib/useTableQuery";
 import { getAdminScheduleRows } from "@/lib/content-store";
 
 const scheduleColumns = [
@@ -35,16 +37,24 @@ const scheduleColumns = [
   { key: "release", label: "Release step" },
 ];
 
+const matchesSearch = (row, query) =>
+  [row.slot, row.sector, row.headline, row.status, row.release].some(
+    (value) => String(value ?? "").toLowerCase().includes(query),
+  );
+
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
   { label: "Subscribers", to: "/admin/subscribers" },
   { label: "Companies", to: "/admin/companies" },
   { label: "Shipments", to: "/admin/shipments" },
+  { label: "Governance", to: "/admin/governance" },
   { label: "Pricing", to: "/admin/pricing" },
 ];
 
 export default function AdminSchedule() {
   const adminScheduleRows = getAdminScheduleRows();
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({ rows: adminScheduleRows, query, predicate: matchesSearch });
 
   return (
     <div className="space-y-6">
@@ -69,6 +79,9 @@ export default function AdminSchedule() {
 
       <DashboardFilterBar
         searchPlaceholder="Search release slot, sector, or headline"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={query.trim() ? table.total : null}
         filters={["8 scheduled items", "3 print-linked releases", "2 review holds"]}
         action={
           <Link
@@ -97,7 +110,7 @@ export default function AdminSchedule() {
               </tr>
             </thead>
             <tbody>
-              {adminScheduleRows.map((row) => (
+              {table.rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {scheduleColumns.map((column) => (
                     <td
@@ -114,6 +127,13 @@ export default function AdminSchedule() {
             </tbody>
           </table>
         </div>
+        <DashboardPagination
+          page={table.page}
+          pageCount={table.pageCount}
+          total={table.total}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+        />
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

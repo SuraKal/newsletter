@@ -6,9 +6,11 @@ import {
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardPagination,
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import { useTableQuery } from "@/lib/useTableQuery";
 import {
   approveCompanyLead,
   declineCompanyLead,
@@ -30,18 +32,47 @@ const companyColumns = [
   },
 ];
 
+const matchesLeadSearch = (lead, query) =>
+  [
+    lead.company,
+    lead.lead?.requestType,
+    lead.lead?.primaryContact,
+    lead.workEmail,
+    lead.lead?.companySize,
+    lead.lead?.launchTimeline,
+    lead.volume,
+    lead.lead?.deliveryLocations,
+  ].some((value) => String(value ?? "").toLowerCase().includes(query));
+
+const matchesAccountSearch = (row, query) =>
+  [row.company, row.tier, row.volume, row.status].some((value) =>
+    String(value ?? "").toLowerCase().includes(query),
+  );
+
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
   { label: "Schedule", to: "/admin/schedule" },
   { label: "Subscribers", to: "/admin/subscribers" },
   { label: "Shipments", to: "/admin/shipments" },
+  { label: "Governance", to: "/admin/governance" },
   { label: "Pricing", to: "/admin/pricing" },
 ];
 
 export default function AdminCompanies() {
   const [, setRevision] = useState(0);
+  const [query, setQuery] = useState("");
   const leads = getCompanyLeads();
   const accounts = getCompanyAccounts();
+  const leadsTable = useTableQuery({
+    rows: leads,
+    query,
+    predicate: matchesLeadSearch,
+  });
+  const accountsTable = useTableQuery({
+    rows: accounts,
+    query,
+    predicate: matchesAccountSearch,
+  });
 
   const handleApprove = (id) => {
     approveCompanyLead(id);
@@ -76,6 +107,11 @@ export default function AdminCompanies() {
 
       <DashboardFilterBar
         searchPlaceholder="Search company, contract tier, or invoice model"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={
+          query.trim() ? leadsTable.total + accountsTable.total : null
+        }
         filters={[
           `${accounts.length} company accounts`,
           `${leads.length} pending requests`,
@@ -98,8 +134,10 @@ export default function AdminCompanies() {
         className="p-5 sm:p-6"
       >
         {leads.length ? (
-          <div className="dashboard-table-wrap overflow-x-auto">
-            <table className="w-full min-w-[760px]">
+          leadsTable.total ? (
+            <>
+              <div className="dashboard-table-wrap overflow-x-auto">
+                <table className="w-full min-w-[760px]">
               <thead>
                 <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
                   {[
@@ -120,7 +158,7 @@ export default function AdminCompanies() {
                 </tr>
               </thead>
               <tbody>
-                {leads.map((lead) => (
+                {leadsTable.rows.map((lead) => (
                   <tr
                     key={lead.id}
                     className="border-b last:border-b-0"
@@ -188,9 +226,23 @@ export default function AdminCompanies() {
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
+</tbody>
+              </table>
+              </div>
+              <DashboardPagination
+                page={leadsTable.page}
+                pageCount={leadsTable.pageCount}
+                total={leadsTable.total}
+                pageSize={leadsTable.pageSize}
+                onPageChange={leadsTable.setPage}
+              />
+            </>
+          ) : (
+            <DashboardEmptyState
+              title="No matching requests"
+              description="Try a different search term to find the business request you are looking for."
+            />
+          )
         ) : (
           <DashboardEmptyState
             title="No pending requests"
@@ -200,38 +252,54 @@ export default function AdminCompanies() {
       </DashboardPanel>
 
       <DashboardPanel title="Company account table" className="p-5 sm:p-6">
-        <div className="dashboard-table-wrap overflow-x-auto">
-          <table className="w-full min-w-[620px]">
-            <thead>
-              <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                {companyColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {accounts.map((row) => (
-                <tr key={row.id} className="border-b last:border-b-0">
-                  {companyColumns.map((column) => (
-                    <td
-                      key={column.key}
-                      className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                    >
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : row[column.key]}
-                    </td>
+        {accountsTable.total ? (
+          <>
+            <div className="dashboard-table-wrap overflow-x-auto">
+              <table className="w-full min-w-[620px]">
+                <thead>
+                  <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
+                    {companyColumns.map((column) => (
+                      <th
+                        key={column.key}
+                        className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
+                      >
+                        {column.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {accountsTable.rows.map((row) => (
+                    <tr key={row.id} className="border-b last:border-b-0">
+                      {companyColumns.map((column) => (
+                        <td
+                          key={column.key}
+                          className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                        >
+                          {column.render
+                            ? column.render(row[column.key], row)
+                            : row[column.key]}
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                </tbody>
+              </table>
+            </div>
+            <DashboardPagination
+              page={accountsTable.page}
+              pageCount={accountsTable.pageCount}
+              total={accountsTable.total}
+              pageSize={accountsTable.pageSize}
+              onPageChange={accountsTable.setPage}
+            />
+          </>
+        ) : (
+          <DashboardEmptyState
+            title="No matching accounts"
+            description="Try a different search term to find the company account you are looking for."
+          />
+        )}
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

@@ -3,6 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CATEGORIES } from "@/lib/constants";
+import { ARTICLE_PLACEMENTS } from "@/lib/content-store";
+
+const CATEGORY_OPTIONS = [...CATEGORIES, "Editorial", "Opinion", "Analysis"];
+
+const MAX_IMAGE_DIMENSION = 1200;
 
 export default function AdminArticleForm({
   form,
@@ -12,6 +18,39 @@ export default function AdminArticleForm({
   successMessage,
   templateFields = [],
 }) {
+  const handleImageUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const scale = Math.min(
+            1,
+            MAX_IMAGE_DIMENSION / Math.max(img.width, img.height),
+          );
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          onChange("image", canvas.toDataURL("image/jpeg", 0.82));
+        } catch {
+          onChange("image", typeof reader.result === "string" ? reader.result : "");
+        }
+      };
+      if (typeof reader.result !== "string") return;
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const selectedPlacement = ARTICLE_PLACEMENTS.find(
+    (option) => option.value === form.source,
+  );
+
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       {successMessage ? (
@@ -53,6 +92,46 @@ export default function AdminArticleForm({
           </select>
         </div>
 
+        <div className="space-y-2">
+          <Label htmlFor="article-source">Placement</Label>
+          <select
+            id="article-source"
+            value={form.source || "latest"}
+            onChange={(e) => onChange("source", e.target.value)}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            {ARTICLE_PLACEMENTS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          {selectedPlacement ? (
+            <p className="text-xs leading-5 text-stone-500">
+              {selectedPlacement.note}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="article-category">Public category</Label>
+          <select
+            id="article-category"
+            value={form.category}
+            onChange={(e) => onChange("category", e.target.value)}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            {CATEGORY_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs leading-5 text-stone-500">
+            Controls the badge and category page grouping.
+          </p>
+        </div>
+
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="article-headline">Headline</Label>
           <Input
@@ -74,6 +153,55 @@ export default function AdminArticleForm({
           />
         </div>
 
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="article-image">Cover image</Label>
+          <div className="grid gap-3 md:grid-cols-[180px_minmax(0,1fr)]">
+            <div className="flex min-h-[120px] items-center justify-center overflow-hidden rounded-md border border-dashed border-input bg-background">
+              {form.image ? (
+                <img
+                  src={form.image}
+                  alt="Cover preview"
+                  className="h-full max-h-44 w-full object-cover"
+                />
+              ) : (
+                <span className="p-4 text-center text-xs text-stone-400">
+                  No image set
+                </span>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  id="article-image-file"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="block w-full max-w-[240px] text-xs text-stone-500 file:mr-2 file:rounded-md file:border-0 file:bg-stone-900 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-stone-700"
+                />
+                {form.image ? (
+                  <button
+                    type="button"
+                    onClick={() => onChange("image", "")}
+                    className="rounded-md border border-input bg-background px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-100"
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+              <Input
+                id="article-image"
+                value={form.image || ""}
+                onChange={(e) => onChange("image", e.target.value)}
+                placeholder="Paste an image URL, or upload from your device"
+              />
+              <p className="text-xs leading-5 text-stone-500">
+                Upload from your device or paste a hosted image URL. Uploaded
+                images are compressed before saving.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="article-author">Author</Label>
           <Input
@@ -82,6 +210,30 @@ export default function AdminArticleForm({
             onChange={(e) => onChange("author", e.target.value)}
             placeholder="Editorial author or desk"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="article-read-time">Read time</Label>
+          <Input
+            id="article-read-time"
+            value={form.readTime || ""}
+            onChange={(e) => onChange("readTime", e.target.value)}
+            placeholder="e.g. 5 min read"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="article-access-label">Public access label</Label>
+          <Input
+            id="article-access-label"
+            value={form.accessLabel || ""}
+            onChange={(e) => onChange("accessLabel", e.target.value)}
+            placeholder="e.g. Subscribers now"
+          />
+          <p className="text-xs leading-5 text-stone-500">
+            Badge shown on latest news cards. Leave empty to auto-derive from
+            the access window.
+          </p>
         </div>
 
         <div className="space-y-2">

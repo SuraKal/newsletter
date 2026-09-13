@@ -17,10 +17,16 @@ const columns = [
   { key: "date", label: "Date" },
 ];
 
+const matchesSearch = (row, query) =>
+  [row.edition, row.trackingId, row.status, row.date].some((value) =>
+    String(value ?? "").toLowerCase().includes(query),
+  );
+
 export default function DeliveryHistoryTable({
   title,
   description = null,
   rows,
+  searchPlaceholder = "Search edition, tracking ID, or date",
 }) {
   return (
     <DashboardActivityTable
@@ -28,6 +34,8 @@ export default function DeliveryHistoryTable({
       description={description}
       columns={columns}
       rows={rows}
+      searchPlaceholder={searchPlaceholder}
+      matchesSearch={matchesSearch}
     />
   );
 }

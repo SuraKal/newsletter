@@ -6,11 +6,14 @@ import { useAuth } from "@/lib/AuthContext";
 import { appParams } from "@/lib/app-params";
 import {
   DashboardEmptyState,
+  DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardPagination,
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import { useTableQuery } from "@/lib/useTableQuery";
 import ReaderProfileForm from "@/components/forms/ReaderProfileForm";
 import AccountConsentForm from "@/components/forms/AccountConsentForm";
 import GovernanceRequestPanel from "@/components/forms/GovernanceRequestPanel";
@@ -63,6 +66,16 @@ const readingColumns = [
   },
   { key: "date", label: "Date" },
 ];
+
+const matchesBillingSearch = (row, query) =>
+  [row.item, row.amount, row.status, row.date].some((value) =>
+    String(value ?? "").toLowerCase().includes(query),
+  );
+
+const matchesReadingSearch = (row, query) =>
+  [row.item, row.category, row.status, row.date].some((value) =>
+    String(value ?? "").toLowerCase().includes(query),
+  );
 
 const readerRelatedLinks = (current) => [
   { label: "Deliveries", to: "/dashboard/deliveries" },
@@ -161,6 +174,12 @@ export function ReaderBillingPage() {
     () => getReaderSubscriptionSnapshot(user?.email),
     [user?.email],
   );
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({
+    rows: readerBillingRows,
+    query,
+    predicate: matchesBillingSearch,
+  });
 
   return (
     <div className="space-y-6">
@@ -233,6 +252,14 @@ export function ReaderBillingPage() {
         </div>
       </DashboardPanel>
 
+      <DashboardFilterBar
+        searchPlaceholder="Search payment item, amount, status, or date"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={query.trim() ? table.total : null}
+        filters={[subscription.planName, subscription.billingCycle]}
+      />
+
       <DashboardPanel title="Payment history and renewal events" className="p-5 sm:p-6">
         <div className="dashboard-table-wrap overflow-x-auto">
           <table className="w-full min-w-[620px]">
@@ -249,7 +276,7 @@ export function ReaderBillingPage() {
               </tr>
             </thead>
             <tbody>
-              {readerBillingRows.map((row) => (
+              {table.rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {invoiceColumns.map((column) => (
                     <td
@@ -266,6 +293,13 @@ export function ReaderBillingPage() {
             </tbody>
           </table>
         </div>
+        <DashboardPagination
+          page={table.page}
+          pageCount={table.pageCount}
+          total={table.total}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+        />
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={readerRelatedLinks("Billing")} />
@@ -275,6 +309,12 @@ export function ReaderBillingPage() {
 
 export function ReaderHistoryPage() {
   const readingRows = getReadingHistoryRows();
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({
+    rows: readingRows,
+    query,
+    predicate: matchesReadingSearch,
+  });
 
   return (
     <div className="space-y-6">
@@ -315,6 +355,14 @@ export function ReaderHistoryPage() {
         </div>
       </DashboardPanel>
 
+      <DashboardFilterBar
+        searchPlaceholder="Search article, desk, status, or date"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={query.trim() ? table.total : null}
+        filters={[`${readingRows.length} stories in history`]}
+      />
+
       <DashboardPanel title="Recent reading history" className="p-5 sm:p-6">
         <div className="dashboard-table-wrap overflow-x-auto">
           <table className="w-full min-w-[620px]">
@@ -331,7 +379,7 @@ export function ReaderHistoryPage() {
               </tr>
             </thead>
             <tbody>
-              {readingRows.map((row) => (
+              {table.rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {readingColumns.map((column) => (
                     <td
@@ -348,6 +396,13 @@ export function ReaderHistoryPage() {
             </tbody>
           </table>
         </div>
+        <DashboardPagination
+          page={table.page}
+          pageCount={table.pageCount}
+          total={table.total}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+        />
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={readerRelatedLinks("Reading history")} />

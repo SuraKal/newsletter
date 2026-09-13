@@ -49,6 +49,7 @@ const AdminContentEditor = lazy(() => import("@/pages/AdminContentEditor"));
 const AdminSchedule = lazy(() => import("@/pages/AdminSchedule"));
 const AdminSubscribers = lazy(() => import("@/pages/AdminSubscribers"));
 const AdminCompanies = lazy(() => import("@/pages/AdminCompanies"));
+const AdminGovernance = lazy(() => import("@/pages/AdminGovernance"));
 const AdminPricing = lazy(() => import("@/pages/AdminPricing"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
@@ -186,6 +187,7 @@ const AuthenticatedApp = () => {
           <Route path="schedule" element={<AdminSchedule />} />
           <Route path="subscribers" element={<AdminSubscribers />} />
           <Route path="companies" element={<AdminCompanies />} />
+          <Route path="governance" element={<AdminGovernance />} />
           <Route path="shipments" element={<AdminShipments />} />
           <Route path="pricing" element={<AdminPricing />} />
         </Route>

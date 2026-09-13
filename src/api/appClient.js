@@ -89,7 +89,31 @@ const ensureSeedData = () => {
   }
 
   if (!storage.getItem(governanceRequestsKey)) {
-    writeJson(governanceRequestsKey, []);
+    const now = Date.now();
+    writeJson(governanceRequestsKey, [
+      {
+        id: "demo-export-1",
+        userId: "reader-1",
+        scope: "reader",
+        type: "Data export",
+        status: "Queued",
+        date: formatRequestDate(new Date(now - 2 * 86400000)),
+        createdAt: new Date(now - 2 * 86400000).toISOString(),
+        notes:
+          "Full account and subscription export requested from the reader privacy workspace.",
+      },
+      {
+        id: "demo-deletion-1",
+        userId: "business-1",
+        scope: "company",
+        type: "Company deletion review",
+        status: "Review required",
+        date: formatRequestDate(new Date(now - 86400000)),
+        createdAt: new Date(now - 86400000).toISOString(),
+        notes:
+          "Business account retention review requested under the company privacy workflow.",
+      },
+    ]);
   }
 };
 
@@ -169,6 +193,24 @@ const formatRequestDate = (date) =>
     day: "numeric",
     year: "numeric",
   }).format(date);
+
+const enrichGovernanceRequest = (request) => {
+  const user = getUserById(request.userId) || null;
+  return {
+    ...request,
+    requester: {
+      id: user?.id || request.userId,
+      name: user?.name || "Unknown user",
+      email: user?.email || "",
+      role: user?.role || "",
+      companyName: user?.companyName || "",
+    },
+    scopeLabel:
+      request.scope === "company"
+        ? user?.companyName || "Company account"
+        : "Individual reader",
+  };
+};
 
 const buildLoginUrl = (fromUrl) => {
   const loginUrl = new URL("/login", window.location.origin);
@@ -390,6 +432,7 @@ export const appClient = {
         type: "Data export",
         status: "Queued",
         date: formatRequestDate(new Date()),
+        createdAt: new Date().toISOString(),
         notes: notes.trim() || "Full account and subscription export requested.",
       };
 
@@ -411,6 +454,7 @@ export const appClient = {
         type: "Deletion review",
         status: "Review required",
         date: formatRequestDate(new Date()),
+        createdAt: new Date().toISOString(),
         notes:
           reason.trim() ||
           "Account deletion review requested under the privacy workflow.",
@@ -492,6 +536,7 @@ export const appClient = {
         type: "Company data export",
         status: "Queued",
         date: formatRequestDate(new Date()),
+        createdAt: new Date().toISOString(),
         notes:
           notes.trim() ||
           "Business account export requested for contacts, locations, and invoice-linked records.",
@@ -515,6 +560,7 @@ export const appClient = {
         type: "Company deletion review",
         status: "Review required",
         date: formatRequestDate(new Date()),
+        createdAt: new Date().toISOString(),
         notes:
           reason.trim() ||
           "Business account deletion or retention review requested under the company privacy workflow.",
@@ -522,6 +568,43 @@ export const appClient = {
 
       writeGovernanceRequests([...readGovernanceRequests(), request]);
       return request;
+    },
+  },
+  admin: {
+    async listGovernanceRequests() {
+      const currentUser = getCurrentSessionUser("admin");
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      return readGovernanceRequests()
+        .map(enrichGovernanceRequest)
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt || 0).getTime() -
+            new Date(a.createdAt || 0).getTime(),
+        );
+    },
+
+    async updateGovernanceRequestStatus(requestId, nextStatus) {
+      const currentUser = getCurrentSessionUser("admin");
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      const requests = readGovernanceRequests();
+      const index = requests.findIndex((request) => request.id === requestId);
+
+      if (index < 0) {
+        return null;
+      }
+
+      const updated = { ...requests[index], status: nextStatus };
+      requests[index] = updated;
+      writeGovernanceRequests(requests);
+      return enrichGovernanceRequest(updated);
     },
   },
 };

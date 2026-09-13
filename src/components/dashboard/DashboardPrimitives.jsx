@@ -1,6 +1,7 @@
-import React from "react";
-import { ArrowRight, ChevronRight, Search } from "lucide-react";
+import React, { useState } from "react";
+import { ArrowRight, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTableQuery } from "@/lib/useTableQuery";
 
 const toneClassMap = {
   success: "dashboard-status-success",
@@ -266,6 +267,9 @@ export function DashboardFilterBar({
   searchPlaceholder = "Search",
   filters = [],
   action = null,
+  searchValue = "",
+  onSearchChange = null,
+  resultCount = null,
 }) {
   return (
     <div className="dashboard-filter-bar flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -275,14 +279,30 @@ export function DashboardFilterBar({
             aria-hidden="true"
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
           />
-          <div
-            aria-label={`Filter placeholder: ${searchPlaceholder}`}
-            className="w-full py-2.5 pl-10 pr-3 font-sans text-sm text-stone-500"
-          >
-            {searchPlaceholder}
-          </div>
+          {onSearchChange ? (
+            <input
+              type="search"
+              role="searchbox"
+              value={searchValue}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full bg-transparent py-2.5 pl-10 pr-3 font-sans text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none dark:text-stone-100"
+            />
+          ) : (
+            <div
+              aria-label={`Filter placeholder: ${searchPlaceholder}`}
+              className="w-full py-2.5 pl-10 pr-3 font-sans text-sm text-stone-500"
+            >
+              {searchPlaceholder}
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
+          {resultCount != null ? (
+            <span className="dashboard-filter-pill inline-flex items-center px-3 py-2 font-sans text-xs font-medium">
+              {resultCount} {resultCount === 1 ? "result" : "results"}
+            </span>
+          ) : null}
           {filters.map((filter) => (
             <span
               key={filter}
@@ -338,14 +358,87 @@ export function DashboardChartPanel({
   );
 }
 
+export function DashboardPagination({
+  page,
+  pageCount,
+  total,
+  pageSize = 5,
+  onPageChange,
+}) {
+  if (pageCount <= 1) {
+    return null;
+  }
+
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+
+  return (
+    <div className="mt-5 flex flex-col items-center justify-between gap-3 border-t border-stone-200/80 pt-4 sm:flex-row dark:border-stone-700/80">
+      <p className="font-sans text-xs text-stone-500 dark:text-stone-400">
+        Showing {start}–{end} of {total} results
+      </p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={page <= 1}
+          onClick={() => onPageChange(page - 1)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          Previous
+        </button>
+        <span className="font-sans text-xs text-stone-500 dark:text-stone-400">
+          Page {page} of {pageCount}
+        </span>
+        <button
+          type="button"
+          disabled={page >= pageCount}
+          onClick={() => onPageChange(page + 1)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+        >
+          Next
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardActivityTable({
   title,
   description = null,
   columns = [],
   rows = [],
+  searchPlaceholder = null,
+  matchesSearch = null,
+  pageSize = 5,
 }) {
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({
+    rows,
+    query: matchesSearch && searchPlaceholder ? query : "",
+    predicate: matchesSearch,
+    pageSize,
+  });
+
   return (
     <DashboardPanel title={title} description={description} className="h-full">
+      {matchesSearch && searchPlaceholder ? (
+        <div className="dashboard-search-shell relative mb-4 max-w-sm">
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
+          />
+          <input
+            type="search"
+            role="searchbox"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={searchPlaceholder}
+            className="w-full bg-transparent py-2.5 pl-10 pr-3 font-sans text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none dark:text-stone-100"
+          />
+        </div>
+      ) : null}
       <div className="dashboard-table-wrap overflow-x-auto">
         <table className="w-full min-w-[620px]">
           <thead>
@@ -361,7 +454,7 @@ export function DashboardActivityTable({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, rowIndex) => (
+            {table.rows.map((row, rowIndex) => (
               <tr
                 key={row.id || rowIndex}
                 className="dashboard-table-row border-b last:border-b-0"
@@ -381,6 +474,13 @@ export function DashboardActivityTable({
           </tbody>
         </table>
       </div>
+      <DashboardPagination
+        page={table.page}
+        pageCount={table.pageCount}
+        total={table.total}
+        pageSize={pageSize}
+        onPageChange={table.setPage}
+      />
     </DashboardPanel>
   );
 }

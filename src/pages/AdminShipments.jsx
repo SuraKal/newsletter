@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Users } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardPagination,
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import { useTableQuery } from "@/lib/useTableQuery";
 import { adminShipmentRows } from "@/lib/demoData";
 
 const shipmentColumns = [
@@ -25,15 +27,29 @@ const shipmentColumns = [
   { key: "eta", label: "ETA" },
 ];
 
+const matchesSearch = (row, query) =>
+  [
+    row.shipmentId,
+    row.label,
+    row.route,
+    row.scope,
+    row.status,
+    row.eta,
+  ].some((value) => String(value ?? "").toLowerCase().includes(query));
+
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
   { label: "Schedule", to: "/admin/schedule" },
   { label: "Companies", to: "/admin/companies" },
   { label: "Subscribers", to: "/admin/subscribers" },
+  { label: "Governance", to: "/admin/governance" },
   { label: "Pricing", to: "/admin/pricing" },
 ];
 
 export default function AdminShipments() {
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({ rows: adminShipmentRows, query, predicate: matchesSearch });
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
@@ -57,6 +73,9 @@ export default function AdminShipments() {
 
       <DashboardFilterBar
         searchPlaceholder="Search run ID, route cluster, or dispatch state"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={query.trim() ? table.total : null}
         filters={["17 runs today", "3 clusters", "2 delays flagged"]}
         action={
           <Link
@@ -85,7 +104,7 @@ export default function AdminShipments() {
               </tr>
             </thead>
             <tbody>
-              {adminShipmentRows.map((row) => (
+              {table.rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {shipmentColumns.map((column) => (
                     <td
@@ -102,6 +121,13 @@ export default function AdminShipments() {
             </tbody>
           </table>
         </div>
+        <DashboardPagination
+          page={table.page}
+          pageCount={table.pageCount}
+          total={table.total}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+        />
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

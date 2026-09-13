@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, Truck } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardPagination,
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import { useTableQuery } from "@/lib/useTableQuery";
 import { businessLocationRows } from "@/lib/demoData";
 
 const locationColumns = [
@@ -24,6 +26,11 @@ const locationColumns = [
   },
 ];
 
+const matchesSearch = (row, query) =>
+  [row.location, row.region, row.copies, row.contact, row.status].some(
+    (value) => String(value ?? "").toLowerCase().includes(query),
+  );
+
 const relatedLinks = [
   { label: "Team", to: "/business-dashboard/team" },
   { label: "Orders", to: "/business-dashboard/orders" },
@@ -33,6 +40,9 @@ const relatedLinks = [
 ];
 
 export default function BusinessLocations() {
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({ rows: businessLocationRows, query, predicate: matchesSearch });
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
@@ -56,6 +66,9 @@ export default function BusinessLocations() {
 
       <DashboardFilterBar
         searchPlaceholder="Search site, city, or receiving contact"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={query.trim() ? table.total : null}
         filters={["9 active locations", "Belgium + Germany", "1 review state"]}
         action={
           <Link
@@ -84,7 +97,7 @@ export default function BusinessLocations() {
               </tr>
             </thead>
             <tbody>
-              {businessLocationRows.map((row) => (
+              {table.rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {locationColumns.map((column) => (
                     <td
@@ -101,6 +114,13 @@ export default function BusinessLocations() {
             </tbody>
           </table>
         </div>
+        <DashboardPagination
+          page={table.page}
+          pageCount={table.pageCount}
+          total={table.total}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+        />
       </DashboardPanel>
 
       <DashboardRelatedLinks

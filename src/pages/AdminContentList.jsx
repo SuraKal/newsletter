@@ -1,16 +1,34 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, CirclePlus } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
+  DashboardPagination,
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { getAdminContentRows } from "@/lib/content-store";
+import { useTableQuery } from "@/lib/useTableQuery";
+import { getAdminContentRows, getPlacementLabel } from "@/lib/content-store";
 
 const contentColumns = [
+  {
+    key: "image",
+    label: "",
+    render: (value, row) =>
+      value ? (
+        <img
+          src={value}
+          alt={row.headline}
+          className="h-10 w-16 rounded-sm object-cover"
+        />
+      ) : (
+        <span className="inline-flex h-10 w-16 items-center justify-center rounded-sm bg-stone-100 text-[0.6rem] font-semibold uppercase tracking-widest text-stone-400 dark:bg-stone-800">
+          None
+        </span>
+      ),
+  },
   {
     key: "headline",
     label: "Headline",
@@ -23,8 +41,12 @@ const contentColumns = [
       </Link>
     ),
   },
-  { key: "sector", label: "Sector" },
-  { key: "editor", label: "Editor" },
+  {
+    key: "source",
+    label: "Placement",
+    render: (value) => getPlacementLabel(value),
+  },
+  { key: "category", label: "Category" },
   {
     key: "status",
     label: "State",
@@ -32,26 +54,43 @@ const contentColumns = [
       <DashboardStatusBadge label={value} tone={row.tone} />
     ),
   },
-  { key: "publishWindow", label: "Publish window" },
 ];
+
+const matchesSearch = (row, query) =>
+  [row.headline, getPlacementLabel(row.source), row.category, row.status].some(
+    (value) => String(value ?? "").toLowerCase().includes(query),
+  );
 
 const relatedLinks = [
   { label: "Schedule", to: "/admin/schedule" },
   { label: "Subscribers", to: "/admin/subscribers" },
   { label: "Companies", to: "/admin/companies" },
   { label: "Shipments", to: "/admin/shipments" },
+  { label: "Governance", to: "/admin/governance" },
   { label: "Pricing", to: "/admin/pricing" },
 ];
 
 export default function AdminContentList() {
   const adminContentRows = getAdminContentRows();
+  const [query, setQuery] = useState("");
+  const table = useTableQuery({ rows: adminContentRows, query, predicate: matchesSearch });
+
+  const draftCount = adminContentRows.filter(
+    (row) => row.status === "Draft",
+  ).length;
+  const scheduledCount = adminContentRows.filter(
+    (row) => row.status === "Scheduled",
+  ).length;
+  const publishedCount = adminContentRows.filter(
+    (row) => row.status === "Published",
+  ).length;
 
   return (
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Admin content"
         title="Publishing queue"
-        description="Review article drafts, scheduled items, and recently published pieces."
+        description="Review drafts, scheduled items, and live pieces. Placement mirrors exactly where each story appears on the public site."
         breadcrumbs={[
           { label: "Admin workspace", to: "/admin/overview" },
           { label: "Content" },
@@ -68,8 +107,15 @@ export default function AdminContentList() {
       />
 
       <DashboardFilterBar
-        searchPlaceholder="Search headline, sector, or editor"
-        filters={["5 drafts", "8 scheduled", "12 published today"]}
+        searchPlaceholder="Search headline, placement, or category"
+        searchValue={query}
+        onSearchChange={setQuery}
+        resultCount={query.trim() ? table.total : null}
+        filters={[
+          `${draftCount} drafts`,
+          `${scheduledCount} scheduled`,
+          `${publishedCount} published`,
+        ]}
         action={
           <Link
             to="/admin/schedule"
@@ -81,9 +127,9 @@ export default function AdminContentList() {
         }
       />
 
-      <DashboardPanel title="Article states" className="p-5 sm:p-6">
+      <DashboardPanel title="Article queue" className="p-5 sm:p-6">
         <div className="dashboard-table-wrap overflow-x-auto">
-          <table className="w-full min-w-[760px]">
+          <table className="w-full min-w-[620px]">
             <thead>
               <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
                 {contentColumns.map((column) => (
@@ -97,7 +143,7 @@ export default function AdminContentList() {
               </tr>
             </thead>
             <tbody>
-              {adminContentRows.map((row) => (
+              {table.rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   {contentColumns.map((column) => (
                     <td
@@ -114,6 +160,13 @@ export default function AdminContentList() {
             </tbody>
           </table>
         </div>
+        <DashboardPagination
+          page={table.page}
+          pageCount={table.pageCount}
+          total={table.total}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+        />
       </DashboardPanel>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />
