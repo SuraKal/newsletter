@@ -16,6 +16,16 @@ export default function TopSlider() {
   const [api, setApi] = React.useState(null);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [headerHeight, setHeaderHeight] = React.useState(0);
+  const viewportUnit = React.useMemo(
+    () =>
+      typeof window !== "undefined" &&
+      window.CSS &&
+      window.CSS.supports &&
+      window.CSS.supports("height", "100svh")
+        ? "100svh"
+        : "100vh",
+    [],
+  );
 
   React.useEffect(() => {
     const header = document.getElementById("masthead");
@@ -85,8 +95,8 @@ export default function TopSlider() {
     <section
       className="mx-auto w-full overflow-hidden px-4 pt-2"
       style={{
-        height: `calc(100vh - ${headerHeight}px)`,
-        minHeight: `calc(100vh - ${headerHeight}px)`,
+        height: `calc(${viewportUnit} - ${headerHeight}px)`,
+        minHeight: `calc(${viewportUnit} - ${headerHeight}px)`,
       }}
     >
       <Carousel
