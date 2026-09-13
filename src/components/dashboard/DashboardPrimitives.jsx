@@ -10,8 +10,9 @@ const toneClassMap = {
   neutral: "dashboard-status-neutral",
 };
 
-export function DashboardBreadcrumbs({ items = [] }) {
-  if (!items.length) {
+export function DashboardBreadcrumbs({ items = [] } = {}) {
+  const crumbs = items || [];
+  if (!crumbs.length) {
     return null;
   }
 
@@ -20,8 +21,8 @@ export function DashboardBreadcrumbs({ items = [] }) {
       aria-label="Breadcrumb"
       className="flex flex-wrap items-center gap-1.5 font-sans text-xs"
     >
-      {items.map((item, index) => {
-        const isLast = index === items.length - 1;
+      {crumbs.map((item, index) => {
+        const isLast = index === crumbs.length - 1;
         return (
           <React.Fragment key={`${item.label}-${index}`}>
             {index > 0 ? (

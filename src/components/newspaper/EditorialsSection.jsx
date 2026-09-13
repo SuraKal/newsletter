@@ -1,9 +1,10 @@
 import React from "react";
-import { editorials } from "@/lib/demoData";
+import { getEditorials } from "@/lib/content-store";
 import SectionHeader from "@/components/newspaper/SectionHeader";
 import NewsCard from "@/components/newspaper/NewsCard";
 
 export default function EditorialsSection() {
+  const editorials = getEditorials();
   return (
     <section className="mx-auto max-w-7xl px-4 py-12">
       <SectionHeader title="Opinion & Analysis" viewAllLink="/news" />

@@ -8,12 +8,23 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { adminScheduleRows } from "@/lib/demoData";
+import { getAdminScheduleRows } from "@/lib/content-store";
 
 const scheduleColumns = [
   { key: "slot", label: "Publish slot" },
   { key: "sector", label: "Sector" },
-  { key: "headline", label: "Headline" },
+  {
+    key: "headline",
+    label: "Headline",
+    render: (value, row) => (
+      <Link
+        to={`/admin/content/${row.id}`}
+        className="font-semibold text-stone-900 hover:text-heritage dark:text-stone-100"
+      >
+        {value}
+      </Link>
+    ),
+  },
   {
     key: "status",
     label: "State",
@@ -21,6 +32,7 @@ const scheduleColumns = [
       <DashboardStatusBadge label={value} tone={row.tone} />
     ),
   },
+  { key: "release", label: "Release step" },
 ];
 
 const relatedLinks = [
@@ -32,6 +44,8 @@ const relatedLinks = [
 ];
 
 export default function AdminSchedule() {
+  const adminScheduleRows = getAdminScheduleRows();
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
@@ -69,7 +83,7 @@ export default function AdminSchedule() {
 
       <DashboardPanel title="Scheduled publishing queue" className="p-5 sm:p-6">
         <div className="dashboard-table-wrap overflow-x-auto">
-          <table className="w-full min-w-[620px]">
+          <table className="w-full min-w-[860px]">
             <thead>
               <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
                 {scheduleColumns.map((column) => (

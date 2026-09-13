@@ -1,7 +1,7 @@
 import React from "react";
 import SectionHeader from "@/components/newspaper/SectionHeader";
 import NewsCard from "@/components/newspaper/NewsCard";
-import { latestNews } from "@/lib/demoData";
+import { getLatestNews } from "@/lib/content-store";
 import { useLanguage } from "@/lib/LanguageContext";
 
 const accessToneClassMap = {
@@ -24,6 +24,7 @@ const getAccessTone = (label) => {
 
 export default function LatestNewsSection() {
   const { t } = useLanguage();
+  const latestNews = getLatestNews();
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-12">

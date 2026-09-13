@@ -7,30 +7,16 @@ import NewsCard from "@/components/newspaper/NewsCard";
 
 import { useAuth } from "@/lib/AuthContext";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
-import {
-  categoryArticles,
-  editorials,
-  featuredStory,
-  getArticleAccessState,
-  heroArticle,
-  latestNews,
-  sidebarArticles,
-} from "@/lib/demoData";
-
-const allArticles = [
-  heroArticle,
-  ...sidebarArticles,
-  ...latestNews,
-  ...editorials,
-  featuredStory,
-  ...Object.values(categoryArticles).flat(),
-];
+import { getArticleById, getHeroArticle, getPublicListingArticles } from "@/lib/content-store";
+import { getArticleAccessState } from "@/lib/demoData";
 
 export default function ArticleDetail() {
   const { id } = useParams();
   const { user } = useAuth();
-  const article = allArticles.find((item) => item.id === id) || heroArticle;
-  const related = latestNews.filter((item) => item.id !== id).slice(0, 3);
+  const article = getArticleById(id) || getHeroArticle();
+  const related = getPublicListingArticles()
+    .filter((item) => item.id !== id)
+    .slice(0, 3);
   const access = getArticleAccessState(
     article,
     hasActiveReaderSubscription(user),

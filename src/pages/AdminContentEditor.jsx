@@ -8,10 +8,8 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import AdminArticleForm from "@/components/forms/AdminArticleForm";
-import {
-  adminEditorArticles,
-  adminEditorTemplateFields,
-} from "@/lib/demoData";
+import { getRawArticleById, saveArticle } from "@/lib/content-store";
+import { adminEditorTemplateFields } from "@/lib/demoData";
 
 const createDefaultArticle = () => ({
   id: "new",
@@ -36,11 +34,11 @@ const createDefaultArticle = () => ({
 export default function AdminContentEditor() {
   const { id } = useParams();
   const seed = useMemo(() => {
-    if (!id) {
+    if (!id || id === "new") {
       return createDefaultArticle();
     }
 
-    return adminEditorArticles.find((item) => item.id === id) || createDefaultArticle();
+    return getRawArticleById(id) || createDefaultArticle();
   }, [id]);
 
   const [form, setForm] = useState(seed);
@@ -68,13 +66,17 @@ export default function AdminContentEditor() {
     setSuccessMessage("");
 
     window.setTimeout(() => {
+      const saved = saveArticle(form);
       setIsSaving(false);
+      if (form.id === "new") {
+        handleChange("id", saved.id);
+      }
       setSuccessMessage(
-        form.status === "Published"
-          ? "Article state updated and ready for live publishing review."
-          : "Editorial draft saved for the next publishing pass.",
+        saved.status === "Published"
+          ? "Article is live in the public newsroom and ready for reader access."
+          : "Editorial draft saved to the publishing queue.",
       );
-    }, 500);
+    }, 300);
   };
 
   return (
@@ -83,6 +85,11 @@ export default function AdminContentEditor() {
         eyebrow="Admin editor"
         title={isNewArticle ? "Create a new article" : "Edit sector article"}
         description="The editor should make sector-specific fields, publish timing, and article state obvious without sending admins back to a generic article list."
+        breadcrumbs={[
+          { label: "Admin workspace", to: "/admin/overview" },
+          { label: "Content", to: "/admin/content" },
+          { label: isNewArticle ? "New article" : "Edit article" },
+        ]}
         action={
           <Link
             to="/admin/content"

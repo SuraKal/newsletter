@@ -21,25 +21,9 @@ import { NAV_LINKS, CATEGORIES } from "@/lib/constants";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { useLanguage } from "@/lib/LanguageContext";
 import HeritageOrnament from "@/components/newspaper/HeritageOrnament";
-import {
-  heroArticle,
-  rightColumnArticle,
-  featuredStory,
-  sidebarArticles,
-  latestNews,
-  editorials,
-  categoryArticles,
-} from "@/lib/demoData";
+import { getAllArticles } from "@/lib/content-store";
 
-const SEARCH_INDEX = [
-  heroArticle,
-  rightColumnArticle,
-  featuredStory,
-  ...sidebarArticles,
-  ...latestNews,
-  ...editorials,
-  ...Object.values(categoryArticles).flat(),
-];
+const SEARCH_INDEX = getAllArticles();
 
 const SEARCH_SUGGESTIONS = [
   "International",

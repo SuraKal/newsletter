@@ -1,12 +1,13 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { featuredStory } from "@/lib/demoData";
+import { getFeaturedStory } from "@/lib/content-store";
 
 import { useLanguage } from "@/lib/LanguageContext";
 
 export default function FeaturedStorySection() {
   const { t } = useLanguage();
+  const featuredStory = getFeaturedStory();
 
   return (
     <section className="bg-[#4A2A08] py-12 text-cream sm:py-16 lg:py-20">

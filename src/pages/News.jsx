@@ -15,25 +15,10 @@ import {
 } from "@/components/ui/pagination";
 import { useAuth } from "@/lib/AuthContext";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
-import {
-  latestNews,
-  editorials,
-  sidebarArticles,
-  heroArticle,
-  categoryArticles,
-  getArticleAccessState,
-} from "@/lib/demoData";
-
-const allArticles = [
-  heroArticle,
-  ...sidebarArticles,
-  ...latestNews,
-  ...editorials,
-  ...Object.values(categoryArticles).flat(),
-];
+import { getHeroArticle, getPublicListingArticles } from "@/lib/content-store";
+import { getArticleAccessState } from "@/lib/demoData";
 
 const PAGE_SIZE = 6;
-const listedArticles = allArticles.slice(1);
 
 function getPageItems(currentPage, totalPages) {
   const items = [];
@@ -60,6 +45,8 @@ function getPageItems(currentPage, totalPages) {
 export default function News() {
   const { user } = useAuth();
   const hasSubscriberAccess = hasActiveReaderSubscription(user);
+  const heroArticle = getHeroArticle();
+  const listedArticles = getPublicListingArticles();
   const heroAccess = getArticleAccessState(heroArticle, hasSubscriberAccess);
   const [currentPage, setCurrentPage] = React.useState(1);
 

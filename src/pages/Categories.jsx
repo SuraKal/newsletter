@@ -4,7 +4,7 @@ import Footer from "@/components/newspaper/Footer";
 import SectionHeader from "@/components/newspaper/SectionHeader";
 import NewsCard from "@/components/newspaper/NewsCard";
 import { CATEGORIES, IMAGES } from "@/lib/constants";
-import { categoryArticles, latestNews } from "@/lib/demoData";
+import { getCategoryArticles, getLatestNews } from "@/lib/content-store";
 
 const categoryImages = {
   News: IMAGES.politics,
@@ -112,11 +112,16 @@ export default function CategoriesPage() {
     const catName =
       CATEGORIES.find((c) => c.toLowerCase() === selectedCat.toLowerCase()) ||
       selectedCat;
+    const categoryArticles = getCategoryArticles();
+    const latestNews = getLatestNews();
     const articles = categoryArticles[selectedCat.toLowerCase()] || [];
     const extraArticles = latestNews.filter(
       (a) => a.category.toLowerCase() === selectedCat.toLowerCase(),
     );
-    const allCatArticles = [...articles, ...extraArticles];
+    const allCatArticles = [...articles, ...extraArticles].filter(
+      (article, index, list) =>
+        list.findIndex((candidate) => candidate.id === article.id) === index,
+    );
 
     return (
       <div className="min-h-screen bg-paper">

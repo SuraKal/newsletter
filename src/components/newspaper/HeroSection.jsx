@@ -4,7 +4,8 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { homepageHeroSlides, latestNews, sidebarArticles } from "@/lib/demoData";
+import { homepageHeroSlides } from "@/lib/demoData";
+import { getLatestNews, getSidebarArticles } from "@/lib/content-store";
 import NewsCard from "@/components/newspaper/NewsCard";
 import { useLanguage } from "@/lib/LanguageContext";
 
@@ -33,7 +34,8 @@ export default function HeroSection() {
     return () => window.clearInterval(interval);
   }, [api]);
 
-  const lowerStories = latestNews.slice(1, 3);
+  const lowerStories = getLatestNews().slice(1, 3);
+  const sidebarArticles = getSidebarArticles();
 
   return (
     <section className="mx-auto max-w-[1320px] px-3 py-3 sm:px-5 lg:px-8">
