@@ -18,6 +18,7 @@ import {
   DashboardRelatedLinks,
 } from "@/components/dashboard/DashboardPrimitives";
 import { adminOverviewMetrics } from "@/lib/demoData";
+import { useWorkspaceSectionBadges } from "@/lib/notifications";
 
 const sectionIconMap = {
   overview: LayoutDashboard,
@@ -28,9 +29,11 @@ const sectionIconMap = {
   governance: ShieldCheck,
   shipments: Truck,
   pricing: CreditCard,
+  subscriptions: CreditCard,
 };
 
 export default function AdminOverviewPage() {
+  const sectionBadges = useWorkspaceSectionBadges("admin");
   const shortcuts = [
     { id: "content", label: "Content", to: "/admin/content" },
     { id: "schedule", label: "Schedule", to: "/admin/schedule" },
@@ -38,10 +41,12 @@ export default function AdminOverviewPage() {
     { id: "companies", label: "Companies", to: "/admin/companies" },
     { id: "governance", label: "Governance", to: "/admin/governance" },
     { id: "shipments", label: "Shipments", to: "/admin/shipments" },
-    { id: "pricing", label: "Pricing", to: "/admin/pricing" },
+    { id: "subscriptions", label: "Subscriptions", to: "/admin/subscriptions" },
+    { id: "pricing", label: "Bulk pricing", to: "/admin/pricing" },
   ].map((tool) => ({
     ...tool,
     icon: sectionIconMap[tool.id],
+    badge: sectionBadges[tool.id],
     description: tool.label === "Content" ? "Workflow made clearer" : undefined,
   }));
 

@@ -10,6 +10,7 @@ import {
   rightColumnArticle,
   sidebarArticles,
 } from "@/lib/demoData";
+import { notifyStoreChange } from "@/lib/store-bus";
 
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
@@ -57,7 +58,19 @@ function normalizeSeedArticle(item, source, extra = {}) {
     location: item.location || "",
     scorelineFocus: item.scorelineFocus || "",
     marketImpact: item.marketImpact || "",
+    clicks: Number(item.clicks) || 0,
   };
+}
+
+function seedClicksFor(id) {
+  const text = String(id || "");
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  const random = Math.abs(hash) % 100 / 100;
+  return Math.round(24 + random * 340);
 }
 
 function buildSeedArticles() {
@@ -80,7 +93,10 @@ function buildSeedArticles() {
     if (seen.has(article.id)) return false;
     seen.add(article.id);
     return true;
-  });
+  }).map((article) => ({
+    ...article,
+    clicks: article.clicks || seedClicksFor(article.id),
+  }));
 }
 
 function readAll() {
@@ -98,6 +114,7 @@ function readAll() {
 
 function writeAll(articles) {
   if (storage) storage.setItem(contentKey, JSON.stringify(articles));
+  notifyStoreChange();
 }
 
 function toRenderArticle(article) {
@@ -218,10 +235,21 @@ export function getEditorials() {
     .map(toRenderArticle);
 }
 
-export function getCategoryArticles() {
+export function getCategoryArticles(categoryLabels = null) {
   const groups = {};
   readAll().forEach((article) => {
-    const key = article.categoryKey || categoryKeyFor(article.category || article.sector);
+    let key;
+    if (categoryLabels) {
+      const match = categoryLabels.find(
+        (label) =>
+          label.toLowerCase() === (article.category || "").toLowerCase(),
+      );
+      key = match || "Other";
+    } else {
+      key =
+        article.categoryKey ||
+        categoryKeyFor(article.category || article.sector);
+    }
     if (!key || article.status !== "Published") return;
     (groups[key] = groups[key] || []).push(toRenderArticle(article));
   });
@@ -255,8 +283,18 @@ export function deleteArticle(id) {
   writeAll(readAll().filter((item) => item.id !== id));
 }
 
+export function registerArticleClick(id) {
+  if (!id) return;
+  const all = readAll();
+  const index = all.findIndex((item) => item.id === id);
+  if (index < 0) return;
+  all[index] = { ...all[index], clicks: (Number(all[index].clicks) || 0) + 1 };
+  writeAll(all);
+}
+
 export function resetContentStore() {
   if (storage) storage.removeItem(contentKey);
+  notifyStoreChange();
 }
 
 export function getAdminContentRows() {
@@ -273,6 +311,7 @@ export function getAdminContentRows() {
       image: article.image || null,
       category: article.category || article.sector || "News",
       source: article.source || "admin",
+      clicks: Number(article.clicks) || 0,
     }));
 }
 

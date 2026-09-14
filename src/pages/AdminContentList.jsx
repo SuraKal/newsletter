@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, CirclePlus } from "lucide-react";
 import {
+  DashboardDataTable,
   DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
@@ -17,6 +18,7 @@ const contentColumns = [
   {
     key: "image",
     label: "",
+    hideOnMobile: true,
     render: (value, row) =>
       value ? (
         <img
@@ -33,6 +35,7 @@ const contentColumns = [
   {
     key: "headline",
     label: "Headline",
+    primary: true,
     render: (value, row) => (
       <Link
         to={`/admin/content/${row.id}`}
@@ -148,38 +151,11 @@ export default function AdminContentList() {
       <DashboardPanel title="Article queue" className="p-5 sm:p-6">
         {table.total ? (
           <>
-            <div className="dashboard-table-wrap overflow-x-auto">
-              <table className="w-full min-w-[620px]">
-                <thead>
-                  <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                    {contentColumns.map((column) => (
-                      <th
-                        key={column.key}
-                        className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                      >
-                        {column.label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {table.rows.map((row) => (
-                    <tr key={row.id} className="border-b last:border-b-0">
-                      {contentColumns.map((column) => (
-                        <td
-                          key={column.key}
-                          className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                        >
-                          {column.render
-                            ? column.render(row[column.key], row)
-                            : row[column.key]}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DashboardDataTable
+              columns={contentColumns}
+              rows={table.rows}
+              minWidth={620}
+            />
             <DashboardPagination
               page={table.page}
               pageCount={table.pageCount}

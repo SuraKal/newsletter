@@ -16,6 +16,7 @@ import {
   DashboardRelatedLinks,
 } from "@/components/dashboard/DashboardPrimitives";
 import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
+import { useWorkspaceSectionBadges } from "@/lib/notifications";
 
 const sectionIconMap = {
   deliveries: Truck,
@@ -40,6 +41,8 @@ export default function ReaderOverviewPage() {
     [user?.email],
   );
 
+  const sectionBadges = useWorkspaceSectionBadges("reader");
+
   const shortcuts = [
     { id: "deliveries", label: "Deliveries", to: "/dashboard/deliveries" },
     { id: "billing", label: "Billing", to: "/dashboard/billing" },
@@ -49,6 +52,7 @@ export default function ReaderOverviewPage() {
   ].map((tool) => ({
     ...tool,
     icon: sectionIconMap[tool.id],
+    badge: sectionBadges[tool.id],
   }));
 
   return (

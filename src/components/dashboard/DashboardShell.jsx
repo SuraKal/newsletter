@@ -1,6 +1,7 @@
 import React from "react";
 import {
   Bell,
+  ChevronRight,
   CircleHelp,
   Ellipsis,
   Home,
@@ -8,9 +9,14 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { dashboardWorkspaces } from "@/lib/dashboard-config";
+import { DashboardNavBadge } from "@/components/dashboard/DashboardPrimitives";
+import {
+  useWorkspaceNotificationTotal,
+  useWorkspaceSectionBadges,
+} from "@/lib/notifications";
 
 const getInitials = (name) =>
   (name || "Workspace")
@@ -41,6 +47,14 @@ export default function DashboardShell({ workspaceKey, children }) {
   const workspace = dashboardWorkspaces[workspaceKey];
   const { user, logout } = useAuth();
   const [moreOpen, setMoreOpen] = React.useState(false);
+  const sectionBadges = useWorkspaceSectionBadges(workspaceKey);
+  const notificationTotal = useWorkspaceNotificationTotal(workspaceKey);
+  const { pathname } = useLocation();
+  const activeSection =
+    workspace?.sections.find(
+      (section) =>
+        pathname === section.path || pathname.startsWith(`${section.path}/`),
+    ) || null;
 
   if (!workspace) {
     return null;
@@ -67,7 +81,11 @@ export default function DashboardShell({ workspaceKey, children }) {
             </p>
           </div>
 
-          <div className="mx-auto flex w-full max-w-md px-2">
+          <p className="min-w-0 flex-1 truncate text-center font-sans text-sm font-semibold text-stone-900 dark:text-stone-100 sm:hidden">
+            {activeSection ? activeSection.label : workspace.label}
+          </p>
+
+          <div className="mx-auto hidden w-full max-w-md px-2 md:block">
             <div className="dashboard-search-shell relative w-full">
               <Search
                 aria-hidden="true"
@@ -83,16 +101,22 @@ export default function DashboardShell({ workspaceKey, children }) {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            <span className="relative">
+              <button
+                type="button"
+                className="dashboard-utility-button flex h-9 w-9 items-center justify-center"
+                aria-label="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+              </button>
+              <DashboardNavBadge
+                count={notificationTotal}
+                className="absolute -right-0.5 -top-0.5"
+              />
+            </span>
             <button
               type="button"
-              className="dashboard-utility-button flex h-9 w-9 items-center justify-center"
-              aria-label="Notifications"
-            >
-              <Bell className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              className="dashboard-utility-button flex h-9 w-9 items-center justify-center"
+              className="dashboard-utility-button hidden h-9 w-9 items-center justify-center sm:flex"
               aria-label="Help"
             >
               <CircleHelp className="h-4 w-4" />
@@ -130,6 +154,10 @@ export default function DashboardShell({ workspaceKey, children }) {
                 >
                   <section.icon className="h-4 w-4 shrink-0" />
                   <span>{section.label}</span>
+                  <DashboardNavBadge
+                    count={sectionBadges[section.id]}
+                    className="ml-auto"
+                  />
                 </NavLink>
               ))}
             </div>
@@ -164,27 +192,35 @@ export default function DashboardShell({ workspaceKey, children }) {
         className="dashboard-bottom-nav md:hidden"
         aria-label={`${workspace.label} mobile navigation`}
       >
-        <div className="grid grid-cols-5 gap-1">
-          {workspace.sections.slice(0, 4).map((section) => (
-            <NavLink
-              key={section.path}
-              to={section.path}
-              className={({ isActive }) => getBottomNavClass(isActive)}
-              onClick={() => setMoreOpen(false)}
+        <div className="dashboard-bottom-nav-pocket">
+          <div className="grid flex-1 grid-cols-5 gap-1">
+            {workspace.sections.slice(0, 4).map((section) => (
+              <NavLink
+                key={section.path}
+                to={section.path}
+                className={({ isActive }) => getBottomNavClass(isActive)}
+                onClick={() => setMoreOpen(false)}
+              >
+                <span className="relative">
+                  <section.icon className="h-4 w-4" />
+                  <DashboardNavBadge
+                    count={sectionBadges[section.id]}
+                    className="absolute -right-3 -top-1"
+                  />
+                </span>
+                <span>{section.label}</span>
+              </NavLink>
+            ))}
+            <button
+              type="button"
+              className={`dashboard-bottom-nav-item ${moreOpen ? "dashboard-bottom-nav-item-active" : ""}`}
+              onClick={() => setMoreOpen((open) => !open)}
+              aria-expanded={moreOpen}
             >
-              <section.icon className="h-4 w-4" />
-              <span>{section.label}</span>
-            </NavLink>
-          ))}
-          <button
-            type="button"
-            className={`dashboard-bottom-nav-item ${moreOpen ? "dashboard-bottom-nav-item-active" : ""}`}
-            onClick={() => setMoreOpen((open) => !open)}
-            aria-expanded={moreOpen}
-          >
-            {moreOpen ? <X className="h-4 w-4" /> : <Ellipsis className="h-4 w-4" />}
-            <span>More</span>
-          </button>
+              {moreOpen ? <X className="h-4 w-4" /> : <Ellipsis className="h-4 w-4" />}
+              <span>More</span>
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -197,7 +233,9 @@ export default function DashboardShell({ workspaceKey, children }) {
             aria-label="More workspace links"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="mb-4 flex items-center justify-between">
+            <div className="dashboard-more-handle" aria-hidden="true" />
+
+            <div className="mb-3 flex items-center justify-between">
               <div>
                 <p className="dashboard-page-eyebrow font-sans text-[0.65rem] font-bold uppercase tracking-[0.2em]">
                   Workspace menu
@@ -210,25 +248,51 @@ export default function DashboardShell({ workspaceKey, children }) {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+
+            <div className="dashboard-more-group">
               {workspace.sections.slice(4).map((section) => (
                 <NavLink
                   key={section.path}
                   to={section.path}
-                  className={({ isActive }) => `dashboard-more-link ${isActive ? "dashboard-more-link-active" : ""}`}
+                  className={({ isActive }) =>
+                    `dashboard-more-group-link ${isActive ? "dashboard-more-group-link-active" : ""}`
+                  }
                   onClick={() => setMoreOpen(false)}
                 >
-                  <section.icon className="h-4 w-4" />
+                  <span className="dashboard-more-group-link-icon">
+                    <section.icon className="h-4 w-4" />
+                  </span>
                   <span>{section.label}</span>
+                  <DashboardNavBadge
+                    count={sectionBadges[section.id]}
+                    className="ml-auto"
+                  />
+                  <ChevronRight className="h-4 w-4" />
                 </NavLink>
               ))}
-              <NavLink to="/" className="dashboard-more-link" onClick={() => setMoreOpen(false)}>
-                <Home className="h-4 w-4" />
+            </div>
+
+            <div className="dashboard-more-group mt-3">
+              <NavLink to="/" className="dashboard-more-group-link" onClick={() => setMoreOpen(false)}>
+                <span className="dashboard-more-group-link-icon">
+                  <Home className="h-4 w-4" />
+                </span>
                 <span>Public site</span>
+                <ChevronRight className="h-4 w-4" />
               </NavLink>
-              <button type="button" className="dashboard-more-link text-rose-700" onClick={() => { setMoreOpen(false); logout(false); }}>
-                <LogOut className="h-4 w-4" />
+              <button
+                type="button"
+                className="dashboard-more-group-link dashboard-more-group-link-danger"
+                onClick={() => {
+                  setMoreOpen(false);
+                  logout(false);
+                }}
+              >
+                <span className="dashboard-more-group-link-icon">
+                  <LogOut className="h-4 w-4" />
+                </span>
                 <span>Sign out</span>
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>

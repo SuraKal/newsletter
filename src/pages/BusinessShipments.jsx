@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, MapPin } from "lucide-react";
 import {
+  DashboardDataTable,
   DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
@@ -11,12 +12,13 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import { businessShipmentRows } from "@/lib/demoData";
+import { getBusinessShipmentRows } from "@/lib/shipment-store";
 
 const shipmentColumns = [
   {
     key: "shipmentId",
     label: "Run ID",
+    primary: true,
     render: (value, row) => (
       <Link
         to={`/business-dashboard/shipments/${row.id}`}
@@ -66,7 +68,7 @@ export default function BusinessShipments() {
   const [query, setQuery] = useState("");
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const table = useTableQuery({
-    rows: businessShipmentRows,
+    rows: getBusinessShipmentRows(),
     query,
     predicate: matchesSearch,
     activeFilters,
@@ -118,38 +120,11 @@ export default function BusinessShipments() {
 
       <DashboardPanel title="Consolidated shipment runs" className="p-5 sm:p-6">
         {table.total ? (
-          <div className="dashboard-table-wrap overflow-x-auto">
-            <table className="w-full min-w-[840px]">
-              <thead>
-                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                  {shipmentColumns.map((column) => (
-                    <th
-                      key={column.key}
-                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                    >
-                      {column.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {table.rows.map((row) => (
-                  <tr key={row.id} className="border-b last:border-b-0">
-                    {shipmentColumns.map((column) => (
-                      <td
-                        key={column.key}
-                        className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                      >
-                        {column.render
-                          ? column.render(row[column.key], row)
-                          : row[column.key]}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DashboardDataTable
+            columns={shipmentColumns}
+            rows={table.rows}
+            minWidth={840}
+          />
         ) : (
           <DashboardEmptyState
             title="No matching shipment runs"

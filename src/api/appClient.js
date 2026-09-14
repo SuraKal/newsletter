@@ -1,4 +1,8 @@
 import { appParams } from "@/lib/app-params";
+import {
+  businessPricingFramework as defaultBusinessPricing,
+  subscriptionPlans as defaultSubscriptionPlans,
+} from "@/lib/demoData";
 
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
@@ -6,6 +10,8 @@ const usersKey = `${appParams.storagePrefix}_users`;
 const sessionKey = `${appParams.storagePrefix}_session`;
 const resetTokensKey = `${appParams.storagePrefix}_reset_tokens`;
 const governanceRequestsKey = `${appParams.storagePrefix}_governance_requests`;
+const subscriptionPlansKey = `${appParams.storagePrefix}_subscription_plans`;
+const businessPricingKey = `${appParams.storagePrefix}_business_pricing`;
 
 const defaultUsers = [
   {
@@ -115,7 +121,84 @@ const ensureSeedData = () => {
       },
     ]);
   }
+
+  if (!storage.getItem(subscriptionPlansKey)) {
+    writeJson(subscriptionPlansKey, defaultSubscriptionPlans);
+  }
+
+  if (!storage.getItem(businessPricingKey)) {
+    writeJson(businessPricingKey, defaultBusinessPricing);
+  }
 };
+
+const readSubscriptionPlans = () => {
+  ensureSeedData();
+  return readJson(subscriptionPlansKey, defaultSubscriptionPlans).map(
+    normalizeSubscriptionPlan,
+  );
+};
+
+const writeSubscriptionPlans = (plans) => {
+  writeJson(subscriptionPlansKey, plans);
+  if (isBrowser) {
+    window.dispatchEvent(new CustomEvent("nekedem:subscription-plans-updated"));
+  }
+};
+
+const normalizeBusinessPricing = (tier) => ({
+  ...tier,
+  id: tier.id || `business-tier-${String(tier.tier || "tier").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+  tier: String(tier.tier || "").trim(),
+  volume: String(tier.volume || "").trim(),
+  pricing: String(tier.pricing || "").trim(),
+  billing: String(tier.billing || "").trim(),
+  note: String(tier.note || "").trim(),
+  status: String(tier.status || "Published").trim(),
+  tone: tier.tone || "success",
+});
+
+const readBusinessPricing = () => {
+  ensureSeedData();
+  return readJson(businessPricingKey, defaultBusinessPricing).map(
+    normalizeBusinessPricing,
+  );
+};
+
+const writeBusinessPricing = (tiers) => {
+  writeJson(businessPricingKey, tiers);
+  if (isBrowser) {
+    window.dispatchEvent(new CustomEvent("nekedem:business-pricing-updated"));
+  }
+};
+
+const requireAdmin = () => {
+  const currentUser = getCurrentSessionUser("admin");
+  if (!currentUser || currentUser.role !== "admin") {
+    throw createAuthError("Admin access required", 403);
+  }
+  return currentUser;
+};
+
+const normalizeSubscriptionPlan = (plan) => ({
+  ...plan,
+  name: String(plan.name || "").trim(),
+  price: String(plan.price || "").trim(),
+  monthlyPrice:
+    plan.price === "Custom" || plan.monthlyPrice === ""
+      ? 0
+      : Number(plan.monthlyPrice) || 0,
+  yearlyPrice:
+    plan.price === "Custom"
+      ? 0
+      : Number(plan.yearlyPrice ?? Number(plan.monthlyPrice || 0) * 12) || 0,
+  description: String(plan.description || "").trim(),
+  features: Array.isArray(plan.features)
+    ? plan.features.map((feature) => String(feature).trim()).filter(Boolean)
+    : [],
+  audience: String(plan.audience || "").trim(),
+  deliveryNote: String(plan.deliveryNote || "").trim(),
+  paymentNote: String(plan.paymentNote || "").trim(),
+});
 
 const readUsers = () => {
   ensureSeedData();
@@ -183,6 +266,11 @@ const updateStoredUser = (userId, updates) => {
 
 const readGovernanceRequests = () => readJson(governanceRequestsKey, []);
 
+export const getGovernanceActionCount = () =>
+  readGovernanceRequests().filter(
+    (request) => request.status !== "Completed",
+  ).length;
+
 const writeGovernanceRequests = (requests) => {
   writeJson(governanceRequestsKey, requests);
 };
@@ -225,6 +313,103 @@ const buildLoginUrl = (fromUrl) => {
 ensureSeedData();
 
 export const appClient = {
+  businessPricing: {
+    list() {
+      return readBusinessPricing();
+    },
+
+    async update(tierId, updates) {
+      requireAdmin();
+      const tiers = readBusinessPricing();
+      const existingTier = tiers.find((tier) => tier.id === tierId);
+      if (!existingTier) {
+        throw createAuthError("Business pricing tier not found", 404);
+      }
+
+      const nextTier = normalizeBusinessPricing({
+        ...existingTier,
+        ...updates,
+        id: existingTier.id,
+      });
+      if (!nextTier.tier || !nextTier.volume || !nextTier.pricing) {
+        throw createAuthError("Tier, volume, and pricing are required", 400);
+      }
+
+      const nextTiers = tiers.map((tier) =>
+        tier.id === tierId ? nextTier : tier,
+      );
+      writeBusinessPricing(nextTiers);
+      return nextTier;
+    },
+
+    async reset() {
+      requireAdmin();
+      writeBusinessPricing(defaultBusinessPricing);
+      return defaultBusinessPricing;
+    },
+  },
+  subscriptions: {
+    list() {
+      return readSubscriptionPlans();
+    },
+
+    async update(planId, updates) {
+      requireAdmin();
+      const plans = readSubscriptionPlans();
+      const existingPlan = plans.find((plan) => plan.id === planId);
+      if (!existingPlan) {
+        throw createAuthError("Subscription plan not found", 404);
+      }
+
+      const nextPlan = normalizeSubscriptionPlan({
+        ...existingPlan,
+        ...updates,
+        id: existingPlan.id,
+      });
+      if (!nextPlan.name || !nextPlan.price) {
+        throw createAuthError("Plan name and price are required", 400);
+      }
+
+      const nextPlans = plans.map((plan) =>
+        plan.id === planId ? nextPlan : plan,
+      );
+      writeSubscriptionPlans(nextPlans);
+      return nextPlan;
+    },
+
+    async create(plan) {
+      requireAdmin();
+      const nextPlan = normalizeSubscriptionPlan({
+        ...plan,
+        id: plan.id || `plan-${Date.now()}`,
+      });
+      if (!nextPlan.name || !nextPlan.price) {
+        throw createAuthError("Plan name and price are required", 400);
+      }
+
+      const nextPlans = [...readSubscriptionPlans(), nextPlan];
+      writeSubscriptionPlans(nextPlans);
+      return nextPlan;
+    },
+
+    async remove(planId) {
+      requireAdmin();
+      const plans = readSubscriptionPlans();
+      if (plans.length <= 1) {
+        throw createAuthError("At least one subscription plan is required", 400);
+      }
+
+      const nextPlans = plans.filter((plan) => plan.id !== planId);
+      writeSubscriptionPlans(nextPlans);
+      return nextPlans;
+    },
+
+    async reset() {
+      requireAdmin();
+      writeSubscriptionPlans(defaultSubscriptionPlans);
+      return defaultSubscriptionPlans;
+    },
+  },
   auth: {
     async me() {
       const user = getCurrentSessionUser("reader");

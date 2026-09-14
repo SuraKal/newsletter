@@ -17,11 +17,13 @@ import {
   LayoutGrid,
   CornerDownLeft,
 } from "lucide-react";
-import { NAV_LINKS, CATEGORIES } from "@/lib/constants";
+import { NAV_LINKS } from "@/lib/constants";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { useLanguage } from "@/lib/LanguageContext";
 import HeritageOrnament from "@/components/newspaper/HeritageOrnament";
 import { getAllArticles } from "@/lib/content-store";
+import { getCategories } from "@/lib/category-store";
+import { useStoreVersion } from "@/lib/store-bus";
 
 const SEARCH_INDEX = getAllArticles();
 
@@ -58,6 +60,8 @@ const MOBILE_PRIMARY_LINKS = [
 ];
 
 export default function Masthead() {
+  useStoreVersion();
+  const categories = getCategories();
   const { strings, toggleLanguage, t, formatDate } = useLanguage();
   const [compactHeader, setCompactHeader] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -613,14 +617,14 @@ export default function Masthead() {
                 </button>
                 {catOpen && (
                   <div className="absolute left-0 top-full z-50 min-w-[200px] border border-stone-300/50 bg-paper py-2 shadow-lg">
-                    {CATEGORIES.map((cat) => (
+                    {categories.map((cat) => (
                       <Link
-                        key={cat}
-                        to={`/categories?cat=${cat.toLowerCase()}`}
+                        key={cat.id}
+                        to={`/categories?cat=${cat.label.toLowerCase()}`}
                         onClick={() => setCatOpen(false)}
                         className="flex min-h-[44px] items-center px-5 py-2.5 font-sans text-xs font-medium uppercase tracking-wider text-ink transition-colors hover:bg-vellum hover:text-heritage"
                       >
-                        {t(cat)}
+                        {t(cat.label)}
                       </Link>
                     ))}
                   </div>
@@ -639,7 +643,8 @@ export default function Masthead() {
     </header>
 
     <nav className="public-bottom-nav md:hidden" aria-label="Mobile site navigation">
-        <div className="grid grid-cols-5 gap-1">
+      <div className="public-bottom-nav-pocket">
+        <div className="grid flex-1 grid-cols-5 gap-1">
           {MOBILE_PRIMARY_LINKS.map((link) => {
             const Icon = link.icon;
             return (
@@ -666,7 +671,8 @@ export default function Masthead() {
             <span>{t("More")}</span>
           </button>
         </div>
-      </nav>
+      </div>
+    </nav>
 
       {menuOpen ? (
         <div className="public-more-overlay md:hidden" role="presentation" onClick={() => setMenuOpen(false)}>

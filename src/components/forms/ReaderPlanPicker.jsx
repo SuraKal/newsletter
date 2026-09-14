@@ -10,7 +10,7 @@ export default function ReaderPlanPicker({
 }) {
   const getPrice = (plan) =>
     billingCycle === "yearly"
-      ? (plan.monthlyPrice * 12).toFixed(2)
+      ? Number(plan.yearlyPrice ?? plan.monthlyPrice * 12).toFixed(2)
       : plan.monthlyPrice.toFixed(2);
 
   return (

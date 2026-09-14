@@ -3,10 +3,11 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Check } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
-import { subscriptionPlans } from "@/lib/demoData";
+import { useSubscriptionPlans } from "@/lib/subscription-catalog";
 
 export default function Subscriptions() {
   const [billing, setBilling] = useState("monthly");
+  const subscriptionPlans = useSubscriptionPlans();
 
   const getDisplayPrice = (plan) => {
     if (plan.price === "Custom") {
@@ -14,7 +15,7 @@ export default function Subscriptions() {
     }
 
     if (billing === "yearly") {
-      return (plan.monthlyPrice * 12).toFixed(2);
+      return Number(plan.yearlyPrice ?? plan.monthlyPrice * 12).toFixed(2);
     }
 
     return plan.price;

@@ -11,11 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { appParams } from "@/lib/app-params";
 import { useAuth } from "@/lib/AuthContext";
-import {
-  readerCheckoutPlans,
-  readerCheckoutSteps,
-  readerPaymentMethods,
-} from "@/lib/demoData";
+import { readerCheckoutSteps, readerPaymentMethods } from "@/lib/demoData";
+import { getReaderPlans, useSubscriptionPlans } from "@/lib/subscription-catalog";
 
 const checkoutStorageKey = `${appParams.storagePrefix}_checkout_sessions`;
 
@@ -41,7 +38,9 @@ const addDays = (date, count) => {
 const getQuote = (plan, billingCycle) => {
   const today = new Date();
   const amount =
-    billingCycle === "yearly" ? plan.monthlyPrice * 12 : plan.monthlyPrice;
+    billingCycle === "yearly"
+      ? Number(plan.yearlyPrice ?? plan.monthlyPrice * 12)
+      : plan.monthlyPrice;
 
   return {
     amount,
@@ -87,6 +86,11 @@ export default function SubscribeCheckout() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
+  const subscriptionPlans = useSubscriptionPlans();
+  const readerCheckoutPlans = useMemo(
+    () => getReaderPlans(subscriptionPlans),
+    [subscriptionPlans],
+  );
   const requestedPlan = searchParams.get("plan");
   const requestedBilling = searchParams.get("billing");
   const fallbackPlan =
@@ -122,7 +126,7 @@ export default function SubscribeCheckout() {
 
   const selectedPlan = useMemo(
     () => readerCheckoutPlans.find((plan) => plan.id === planId) || readerCheckoutPlans[0],
-    [planId],
+    [planId, readerCheckoutPlans],
   );
 
   const selectedPaymentMethod = useMemo(
@@ -136,6 +140,15 @@ export default function SubscribeCheckout() {
     () => getQuote(selectedPlan, billingCycle),
     [billingCycle, selectedPlan],
   );
+
+  useEffect(() => {
+    if (!readerCheckoutPlans.some((plan) => plan.id === planId)) {
+      setPlanId(
+        readerCheckoutPlans.find((plan) => plan.highlighted)?.id ||
+          readerCheckoutPlans[0]?.id,
+      );
+    }
+  }, [planId, readerCheckoutPlans]);
 
   useEffect(() => {
     const nextParams = new URLSearchParams(searchParams);

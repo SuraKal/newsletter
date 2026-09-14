@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { MailPlus } from "lucide-react";
+import { Check, MailPlus } from "lucide-react";
 import {
+  DashboardDataTable,
   DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
@@ -11,10 +12,13 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import { businessTeamRows } from "@/lib/demoData";
+import {
+  getBusinessTeamRows,
+  updateBusinessTeamMember,
+} from "@/lib/business-ops-store";
 
-const teamColumns = [
-  { key: "name", label: "Team member" },
+const createTeamColumns = (handleActivate) => [
+  { key: "name", label: "Team member", primary: true },
   { key: "role", label: "Role" },
   { key: "scope", label: "Scope" },
   {
@@ -23,6 +27,23 @@ const teamColumns = [
     render: (value, row) => (
       <DashboardStatusBadge label={value} tone={row.tone} />
     ),
+  },
+  {
+    key: "action",
+    label: "Action",
+    render: (value, row) =>
+      row.status === "Pending" ? (
+        <button
+          type="button"
+          onClick={() => handleActivate(row.id)}
+          className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-heritage"
+        >
+          <Check className="h-3.5 w-3.5" />
+          Activate seat
+        </button>
+      ) : (
+        <span className="font-sans text-xs text-stone-400">Active</span>
+      ),
   },
 ];
 
@@ -46,14 +67,25 @@ const relatedLinks = [
 
 export default function BusinessTeam() {
   const [query, setQuery] = useState("");
+  const [, setRevision] = useState(0);
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const table = useTableQuery({
-    rows: businessTeamRows,
+    rows: getBusinessTeamRows(),
     query,
     predicate: matchesSearch,
     activeFilters,
     filterGroups: teamFilterGroups,
   });
+
+  const handleActivate = (memberId) => {
+    updateBusinessTeamMember(memberId, {
+      status: "Active",
+      tone: "success",
+    });
+    setRevision((value) => value + 1);
+  };
+
+  const teamColumns = createTeamColumns(handleActivate);
 
   return (
     <div className="space-y-6">
@@ -91,38 +123,11 @@ export default function BusinessTeam() {
 
       <DashboardPanel title="Team members" className="p-5 sm:p-6">
         {table.total ? (
-          <div className="dashboard-table-wrap overflow-x-auto">
-            <table className="w-full min-w-[620px]">
-              <thead>
-                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                  {teamColumns.map((column) => (
-                    <th
-                      key={column.key}
-                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                    >
-                      {column.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {table.rows.map((row) => (
-                  <tr key={row.id} className="border-b last:border-b-0">
-                    {teamColumns.map((column) => (
-                      <td
-                        key={column.key}
-                        className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                      >
-                        {column.render
-                          ? column.render(row[column.key], row)
-                          : row[column.key]}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DashboardDataTable
+            columns={teamColumns}
+            rows={table.rows}
+            minWidth={620}
+          />
         ) : (
           <DashboardEmptyState
             title="No matching team members"

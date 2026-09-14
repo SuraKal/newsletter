@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTableQuery } from "@/lib/useTableQuery";
+import { getSectionBadgeForPath } from "@/lib/notifications";
+import { useStoreVersion } from "@/lib/store-bus";
 
 const toneClassMap = {
   success: "dashboard-status-success",
@@ -16,6 +18,21 @@ const toneClassMap = {
   info: "dashboard-status-info",
   neutral: "dashboard-status-neutral",
 };
+
+export function DashboardNavBadge({ count = 0, className = "" }) {
+  if (!count) {
+    return null;
+  }
+
+  return (
+    <span
+      className={`inline-flex h-[1.15rem] min-w-[1.15rem] items-center justify-center rounded-full bg-heritage px-1 font-sans text-[0.6rem] font-bold leading-none text-paper ${className}`}
+      aria-label={`${count} items needing attention`}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 export function DashboardBreadcrumbs({ items = [] } = {}) {
   const crumbs = items || [];
@@ -95,8 +112,11 @@ export function DashboardShortcuts({
                 <Icon className="h-4 w-4" />
               </span>
               <span className="min-w-0">
-                <span className="block font-sans text-sm font-semibold text-stone-900 dark:text-stone-100">
-                  {item.label}
+                <span className="flex items-center gap-2">
+                  <span className="block font-sans text-sm font-semibold text-stone-900 dark:text-stone-100">
+                    {item.label}
+                  </span>
+                  <DashboardNavBadge count={item.badge} />
                 </span>
                 {item.description ? (
                   <span className="dashboard-page-description mt-0.5 block font-sans text-xs">
@@ -114,6 +134,7 @@ export function DashboardShortcuts({
 }
 
 export function DashboardRelatedLinks({ items = [], title = "Related links" }) {
+  useStoreVersion();
   if (!items.length) {
     return null;
   }
@@ -128,9 +149,12 @@ export function DashboardRelatedLinks({ items = [], title = "Related links" }) {
           <Link
             key={item.to}
             to={item.to}
-            className="font-sans text-sm font-medium text-stone-600 underline decoration-stone-300 underline-offset-2 transition-colors hover:text-stone-900 hover:decoration-stone-500 dark:text-stone-300 dark:hover:text-stone-100"
+            className="inline-flex items-center gap-1.5 font-sans text-sm font-medium text-stone-600 underline decoration-stone-300 underline-offset-2 transition-colors hover:text-stone-900 hover:decoration-stone-500 dark:text-stone-300 dark:hover:text-stone-100"
           >
             {item.label}
+            <DashboardNavBadge
+              count={item.badge ?? getSectionBadgeForPath(item.to)}
+            />
           </Link>
         ))}
       </div>
@@ -277,7 +301,7 @@ export function DashboardFactList({ items = [] }) {
   return (
     <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => (
-        <div key={item.label}>
+        <div key={item.label} className="min-w-0">
           <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
             {item.label}
           </p>
@@ -485,6 +509,89 @@ export function DashboardPagination({
   );
 }
 
+export function DashboardDataTable({
+  columns = [],
+  rows = [],
+  minWidth = 620,
+  className = "",
+}) {
+  const primaryIndex = Math.max(
+    0,
+    columns.findIndex(
+      (column) => column.primary && !column.hideOnMobile,
+    ),
+  );
+  const primaryColumn = columns[primaryIndex] || { key: "", label: "" };
+  const detailColumns = columns.filter(
+    (column, index) => index !== primaryIndex && !column.hideOnMobile,
+  );
+
+  const renderCell = (column, row) =>
+    column.render ? column.render(row[column.key], row) : row[column.key];
+
+  return (
+    <div className={className}>
+      <div className="dashboard-table-wrap hidden md:block">
+        <table className="w-full" style={{ minWidth }}>
+          <thead>
+            <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
+              {columns.map((column) => (
+                <th
+                  key={column.key || column.label}
+                  className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400"
+                >
+                  {column.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIndex) => (
+              <tr
+                key={row.id || rowIndex}
+                className="dashboard-table-row border-b last:border-b-0"
+              >
+                {columns.map((column) => (
+                  <td
+                    key={column.key || column.label}
+                    className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
+                  >
+                    {renderCell(column, row)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <ul className="dashboard-mobile-list md:hidden">
+        {rows.map((row, rowIndex) => (
+          <li key={row.id || rowIndex}>
+            <div className="dashboard-mobile-list-title font-sans text-[0.95rem] font-semibold leading-snug">
+              {renderCell(primaryColumn, row)}
+            </div>
+            {detailColumns.length ? (
+              <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5">
+                {detailColumns.map((column) => (
+                  <div key={column.key || column.label}>
+                    <dt className="dashboard-mobile-list-label font-sans text-[0.62rem] font-bold uppercase tracking-[0.16em]">
+                      {column.label}
+                    </dt>
+                    <dd className="dashboard-mobile-list-value mt-1 font-sans text-sm leading-5">
+                      {renderCell(column, row)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function DashboardActivityTable({
   title,
   description = null,
@@ -520,41 +627,7 @@ export function DashboardActivityTable({
           />
         </div>
       ) : null}
-      <div className="dashboard-table-wrap overflow-x-auto">
-        <table className="w-full min-w-[620px]">
-          <thead>
-            <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className="dashboard-table-head py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em]"
-                >
-                  {column.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {table.rows.map((row, rowIndex) => (
-              <tr
-                key={row.id || rowIndex}
-                className="dashboard-table-row border-b last:border-b-0"
-              >
-                {columns.map((column) => (
-                  <td
-                    key={column.key}
-                    className="py-3 font-sans text-sm text-stone-600 dark:text-stone-300"
-                  >
-                    {column.render
-                      ? column.render(row[column.key], row)
-                      : row[column.key]}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DashboardDataTable columns={columns} rows={table.rows} minWidth={620} />
       <DashboardPagination
         page={table.page}
         pageCount={table.pageCount}

@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import {
   DashboardEmptyState,
   DashboardFactList,
@@ -9,7 +9,10 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { businessOrderRows } from "@/lib/demoData";
+import {
+  getBusinessOrderById,
+  updateBusinessOrder,
+} from "@/lib/business-ops-store";
 
 const relatedLinks = [
   { label: "Team", to: "/business-dashboard/team" },
@@ -21,7 +24,20 @@ const relatedLinks = [
 
 export default function BusinessOrderDetail() {
   const { orderId } = useParams();
-  const order = businessOrderRows.find((row) => row.id === orderId);
+  const [, setRevision] = useState(0);
+  const order = getBusinessOrderById(orderId);
+
+  const needsConfirmation = order && order.status === "Review";
+
+  const handleConfirm = () => {
+    if (!order) return;
+    updateBusinessOrder(order.id, {
+      status: "Active",
+      tone: "success",
+      nextWindow: order.nextWindow,
+    });
+    setRevision((value) => value + 1);
+  };
 
   if (!order) {
     return (
@@ -63,13 +79,25 @@ export default function BusinessOrderDetail() {
           { label: order.order },
         ]}
         action={
-          <Link
-            to="/business-dashboard/orders"
-            className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition-colors hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to orders
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/business-dashboard/orders"
+              className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition-colors hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to orders
+            </Link>
+            {needsConfirmation ? (
+              <button
+                type="button"
+                onClick={handleConfirm}
+                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 dark:bg-stone-100 dark:text-stone-900"
+              >
+                <Check className="h-4 w-4" />
+                Confirm order plan
+              </button>
+            ) : null}
+          </div>
         }
       />
 

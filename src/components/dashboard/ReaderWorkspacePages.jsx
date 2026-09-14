@@ -5,6 +5,7 @@ import { appClient } from "@/api/appClient";
 import { useAuth } from "@/lib/AuthContext";
 import { appParams } from "@/lib/app-params";
 import {
+  DashboardDataTable,
   DashboardEmptyState,
   DashboardFactList,
   DashboardFilterBar,
@@ -33,7 +34,7 @@ import {
 } from "@/lib/demoData";
 
 const invoiceColumns = [
-  { key: "item", label: "Item" },
+  { key: "item", label: "Item", primary: true },
   { key: "amount", label: "Amount" },
   {
     key: "status",
@@ -49,6 +50,7 @@ const readingColumns = [
   {
     key: "item",
     label: "Article",
+    primary: true,
     render: (value, row) => (
       <Link
         to={`/article/${row.articleId || row.id}`}
@@ -395,38 +397,11 @@ export function ReaderBillingPage() {
 
       <DashboardPanel title="Payment history and renewal events" className="p-5 sm:p-6">
         {table.total ? (
-          <div className="dashboard-table-wrap overflow-x-auto">
-            <table className="w-full min-w-[620px]">
-              <thead>
-                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                  {invoiceColumns.map((column) => (
-                    <th
-                      key={column.key}
-                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                    >
-                      {column.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {table.rows.map((row) => (
-                  <tr key={row.id} className="border-b last:border-b-0">
-                    {invoiceColumns.map((column) => (
-                      <td
-                        key={column.key}
-                        className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                      >
-                        {column.render
-                          ? column.render(row[column.key], row)
-                          : row[column.key]}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DashboardDataTable
+            columns={invoiceColumns}
+            rows={table.rows}
+            minWidth={620}
+          />
         ) : (
           <DashboardEmptyState
             title="No matching payment events"
@@ -513,38 +488,11 @@ export function ReaderHistoryPage() {
 
       <DashboardPanel title="Recent reading history" className="p-5 sm:p-6">
         {table.total ? (
-          <div className="dashboard-table-wrap overflow-x-auto">
-            <table className="w-full min-w-[620px]">
-              <thead>
-                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                  {readingColumns.map((column) => (
-                    <th
-                      key={column.key}
-                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                    >
-                      {column.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {table.rows.map((row) => (
-                  <tr key={row.id} className="border-b last:border-b-0">
-                    {readingColumns.map((column) => (
-                      <td
-                        key={column.key}
-                        className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                      >
-                        {column.render
-                          ? column.render(row[column.key], row)
-                          : row[column.key]}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DashboardDataTable
+            columns={readingColumns}
+            rows={table.rows}
+            minWidth={620}
+          />
         ) : (
           <DashboardEmptyState
             title="No matching reading history"

@@ -1,5 +1,6 @@
 import { appParams } from "@/lib/app-params";
 import { adminCompanyRows } from "@/lib/demoData";
+import { notifyStoreChange } from "@/lib/store-bus";
 
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
@@ -90,6 +91,7 @@ function readAll() {
 
 function writeAll(accounts) {
   if (storage) storage.setItem(accountsKey, JSON.stringify(accounts));
+  notifyStoreChange();
 }
 
 export function formatLeadDate(iso) {

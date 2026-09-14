@@ -3,98 +3,9 @@ import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import SectionHeader from "@/components/newspaper/SectionHeader";
 import NewsCard from "@/components/newspaper/NewsCard";
-import { CATEGORIES, IMAGES } from "@/lib/constants";
 import { getCategoryArticles, getLatestNews } from "@/lib/content-store";
-
-const categoryImages = {
-  News: IMAGES.politics,
-  Community: IMAGES.culture,
-  Business: IMAGES.business,
-  "Jobs & Marketplace": IMAGES.economy,
-  Events: IMAGES.events,
-  "Culture & Lifestyle": IMAGES.culture,
-  Technology: IMAGES.technology,
-  "Advice Corner": IMAGES.featured,
-  "Serial Novels": IMAGES.featured,
-  Other: IMAGES.hero,
-};
-
-const categoryGroups = [
-  {
-    title: "News",
-    items: ["Local News", "International", "Community Updates"],
-  },
-  {
-    title: "Community",
-    items: [
-      "Weddings & Love Stories",
-      "Birth Announcements",
-      "Graduations",
-      "Memorials",
-      "Success Stories",
-      "Community Announcements",
-      "Volunteer Opportunities",
-    ],
-  },
-  {
-    title: "Business",
-    items: [
-      "Business News",
-      "Featured Businesses",
-      "Entrepreneur Stories",
-      "Investment",
-      "Sponsored Businesses",
-    ],
-  },
-  {
-    title: "Jobs & Marketplace",
-    items: [
-      "Job Vacancies",
-      "Businesses Hiring",
-      "Buy & Sell",
-      "Cars",
-      "Houses & Apartments",
-      "Services",
-    ],
-  },
-  {
-    title: "Events",
-    items: [
-      "Community Events",
-      "Church Events",
-      "Festivals",
-      "Concerts",
-      "Sports Events",
-    ],
-  },
-  {
-    title: "Culture & Lifestyle",
-    items: ["Culture", "Food", "Health", "Travel", "Fashion", "Entertainment"],
-  },
-  {
-    title: "Technology",
-    items: ["AI", "Apps", "Mobile", "Business Technology", "Digital Tips"],
-  },
-  {
-    title: "Advice Corner",
-    items: [
-      "Anonymous Stories",
-      "Relationships",
-      "Family",
-      "Career Advice",
-      "Immigration & Legal Tips",
-      "Education",
-    ],
-  },
-  {
-    title: "Serial Novels",
-    items: ["Romance", "Mystery", "Historical Fiction", "Children's Stories"],
-  },
-  {
-    title: "Other",
-    items: ["Announcements", "General Interest", "Archive Picks"],
-  },
-];
+import { getCategories } from "@/lib/category-store";
+import { useStoreVersion } from "@/lib/store-bus";
 
 function slugify(value) {
   return value
@@ -105,18 +16,23 @@ function slugify(value) {
 }
 
 export default function CategoriesPage() {
+  useStoreVersion();
+  const categories = getCategories();
+  const categoryLabels = categories.map((cat) => cat.label);
   const params = new URLSearchParams(window.location.search);
   const selectedCat = params.get("cat");
 
   if (selectedCat) {
-    const catName =
-      CATEGORIES.find((c) => c.toLowerCase() === selectedCat.toLowerCase()) ||
-      selectedCat;
-    const categoryArticles = getCategoryArticles();
+    const raw = selectedCat.toLowerCase();
+    const matched =
+      categories.find((cat) => slugify(cat.label) === raw) ||
+      categories.find((cat) => cat.label.toLowerCase() === raw);
+    const catName = matched ? matched.label : selectedCat;
+    const categoryArticles = getCategoryArticles(categoryLabels);
     const latestNews = getLatestNews();
-    const articles = categoryArticles[selectedCat.toLowerCase()] || [];
+    const articles = categoryArticles[catName] || [];
     const extraArticles = latestNews.filter(
-      (a) => a.category.toLowerCase() === selectedCat.toLowerCase(),
+      (a) => a.category.toLowerCase() === raw,
     );
     const allCatArticles = [...articles, ...extraArticles].filter(
       (article, index, list) =>
@@ -160,21 +76,21 @@ export default function CategoriesPage() {
         <SectionHeader title="All Categories" />
 
         <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-5">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <a
-              key={cat}
-              href={`/categories?cat=${slugify(cat)}`}
+              key={cat.id}
+              href={`/categories?cat=${slugify(cat.label)}`}
               className="group relative aspect-[4/3] overflow-hidden"
             >
               <img
-                src={categoryImages[cat]}
-                alt={cat}
+                src={cat.image}
+                alt={cat.label}
                 className="editorial-image h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/30 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-4">
                 <h3 className="font-display text-xl font-bold text-paper">
-                  {cat}
+                  {cat.label}
                 </h3>
               </div>
             </a>
@@ -189,32 +105,34 @@ export default function CategoriesPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {categoryGroups.map((group) => (
-              <article
-                key={group.title}
-                className="border border-stone-300/60 bg-vellum p-6"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <h3 className="font-display text-2xl font-bold text-ink">
-                    {group.title}
-                  </h3>
-                  <span className="font-sans text-[0.6rem] font-bold uppercase tracking-[0.2em] text-redacted">
-                    {group.items.length} items
-                  </span>
-                </div>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  {group.items.map((item) => (
-                    <a
-                      key={item}
-                      href={`/categories?cat=${slugify(group.title)}&sub=${slugify(item)}`}
-                      className="inline-flex border border-stone-300/70 bg-paper px-3 py-2 font-sans text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-ink hover:text-paper"
-                    >
-                      {item}
-                    </a>
-                  ))}
-                </div>
-              </article>
-            ))}
+            {categories
+              .filter((cat) => cat.subcategories.length)
+              .map((cat) => (
+                <article
+                  key={cat.id}
+                  className="border border-stone-300/60 bg-vellum p-6"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <h3 className="font-display text-2xl font-bold text-ink">
+                      {cat.label}
+                    </h3>
+                    <span className="font-sans text-[0.6rem] font-bold uppercase tracking-[0.2em] text-redacted">
+                      {cat.subcategories.length} items
+                    </span>
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    {cat.subcategories.map((item) => (
+                      <a
+                        key={item}
+                        href={`/categories?cat=${slugify(cat.label)}&sub=${slugify(item)}`}
+                        className="inline-flex border border-stone-300/70 bg-paper px-3 py-2 font-sans text-xs font-bold uppercase tracking-wider text-ink transition-colors hover:bg-ink hover:text-paper"
+                      >
+                        {item}
+                      </a>
+                    ))}
+                  </div>
+                </article>
+              ))}
           </div>
         </section>
       </main>

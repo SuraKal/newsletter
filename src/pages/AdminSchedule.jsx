@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { PenSquare, Truck } from "lucide-react";
+import { Check, PenSquare, Truck } from "lucide-react";
 import {
+  DashboardDataTable,
   DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
@@ -11,14 +12,19 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import { getAdminScheduleRows } from "@/lib/content-store";
+import {
+  getAdminScheduleRows,
+  getRawArticleById,
+  saveArticle,
+} from "@/lib/content-store";
 
-const scheduleColumns = [
+const createScheduleColumns = (handleRelease) => [
   { key: "slot", label: "Publish slot" },
   { key: "sector", label: "Sector" },
   {
     key: "headline",
     label: "Headline",
+    primary: true,
     render: (value, row) => (
       <Link
         to={`/admin/content/${row.id}`}
@@ -36,7 +42,38 @@ const scheduleColumns = [
     ),
   },
   { key: "release", label: "Release step" },
+  {
+    key: "action",
+    label: "Action",
+    render: (value, row) => {
+      const action = nextReleaseAction(row.status);
+      return action ? (
+        <button
+          type="button"
+          onClick={() => handleRelease(row.id, action.next)}
+          className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-heritage"
+        >
+          <Check className="h-3.5 w-3.5" />
+          {action.label}
+        </button>
+      ) : (
+        <span className="font-sans text-xs text-stone-400">Released</span>
+      );
+    },
+  },
 ];
+
+const nextReleaseAction = (status) => {
+  if (status === "Draft" || status === "Needs review") {
+    return { label: "Approve release", next: "Scheduled" };
+  }
+
+  if (status === "Scheduled") {
+    return { label: "Publish now", next: "Published" };
+  }
+
+  return null;
+};
 
 const matchesSearch = (row, query) =>
   [row.slot, row.sector, row.headline, row.status, row.release].some(
@@ -60,6 +97,7 @@ const relatedLinks = [
 export default function AdminSchedule() {
   const adminScheduleRows = getAdminScheduleRows();
   const [query, setQuery] = useState("");
+  const [, setRevision] = useState(0);
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const table = useTableQuery({
     rows: adminScheduleRows,
@@ -68,6 +106,15 @@ export default function AdminSchedule() {
     activeFilters,
     filterGroups: scheduleFilterGroups,
   });
+
+  const handleRelease = (articleId, nextStatus) => {
+    const raw = getRawArticleById(articleId);
+    if (!raw) return;
+    saveArticle({ ...raw, status: nextStatus });
+    setRevision((value) => value + 1);
+  };
+
+  const scheduleColumns = createScheduleColumns(handleRelease);
 
   return (
     <div className="space-y-6">
@@ -115,38 +162,11 @@ export default function AdminSchedule() {
       <DashboardPanel title="Scheduled publishing queue" className="p-5 sm:p-6">
         {table.total ? (
           <>
-            <div className="dashboard-table-wrap overflow-x-auto">
-              <table className="w-full min-w-[860px]">
-                <thead>
-                  <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                    {scheduleColumns.map((column) => (
-                      <th
-                        key={column.key}
-                        className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                      >
-                        {column.label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {table.rows.map((row) => (
-                    <tr key={row.id} className="border-b last:border-b-0">
-                      {scheduleColumns.map((column) => (
-                        <td
-                          key={column.key}
-                          className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                        >
-                          {column.render
-                            ? column.render(row[column.key], row)
-                            : row[column.key]}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DashboardDataTable
+              columns={scheduleColumns}
+              rows={table.rows}
+              minWidth={860}
+            />
             <DashboardPagination
               page={table.page}
               pageCount={table.pageCount}

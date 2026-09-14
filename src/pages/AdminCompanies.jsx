@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, CreditCard, Truck, X } from "lucide-react";
 import {
+  DashboardDataTable,
   DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
@@ -23,6 +24,7 @@ const companyColumns = [
   {
     key: "company",
     label: "Company",
+    primary: true,
     render: (value, row) => (
       <Link
         to={`/admin/companies/${row.id}`}
@@ -113,6 +115,103 @@ export default function AdminCompanies() {
     setRevision((value) => value + 1);
   };
 
+  const leadColumns = [
+    {
+      key: "company",
+      label: "Organization",
+      primary: true,
+      render: (value, lead) => (
+        <div>
+          <Link
+            to={`/admin/companies/${lead.id}`}
+            className="font-sans text-sm font-semibold text-stone-900 transition-colors hover:text-heritage dark:text-stone-100"
+          >
+            {lead.company}
+          </Link>
+          <p className="mt-0.5 font-sans text-xs text-stone-500">
+            {lead.lead?.requestType}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "workEmail",
+      label: "Contact",
+      render: (value, lead) => (
+        <div>
+          <p className="font-sans text-sm text-stone-700 dark:text-stone-300">
+            {lead.lead?.primaryContact}
+          </p>
+          <p className="mt-0.5 font-sans text-xs text-stone-500">{lead.workEmail}</p>
+        </div>
+      ),
+    },
+    {
+      key: "companySize",
+      label: "Request",
+      render: (value, lead) => (
+        <div>
+          <p className="font-sans text-sm text-stone-700 dark:text-stone-300">
+            {lead.lead?.companySize}
+          </p>
+          <p className="mt-0.5 font-sans text-xs text-stone-500">
+            {lead.lead?.launchTimeline}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "volume",
+      label: "Footprint",
+      render: (value, lead) => (
+        <div>
+          <p className="font-sans text-sm text-stone-700 dark:text-stone-300">
+            {lead.volume}
+          </p>
+          <p className="mt-0.5 font-sans text-xs text-stone-500">
+            {lead.lead?.deliveryLocations}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "createdAt",
+      label: "Submitted",
+      render: (value, lead) => (
+        <div>
+          <p className="font-sans text-sm text-stone-700 dark:text-stone-300">
+            {formatLeadDate(lead.createdAt)}
+          </p>
+          <DashboardStatusBadge label="Pending review" tone="warning" />
+        </div>
+      ),
+    },
+    {
+      key: "decision",
+      label: "Decision",
+      render: (value, lead) => (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => handleApprove(lead.id)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-emerald-700"
+          >
+            <Check className="h-3.5 w-3.5" />
+            Approve
+          </button>
+          <button
+            type="button"
+            onClick={() => handleDecline(lead.id)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+          >
+            <X className="h-3.5 w-3.5" />
+            Decline
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
@@ -173,102 +272,11 @@ export default function AdminCompanies() {
         {leads.length ? (
           leadsTable.total ? (
             <>
-              <div className="dashboard-table-wrap overflow-x-auto">
-                <table className="w-full min-w-[760px]">
-              <thead>
-                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                  {[
-                    { label: "Organization" },
-                    { label: "Contact" },
-                    { label: "Request" },
-                    { label: "Footprint" },
-                    { label: "Submitted" },
-                    { label: "Decision" },
-                  ].map((column) => (
-                    <th
-                      key={column.label}
-                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                    >
-                      {column.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {leadsTable.rows.map((lead) => (
-                  <tr
-                    key={lead.id}
-                    className="border-b last:border-b-0"
-                  >
-                    <td className="py-3 pr-3">
-                      <Link
-                        to={`/admin/companies/${lead.id}`}
-                        className="font-sans text-sm font-semibold text-stone-900 transition-colors hover:text-heritage dark:text-stone-100"
-                      >
-                        {lead.company}
-                      </Link>
-                      <p className="mt-0.5 font-sans text-xs text-stone-500">
-                        {lead.lead?.requestType}
-                      </p>
-                    </td>
-                    <td className="py-3 pr-3">
-                      <p className="font-sans text-sm text-stone-700 dark:text-stone-300">
-                        {lead.lead?.primaryContact}
-                      </p>
-                      <p className="mt-0.5 font-sans text-xs text-stone-500">
-                        {lead.workEmail}
-                      </p>
-                    </td>
-                    <td className="py-3 pr-3">
-                      <p className="font-sans text-sm text-stone-700 dark:text-stone-300">
-                        {lead.lead?.companySize}
-                      </p>
-                      <p className="mt-0.5 font-sans text-xs text-stone-500">
-                        {lead.lead?.launchTimeline}
-                      </p>
-                    </td>
-                    <td className="py-3 pr-3">
-                      <p className="font-sans text-sm text-stone-700 dark:text-stone-300">
-                        {lead.volume}
-                      </p>
-                      <p className="mt-0.5 font-sans text-xs text-stone-500">
-                        {lead.lead?.deliveryLocations}
-                      </p>
-                    </td>
-                    <td className="py-3 pr-3">
-                      <p className="font-sans text-sm text-stone-700 dark:text-stone-300">
-                        {formatLeadDate(lead.createdAt)}
-                      </p>
-                      <DashboardStatusBadge
-                        label="Pending review"
-                        tone="warning"
-                      />
-                    </td>
-                    <td className="py-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleApprove(lead.id)}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-emerald-700"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDecline(lead.id)}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                          Decline
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-</tbody>
-              </table>
-              </div>
+              <DashboardDataTable
+                columns={leadColumns}
+                rows={leadsTable.rows}
+                minWidth={760}
+              />
               <DashboardPagination
                 page={leadsTable.page}
                 pageCount={leadsTable.pageCount}
@@ -294,38 +302,11 @@ export default function AdminCompanies() {
       <DashboardPanel title="Company account table" className="p-5 sm:p-6">
         {accountsTable.total ? (
           <>
-            <div className="dashboard-table-wrap overflow-x-auto">
-              <table className="w-full min-w-[620px]">
-                <thead>
-                  <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                    {companyColumns.map((column) => (
-                      <th
-                        key={column.key}
-                        className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                      >
-                        {column.label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {accountsTable.rows.map((row) => (
-                    <tr key={row.id} className="border-b last:border-b-0">
-                      {companyColumns.map((column) => (
-                        <td
-                          key={column.key}
-                          className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                        >
-                          {column.render
-                            ? column.render(row[column.key], row)
-                            : row[column.key]}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DashboardDataTable
+              columns={companyColumns}
+              rows={accountsTable.rows}
+              minWidth={620}
+            />
             <DashboardPagination
               page={accountsTable.page}
               pageCount={accountsTable.pageCount}

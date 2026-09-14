@@ -1,12 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
-import { subscriptionPlans } from "@/lib/demoData";
+import { useSubscriptionPlans } from "@/lib/subscription-catalog";
 import SectionHeader from "@/components/newspaper/SectionHeader";
 import { useLanguage } from "@/lib/LanguageContext";
 
 export default function SubscriptionSection() {
   const { t } = useLanguage();
+  const subscriptionPlans = useSubscriptionPlans();
 
   return (
     <section className="bg-vellum py-16">

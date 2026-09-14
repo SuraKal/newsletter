@@ -22,6 +22,7 @@ import { getBusinessCompanySnapshot } from "@/lib/company-store";
 import {
   businessOverviewMetrics,
 } from "@/lib/demoData";
+import { useWorkspaceSectionBadges } from "@/lib/notifications";
 
 const sectionIconMap = {
   overview: LayoutDashboard,
@@ -48,6 +49,7 @@ const statusFor = (entity) => {
 export default function BusinessOverviewPage() {
   const entity = getBusinessCompanySnapshot();
   const statusInfo = statusFor(entity);
+  const sectionBadges = useWorkspaceSectionBadges("business");
 
   const contractStateDetail =
     entity?.status === "Pending review"
@@ -89,6 +91,7 @@ export default function BusinessOverviewPage() {
   ].map((tool) => ({
     ...tool,
     icon: sectionIconMap[tool.id],
+    badge: sectionBadges[tool.id],
   }));
 
   return (

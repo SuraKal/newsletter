@@ -3,10 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CATEGORIES } from "@/lib/constants";
 import { ARTICLE_PLACEMENTS } from "@/lib/content-store";
-
-const CATEGORY_OPTIONS = [...CATEGORIES, "Editorial", "Opinion", "Analysis"];
+import { getCategoryLabels } from "@/lib/category-store";
+import { useStoreVersion } from "@/lib/store-bus";
 
 const MAX_IMAGE_DIMENSION = 1200;
 
@@ -18,6 +17,8 @@ export default function AdminArticleForm({
   successMessage,
   templateFields = [],
 }) {
+  useStoreVersion();
+  const CATEGORY_OPTIONS = [...getCategoryLabels(), "Editorial", "Opinion", "Analysis"];
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
@@ -60,22 +61,6 @@ export default function AdminArticleForm({
       ) : null}
 
       <div className="grid gap-5 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="article-sector">Sector</Label>
-          <select
-            id="article-sector"
-            value={form.sector}
-            onChange={(e) => onChange("sector", e.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            {["Politics", "Business", "Sports", "Events"].map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
-
         <div className="space-y-2">
           <Label htmlFor="article-status">Publishing state</Label>
           <select

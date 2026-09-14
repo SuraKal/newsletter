@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, Truck } from "lucide-react";
 import {
+  DashboardDataTable,
   DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
@@ -11,11 +12,13 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import { adminPricingRows } from "@/lib/demoData";
+import { useBusinessPricing } from "@/lib/business-pricing-catalog";
+import AdminBusinessPricingCatalog from "@/components/dashboard/AdminBusinessPricingCatalog";
 
 const pricingColumns = [
-  { key: "tier", label: "Tier" },
+  { key: "tier", label: "Tier", primary: true },
   { key: "volume", label: "Volume band" },
+  { key: "pricing", label: "Pricing label" },
   { key: "billing", label: "Billing model" },
   {
     key: "status",
@@ -27,13 +30,14 @@ const pricingColumns = [
 ];
 
 const matchesSearch = (row, query) =>
-  [row.tier, row.volume, row.billing, row.status].some((value) =>
+  [row.tier, row.volume, row.pricing, row.billing, row.status].some((value) =>
     String(value ?? "").toLowerCase().includes(query),
   );
 
 const pricingFilterGroups = [{ key: "status", label: "Status" }];
 
 const relatedLinks = [
+  { label: "Reader subscriptions", to: "/admin/subscriptions" },
   { label: "Content", to: "/admin/content" },
   { label: "Schedule", to: "/admin/schedule" },
   { label: "Subscribers", to: "/admin/subscribers" },
@@ -44,9 +48,10 @@ const relatedLinks = [
 
 export default function AdminPricing() {
   const [query, setQuery] = useState("");
+  const businessPricing = useBusinessPricing();
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const table = useTableQuery({
-    rows: adminPricingRows,
+    rows: businessPricing,
     query,
     predicate: matchesSearch,
     activeFilters,
@@ -58,7 +63,7 @@ export default function AdminPricing() {
       <DashboardPageHeader
         eyebrow="Admin pricing"
         title="Pricing tier matrix"
-        description="Review business pricing tiers and volume bands."
+        description="Manage company bulk-order pricing tiers, volume bands, invoice models, and delivery complexity. Company accounts still receive reader access; this workspace only controls their volume and operational rules."
         breadcrumbs={[
           { label: "Admin workspace", to: "/admin/overview" },
           { label: "Pricing" },
@@ -74,8 +79,10 @@ export default function AdminPricing() {
         }
       />
 
+      <AdminBusinessPricingCatalog />
+
       <DashboardFilterBar
-        searchPlaceholder="Search tier, volume band, or billing model"
+        searchPlaceholder="Search tier, volume, pricing, or billing model"
         searchValue={query}
         onSearchChange={setQuery}
         resultCount={query.trim() || table.hasActiveFilters ? table.total : null}
@@ -84,7 +91,7 @@ export default function AdminPricing() {
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         filterOptions={table.filterOptions}
-        filters={["3 pricing bands", "12 cross-border contracts", "6 reviews in progress"]}
+        filters={[`${businessPricing.length} public tiers`, "Bulk ordering", "Company billing"]}
         action={
           <Link
             to="/admin/shipments"
@@ -98,38 +105,11 @@ export default function AdminPricing() {
 
       <DashboardPanel title="Pricing tier matrix" className="p-5 sm:p-6">
         {table.total ? (
-          <div className="dashboard-table-wrap overflow-x-auto">
-            <table className="w-full min-w-[620px]">
-              <thead>
-                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                  {pricingColumns.map((column) => (
-                    <th
-                      key={column.key}
-                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                    >
-                      {column.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {table.rows.map((row) => (
-                  <tr key={row.id} className="border-b last:border-b-0">
-                    {pricingColumns.map((column) => (
-                      <td
-                        key={column.key}
-                        className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                      >
-                        {column.render
-                          ? column.render(row[column.key], row)
-                          : row[column.key]}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DashboardDataTable
+            columns={pricingColumns}
+            rows={table.rows}
+            minWidth={620}
+          />
         ) : (
           <DashboardEmptyState
             title="No matching pricing tiers"

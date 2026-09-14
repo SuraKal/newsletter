@@ -50,7 +50,12 @@ const AdminSchedule = lazy(() => import("@/pages/AdminSchedule"));
 const AdminSubscribers = lazy(() => import("@/pages/AdminSubscribers"));
 const AdminCompanies = lazy(() => import("@/pages/AdminCompanies"));
 const AdminGovernance = lazy(() => import("@/pages/AdminGovernance"));
+const AdminCategories = lazy(() => import("@/pages/AdminCategories"));
+const AdminCategoryDetail = lazy(
+  () => import("@/pages/AdminCategoryDetail"),
+);
 const AdminPricing = lazy(() => import("@/pages/AdminPricing"));
+const AdminSubscriptions = lazy(() => import("@/pages/AdminSubscriptions"));
 const AdminShipmentDetail = lazy(() => import("@/pages/AdminShipmentDetail"));
 const AdminCompanyDetail = lazy(() => import("@/pages/AdminCompanyDetail"));
 const AdminSubscriberDetail = lazy(
@@ -236,12 +241,18 @@ const AuthenticatedApp = () => {
             element={<AdminCompanyDetail />}
           />
           <Route path="governance" element={<AdminGovernance />} />
+          <Route path="categories" element={<AdminCategories />} />
+          <Route
+            path="categories/:categoryId"
+            element={<AdminCategoryDetail />}
+          />
           <Route path="shipments" element={<AdminShipments />} />
           <Route
             path="shipments/:shipmentId"
             element={<AdminShipmentDetail />}
           />
           <Route path="pricing" element={<AdminPricing />} />
+          <Route path="subscriptions" element={<AdminSubscriptions />} />
         </Route>
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />

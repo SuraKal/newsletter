@@ -18,8 +18,8 @@ import {
   businessDeliveryLocations,
   businessLandingFeatures,
   businessLandingStats,
-  businessPricingFramework,
 } from "@/lib/demoData";
+import { useBusinessPricing } from "@/lib/business-pricing-catalog";
 
 const featureIconMap = {
   "Bulk copy planning": FileText,
@@ -37,6 +37,8 @@ const locationIconMap = {
 };
 
 export default function BusinessPage() {
+  const businessPricingFramework = useBusinessPricing();
+
   return (
     <div className="min-h-screen bg-paper">
       <Masthead />

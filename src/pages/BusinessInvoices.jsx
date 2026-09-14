@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ReceiptText, ShieldCheck } from "lucide-react";
 import {
+  DashboardDataTable,
   DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
@@ -11,12 +12,13 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import { businessInvoiceRows } from "@/lib/demoData";
+import { getBusinessInvoiceRows } from "@/lib/business-ops-store";
 
 const invoiceColumns = [
   {
     key: "invoice",
     label: "Invoice",
+    primary: true,
     render: (value, row) => (
       <Link
         to={`/business-dashboard/invoices/${row.id}`}
@@ -62,7 +64,7 @@ export default function BusinessInvoices() {
   const [query, setQuery] = useState("");
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const table = useTableQuery({
-    rows: businessInvoiceRows,
+    rows: getBusinessInvoiceRows(),
     query,
     predicate: matchesSearch,
     activeFilters,
@@ -129,38 +131,11 @@ export default function BusinessInvoices() {
 
       <DashboardPanel title="Invoice history" className="p-5 sm:p-6">
         {table.total ? (
-          <div className="dashboard-table-wrap overflow-x-auto">
-            <table className="w-full min-w-[620px]">
-              <thead>
-                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                  {invoiceColumns.map((column) => (
-                    <th
-                      key={column.key}
-                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                    >
-                      {column.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {table.rows.map((row) => (
-                  <tr key={row.id} className="border-b last:border-b-0">
-                    {invoiceColumns.map((column) => (
-                      <td
-                        key={column.key}
-                        className="py-3 font-sans text-sm text-stone-700 dark:text-stone-300"
-                      >
-                        {column.render
-                          ? column.render(row[column.key], row)
-                          : row[column.key]}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DashboardDataTable
+            columns={invoiceColumns}
+            rows={table.rows}
+            minWidth={620}
+          />
         ) : (
           <DashboardEmptyState
             title="No matching invoices"

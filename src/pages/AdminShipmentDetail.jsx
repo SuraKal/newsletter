@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import {
   DashboardEmptyState,
   DashboardFactList,
@@ -9,10 +9,11 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import { adminShipmentActivityRows } from "@/lib/demoData";
 import {
-  adminShipmentActivityRows,
-  adminShipmentRows,
-} from "@/lib/demoData";
+  getShipmentById,
+  updateShipment,
+} from "@/lib/shipment-store";
 
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
@@ -23,11 +24,34 @@ const relatedLinks = [
   { label: "Pricing", to: "/admin/pricing" },
 ];
 
+const actionForStatus = (status) => {
+  if (status === "Delay flagged") {
+    return { label: "Resolve delay", next: { status: "In dispatch", tone: "info" } };
+  }
+
+  if (status === "Preparing") {
+    return { label: "Confirm dispatch", next: { status: "In dispatch", tone: "info" } };
+  }
+
+  if (status === "In dispatch") {
+    return { label: "Mark delivered", next: { status: "Delivered", tone: "success" } };
+  }
+
+  return null;
+};
+
 export default function AdminShipmentDetail() {
   const { shipmentId } = useParams();
-  const shipment = adminShipmentRows.find(
-    (row) => row.id === shipmentId,
-  );
+  const [, setRevision] = useState(0);
+  const shipment = getShipmentById(shipmentId);
+
+  const action = shipment ? actionForStatus(shipment.status) : null;
+
+  const handleAction = () => {
+    if (!shipment || !action) return;
+    updateShipment(shipment.id, action.next);
+    setRevision((value) => value + 1);
+  };
 
   if (!shipment) {
     return (
@@ -73,13 +97,25 @@ export default function AdminShipmentDetail() {
           { label: shipment.shipmentId },
         ]}
         action={
-          <Link
-            to="/admin/shipments"
-            className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition-colors hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to shipments
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/admin/shipments"
+              className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition-colors hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to shipments
+            </Link>
+            {action ? (
+              <button
+                type="button"
+                onClick={handleAction}
+                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 dark:bg-stone-100 dark:text-stone-900"
+              >
+                <Check className="h-4 w-4" />
+                {action.label}
+              </button>
+            ) : null}
+          </div>
         }
       />
 

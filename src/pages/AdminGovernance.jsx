@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 import {
+  DashboardDataTable,
   DashboardEmptyState,
   DashboardFilterBar,
   DashboardPageHeader,
@@ -106,6 +107,72 @@ export default function AdminGovernance() {
     }
   };
 
+  const governanceColumns = [
+    {
+      key: "requester",
+      label: "Requester",
+      primary: true,
+      render: (value, row) => (
+        <div>
+          <p className="font-sans text-sm font-semibold text-stone-900 dark:text-stone-100">
+            {value?.name}
+          </p>
+          <p className="mt-0.5 font-sans text-xs text-stone-500">{value?.email}</p>
+        </div>
+      ),
+    },
+    {
+      key: "type",
+      label: "Request",
+      render: (value, row) => (
+        <div>
+          <p className="font-sans text-sm text-stone-700 dark:text-stone-300">
+            {value}
+          </p>
+          <p className="mt-0.5 font-sans text-xs text-stone-500">
+            {row.scopeLabel}
+          </p>
+        </div>
+      ),
+    },
+    { key: "date", label: "Submitted" },
+    {
+      key: "notes",
+      label: "Notes",
+      hideOnMobile: true,
+      render: (value) => (
+        <p className="max-w-xs font-body text-xs leading-relaxed text-stone-600 line-clamp-2 dark:text-stone-300">
+          {value}
+        </p>
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (value) => (
+        <DashboardStatusBadge label={value} tone={statusTone[value] || "neutral"} />
+      ),
+    },
+    {
+      key: "action",
+      label: "Action",
+      render: (value, row) => {
+        const nextAction = nextActionFor(row.status);
+        return nextAction ? (
+          <button
+            type="button"
+            onClick={() => handleAdvance(row.id, nextAction.next)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-heritage"
+          >
+            {nextAction.label}
+          </button>
+        ) : (
+          <span className="font-sans text-xs text-stone-400">Resolved</span>
+        );
+      },
+    },
+  ];
+
   const openRequests = requests.filter(
     (request) => request.status !== "Completed",
   ).length;
@@ -173,90 +240,11 @@ export default function AdminGovernance() {
             <p className="font-sans text-sm text-stone-500">Loading requests...</p>
           </div>
         ) : requests.length && table.total ? (
-          <div className="dashboard-table-wrap overflow-x-auto">
-            <table className="w-full min-w-[840px]">
-              <thead>
-                <tr className="border-b border-stone-200/80 dark:border-stone-700/80">
-                  {[
-                    { label: "Requester" },
-                    { label: "Request" },
-                    { label: "Submitted" },
-                    { label: "Notes" },
-                    { label: "Status" },
-                    { label: "Action" },
-                  ].map((column) => (
-                    <th
-                      key={column.label}
-                      className="py-3 text-left font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500"
-                    >
-                      {column.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {table.rows.map((request) => {
-                  const nextAction = nextActionFor(request.status);
-                  return (
-                    <tr
-                      key={request.id}
-                      className="border-b last:border-b-0"
-                    >
-                      <td className="py-3 pr-3">
-                        <p className="font-sans text-sm font-semibold text-stone-900 dark:text-stone-100">
-                          {request.requester?.name}
-                        </p>
-                        <p className="mt-0.5 font-sans text-xs text-stone-500">
-                          {request.requester?.email}
-                        </p>
-                      </td>
-                      <td className="py-3 pr-3">
-                        <p className="font-sans text-sm text-stone-700 dark:text-stone-300">
-                          {request.type}
-                        </p>
-                        <p className="mt-0.5 font-sans text-xs text-stone-500">
-                          {request.scopeLabel}
-                        </p>
-                      </td>
-                      <td className="py-3 pr-3">
-                        <p className="font-sans text-sm text-stone-700 dark:text-stone-300">
-                          {request.date}
-                        </p>
-                      </td>
-                      <td className="py-3 pr-3">
-                        <p className="max-w-xs font-body text-xs leading-relaxed text-stone-600 line-clamp-2 dark:text-stone-300">
-                          {request.notes}
-                        </p>
-                      </td>
-                      <td className="py-3 pr-3">
-                        <DashboardStatusBadge
-                          label={request.status}
-                          tone={statusTone[request.status] || "neutral"}
-                        />
-                      </td>
-                      <td className="py-3">
-                        {nextAction ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleAdvance(request.id, nextAction.next)
-                            }
-                            className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-heritage"
-                          >
-                            {nextAction.label}
-                          </button>
-                        ) : (
-                          <span className="font-sans text-xs text-stone-400">
-                            Resolved
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <DashboardDataTable
+            columns={governanceColumns}
+            rows={table.rows}
+            minWidth={840}
+          />
         ) : (
           <DashboardEmptyState
             title={requests.length ? "No matching requests" : "No governance requests"}

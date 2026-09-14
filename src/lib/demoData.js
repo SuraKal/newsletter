@@ -380,6 +380,7 @@ export const subscriptionPlans = [
     name: "Digital",
     price: "9.99",
     monthlyPrice: 9.99,
+    yearlyPrice: 119.88,
     period: "/month",
     description: "Immediate digital access for individual readers",
     features: [
@@ -400,6 +401,7 @@ export const subscriptionPlans = [
     name: "Print + Digital",
     price: "24.99",
     monthlyPrice: 24.99,
+    yearlyPrice: 299.88,
     period: "/month",
     description: "The complete ንቐደም experience",
     features: [
@@ -422,6 +424,7 @@ export const subscriptionPlans = [
     price: "Custom",
     pricePrefix: "",
     period: "",
+    yearlyPrice: 0,
     description: "Volume-priced newspaper access for teams and organizations",
     features: [
       "Bulk print orders by location or team",
@@ -1628,12 +1631,12 @@ export const adminEditorArticles = [
 ];
 
 export const adminEditorTemplateFields = {
-  Politics: [
+  News: [
     {
       key: "councilSession",
       label: "Institution or session",
       placeholder: "Council, parliament, or committee session",
-      hint: "Politics coverage usually needs the decision-making body or vote context.",
+      hint: "News coverage usually needs the decision-making body or vote context.",
     },
     {
       key: "location",
@@ -1656,21 +1659,13 @@ export const adminEditorTemplateFields = {
       hint: "Use region context when commercial or logistics effects vary by market.",
     },
   ],
-  Sports: [
+  Events: [
     {
       key: "scorelineFocus",
       label: "Fixture or analysis focus",
       placeholder: "Matchday, injury notes, or analysis angle",
-      hint: "Sports packages should keep the performance focus visible before print summaries are prepared.",
+      hint: "Events packages should keep the performance focus visible before print summaries are prepared.",
     },
-    {
-      key: "location",
-      label: "Venue region",
-      placeholder: "Regional stadiums",
-      hint: "Venue context matters for event timing and localized sports coverage.",
-    },
-  ],
-  Events: [
     {
       key: "eventDate",
       label: "Event date or range",

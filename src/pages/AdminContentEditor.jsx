@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowRight, Clock3, Eye, EyeOff, FileText, Info } from "lucide-react";
+import { ArrowRight, Clock3, Eye, EyeOff, FileText, Info, Send } from "lucide-react";
 import {
   DashboardFilterBar,
   DashboardPageHeader,
@@ -35,7 +35,6 @@ const placementPrecedence = {
 const createDefaultArticle = () => ({
   id: "new",
   headline: "",
-  sector: "Politics",
   editor: "Editorial desk",
   status: "Draft",
   tone: "neutral",
@@ -339,13 +338,14 @@ export default function AdminContentEditor() {
   const [form, setForm] = useState(seed);
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     setForm(seed);
     setSuccessMessage("");
   }, [seed]);
 
-  const templateFields = adminEditorTemplateFields[form.sector] || [];
+  const templateFields = adminEditorTemplateFields[form.category] || [];
   const isNewArticle = id === "new";
 
   const handleChange = (key, value) => {
@@ -375,12 +375,40 @@ export default function AdminContentEditor() {
     }, 300);
   };
 
+  const handlePublishNow = () => {
+    if (!form.headline.trim()) {
+      setActionError("Add a headline before publishing this article.");
+      setSuccessMessage("");
+      return;
+    }
+
+    setActionError("");
+    setIsSaving(true);
+    setSuccessMessage("");
+
+    window.setTimeout(() => {
+      const draft = {
+        ...form,
+        status: "Published",
+        date: form.date || form.publishDate || "",
+      };
+      const saved = saveArticle(draft);
+      setIsSaving(false);
+      if (form.id === "new") {
+        handleChange("id", saved.id);
+      }
+      setSuccessMessage(
+        "Article is live in the public newsroom and ready for reader access.",
+      );
+    }, 300);
+  };
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Admin editor"
-        title={isNewArticle ? "Create a new article" : "Edit sector article"}
-        description="The editor should make sector-specific fields, publish timing, and article state obvious without sending admins back to a generic article list."
+        title={isNewArticle ? "Create a new article" : "Edit article"}
+        description="The editor should make category-specific template fields, publish timing, and article state obvious without sending admins back to a generic article list."
         breadcrumbs={[
           { label: "Admin workspace", to: "/admin/overview" },
           { label: "Content", to: "/admin/content" },
@@ -400,7 +428,7 @@ export default function AdminContentEditor() {
       <DashboardFilterBar
         searchPlaceholder="Search editorial notes or template fields"
         filters={[
-          `${form.sector} template`,
+          `${form.category || "News"} template`,
           form.status,
           `${form.publishDate} · ${form.publishTime}`,
         ]}
@@ -417,8 +445,8 @@ export default function AdminContentEditor() {
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <DashboardPanel
-          title="Sector-aware editor"
-          description="Template fields change with the article desk so publishing stays structured across politics, business, sports, and events."
+          title="Category-aware editor"
+          description="Template fields change with the article category so publishing stays structured across business, events, and the other public sections."
         >
           <AdminArticleForm
             form={form}
@@ -443,6 +471,27 @@ export default function AdminContentEditor() {
                 <div className="mt-3">
                   <DashboardStatusBadge label={form.status} tone={form.tone || "neutral"} />
                 </div>
+                {form.status !== "Published" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handlePublishNow}
+                      disabled={isSaving}
+                      className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-heritage px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-paper transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Send className="h-4 w-4" />
+                      Publish now
+                    </button>
+                    {actionError ? (
+                      <p
+                        role="alert"
+                        className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 font-sans text-xs font-semibold text-red-700"
+                      >
+                        {actionError}
+                      </p>
+                    ) : null}
+                  </>
+                ) : null}
               </div>
               <div className="dashboard-panel-soft p-4">
                 <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500">

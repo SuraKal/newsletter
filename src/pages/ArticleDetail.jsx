@@ -7,7 +7,7 @@ import NewsCard from "@/components/newspaper/NewsCard";
 
 import { useAuth } from "@/lib/AuthContext";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
-import { getArticleById, getHeroArticle, getPublicListingArticles } from "@/lib/content-store";
+import { getArticleById, getHeroArticle, getPublicListingArticles, registerArticleClick } from "@/lib/content-store";
 import {
   isArticleSaved,
   recordArticleShare,
@@ -39,6 +39,7 @@ export default function ArticleDetail() {
     if (article?.id && article?.id !== trackedArticleId.current) {
       trackedArticleId.current = article?.id;
       recordArticleView(article);
+      registerArticleClick(article.id);
     }
   }, [article?.id]);
 
