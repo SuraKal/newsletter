@@ -102,14 +102,20 @@ function buildSeedArticles() {
 function readAll() {
   if (!storage) return buildSeedArticles();
   const raw = storage.getItem(contentKey);
-  if (!raw) return buildSeedArticles();
+  if (!raw) {
+    const seeded = buildSeedArticles();
+    writeAll(seeded);
+    return seeded;
+  }
   try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length) return parsed;
   } catch {
     // fall through to reseed
   }
-  return buildSeedArticles();
+  const seeded = buildSeedArticles();
+  writeAll(seeded);
+  return seeded;
 }
 
 function writeAll(articles) {

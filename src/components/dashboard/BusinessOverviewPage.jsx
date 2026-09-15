@@ -18,11 +18,16 @@ import {
   DashboardRelatedLinks,
 } from "@/components/dashboard/DashboardPrimitives";
 import { appParams } from "@/lib/app-params";
-import { getBusinessCompanySnapshot } from "@/lib/company-store";
+import {
+  getBusinessCompanySnapshot,
+  getCompanyWorkflowPresentation,
+  getCompanyWorkflowState,
+} from "@/lib/company-store";
 import {
   businessOverviewMetrics,
 } from "@/lib/demoData";
 import { useWorkspaceSectionBadges } from "@/lib/notifications";
+import { useStoreVersion } from "@/lib/store-bus";
 
 const sectionIconMap = {
   overview: LayoutDashboard,
@@ -34,52 +39,48 @@ const sectionIconMap = {
   settings: ShieldCheck,
 };
 
-const statusFor = (entity) => {
-  if (!entity) return { label: "No company profile", tone: "neutral" };
-  if (entity.status === "Pending review") {
-    return { label: "Under review", tone: "warning" };
-  }
-  if (entity.status === "Declined") return { label: "Declined", tone: "neutral" };
-  if (entity.status === "Onboarding") {
-    return { label: "Onboarding", tone: "neutral" };
-  }
-  return { label: "Active", tone: "success" };
-};
-
 export default function BusinessOverviewPage() {
+  useStoreVersion();
   const entity = getBusinessCompanySnapshot();
-  const statusInfo = statusFor(entity);
+  const workflow = getCompanyWorkflowPresentation(entity);
+  const workflowState = getCompanyWorkflowState(entity);
+  const statusInfo = entity
+    ? workflow
+    : { label: "No company profile", tone: "neutral" };
   const sectionBadges = useWorkspaceSectionBadges("business");
 
   const contractStateDetail =
-    entity?.status === "Pending review"
-      ? "Your application is in the commercial review queue and activates once approved in the admin companies workspace."
-      : entity?.status === "Declined"
-        ? "This application was declined by the commercial review team. Reach out to business@nekedem.local to restart onboarding."
-        : entity?.status === "Onboarding"
-          ? "Approved and moving through onboarding. Route setup and receiving contacts are being finalized."
-          : "Account setup is pending. Start the business application to open the account.";
+    entity ? workflow.detail : "Start the business application to open a company quote and account review.";
 
   const metrics =
-    entity && entity.status !== "Pending review" && entity.status !== "Declined"
-      ? entity.status === "Onboarding"
+    entity && workflowState === "Converted to account"
+      ? businessOverviewMetrics
+      : entity && workflowState === "Approved"
         ? [
             {
               label: "Contract state",
-              value: "Onboarding",
+              value: "Approved",
               detail: contractStateDetail,
             },
             ...businessOverviewMetrics.slice(1),
           ]
-        : businessOverviewMetrics
-      : [
-          {
-            label: "Contract state",
-            value: statusInfo.label,
-            detail: contractStateDetail,
-          },
-          ...businessOverviewMetrics.slice(1),
-        ];
+        : entity && workflowState === "Quote ready"
+          ? [
+              {
+                label: "Contract state",
+                value: "Quote ready",
+                detail: contractStateDetail,
+              },
+              ...businessOverviewMetrics.slice(1),
+            ]
+          : [
+              {
+                label: "Contract state",
+                value: statusInfo.label,
+                detail: contractStateDetail,
+              },
+              ...businessOverviewMetrics.slice(1),
+            ];
 
   const shortcuts = [
     { id: "team", label: "Team", to: "/business-dashboard/team" },
@@ -102,10 +103,10 @@ export default function BusinessOverviewPage() {
         breadcrumbs={[{ label: "Business workspace" }, { label: "Overview" }]}
         action={
           <Link
-            to="/business-dashboard/shipments"
+            to={workflowState === "Converted to account" ? "/business-dashboard/shipments" : workflow.actionPath}
             className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-stone-700"
           >
-            Open shipment workspace
+            {workflowState === "Converted to account" ? "Open shipment workspace" : workflow.action}
             <ArrowRight className="h-4 w-4" />
           </Link>
         }
@@ -118,15 +119,7 @@ export default function BusinessOverviewPage() {
               {entity?.company || `${appParams.appName} Distribution Group`}
             </p>
             <p className="mt-1 max-w-2xl font-sans text-xs leading-5 text-stone-500">
-              {entity?.status === "Pending review"
-                ? "Awaiting commercial review. An approval from the admin companies workspace activates this account."
-                : entity?.status === "Onboarding"
-                  ? "Approved and moving through onboarding. Route setup and receiving contacts are being finalized."
-                  : entity?.status === "Declined"
-                    ? "This application was declined by the commercial review team."
-                    : entity?.status
-                      ? "Account is active and invoice-ready."
-                      : "Start the business application to open this account."}
+              {contractStateDetail}
             </p>
           </div>
           <DashboardStatusBadge

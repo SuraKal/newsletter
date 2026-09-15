@@ -3,6 +3,7 @@ import {
   businessPricingFramework as defaultBusinessPricing,
   subscriptionPlans as defaultSubscriptionPlans,
 } from "@/lib/demoData";
+import { notifyStoreChange } from "@/lib/store-bus";
 
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
@@ -73,6 +74,7 @@ const writeJson = (key, value) => {
   }
 
   storage.setItem(key, JSON.stringify(value));
+  notifyStoreChange(key);
 };
 
 const ensureSeedData = () => {
@@ -81,14 +83,18 @@ const ensureSeedData = () => {
   }
 
   const existingUsers = readJson(usersKey, []);
-  const preservedUsers = existingUsers.filter(
+  const existingUserList = Array.isArray(existingUsers) ? existingUsers : [];
+  const preservedUsers = existingUserList.filter(
     (user) =>
       user.id !== "admin-1" &&
       user.id !== "reader-1" &&
       user.id !== "business-1",
   );
 
-  writeJson(usersKey, [...defaultUsers, ...preservedUsers]);
+  const nextUsers = [...defaultUsers, ...preservedUsers];
+  if (JSON.stringify(existingUserList) !== JSON.stringify(nextUsers)) {
+    writeJson(usersKey, nextUsers);
+  }
 
   if (!storage.getItem(resetTokensKey)) {
     writeJson(resetTokensKey, {});
@@ -122,18 +128,25 @@ const ensureSeedData = () => {
     ]);
   }
 
-  if (!storage.getItem(subscriptionPlansKey)) {
+  const storedPlans = readJson(subscriptionPlansKey, null);
+  if (!Array.isArray(storedPlans) || !storedPlans.length) {
     writeJson(subscriptionPlansKey, defaultSubscriptionPlans);
   }
 
-  if (!storage.getItem(businessPricingKey)) {
+  const storedBusinessPricing = readJson(businessPricingKey, null);
+  if (!Array.isArray(storedBusinessPricing) || !storedBusinessPricing.length) {
     writeJson(businessPricingKey, defaultBusinessPricing);
   }
 };
 
 const readSubscriptionPlans = () => {
   ensureSeedData();
-  return readJson(subscriptionPlansKey, defaultSubscriptionPlans).map(
+  const plans = readJson(subscriptionPlansKey, defaultSubscriptionPlans);
+  if (!Array.isArray(plans) || !plans.length) {
+    writeJson(subscriptionPlansKey, defaultSubscriptionPlans);
+    return defaultSubscriptionPlans.map(normalizeSubscriptionPlan);
+  }
+  return plans.map(
     normalizeSubscriptionPlan,
   );
 };
@@ -159,7 +172,12 @@ const normalizeBusinessPricing = (tier) => ({
 
 const readBusinessPricing = () => {
   ensureSeedData();
-  return readJson(businessPricingKey, defaultBusinessPricing).map(
+  const pricing = readJson(businessPricingKey, defaultBusinessPricing);
+  if (!Array.isArray(pricing) || !pricing.length) {
+    writeJson(businessPricingKey, defaultBusinessPricing);
+    return defaultBusinessPricing.map(normalizeBusinessPricing);
+  }
+  return pricing.map(
     normalizeBusinessPricing,
   );
 };

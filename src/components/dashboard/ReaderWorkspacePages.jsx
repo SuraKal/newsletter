@@ -24,6 +24,7 @@ import DeliveryHistoryTable from "@/components/delivery/DeliveryHistoryTable";
 import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
 import { getReadingHistoryRows } from "@/lib/reading-history";
 import { getDeliveryByTrackingCode } from "@/lib/delivery-store";
+import { useStoreVersion } from "@/lib/store-bus";
 import {
   readerConsentChecklist,
   readerBillingRows,
@@ -102,6 +103,7 @@ const makeBreadcrumbs = (label) => [
 ];
 
 export function ReaderDeliveriesPage() {
+  useStoreVersion();
   const { user } = useAuth();
   const subscription = useMemo(
     () => getReaderSubscriptionSnapshot(user?.email),
@@ -181,6 +183,7 @@ export function ReaderDeliveriesPage() {
 }
 
 export function ReaderDeliveryDetailPage() {
+  useStoreVersion();
   const { user } = useAuth();
   const { trackingCode } = useParams();
   const subscription = useMemo(
@@ -296,6 +299,7 @@ export function ReaderDeliveryDetailPage() {
 }
 
 export function ReaderBillingPage() {
+  useStoreVersion();
   const { user } = useAuth();
   const subscription = useMemo(
     () => getReaderSubscriptionSnapshot(user?.email),
@@ -382,6 +386,25 @@ export function ReaderBillingPage() {
         </div>
       </DashboardPanel>
 
+      {!subscription.hasReadingAccess ? (
+        <DashboardPanel title="Subscription action" className="border-l-4 border-l-amber-500 p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <DashboardStatusBadge label={subscription.subscriptionStatus} tone="warning" />
+              <p className="mt-3 font-sans text-sm leading-5 text-stone-600 dark:text-stone-400">
+                {subscription.accessState}
+              </p>
+            </div>
+            <Link
+              to={subscription.recoveryPath}
+              className="inline-flex shrink-0 items-center justify-center rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:bg-stone-700"
+            >
+              {subscription.recoveryAction}
+            </Link>
+          </div>
+        </DashboardPanel>
+      ) : null}
+
       <DashboardFilterBar
         searchPlaceholder="Search payment item, amount, status, or date"
         searchValue={query}
@@ -423,6 +446,7 @@ export function ReaderBillingPage() {
 }
 
 export function ReaderHistoryPage() {
+  useStoreVersion();
   const readingRows = getReadingHistoryRows();
   const [query, setQuery] = useState("");
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
@@ -514,6 +538,7 @@ export function ReaderHistoryPage() {
 }
 
 export function ReaderProfilePage() {
+  useStoreVersion();
   const [form, setForm] = useState({
     name: `${appParams.appName} Reader`,
     email: appParams.readerEmail,
@@ -619,6 +644,7 @@ export function ReaderProfilePage() {
 }
 
 export function ReaderPrivacyPage() {
+  useStoreVersion();
   const [consents, setConsents] = useState({
     newsletterOptIn: false,
     privacyUpdatesOptIn: true,

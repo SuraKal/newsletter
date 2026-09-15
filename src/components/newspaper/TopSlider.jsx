@@ -11,6 +11,7 @@ import { IMAGES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/LanguageContext";
+import { useStoreVersion } from "@/lib/store-bus";
 
 const SLIDER_FALLBACK_IMAGES = [IMAGES.hero, IMAGES.politics, IMAGES.economy, IMAGES.culture];
 
@@ -34,6 +35,7 @@ function buildSliderSlides() {
 const topSliderSlides = buildSliderSlides();
 
 export default function TopSlider() {
+  useStoreVersion();
   const { t } = useLanguage();
   const [api, setApi] = React.useState(null);
   const [selectedIndex, setSelectedIndex] = React.useState(0);

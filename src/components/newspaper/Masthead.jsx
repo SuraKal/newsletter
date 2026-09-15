@@ -20,6 +20,8 @@ import {
 import { NAV_LINKS } from "@/lib/constants";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { useLanguage } from "@/lib/LanguageContext";
+import { useAuth } from "@/lib/AuthContext";
+import { getDefaultDashboardRoute } from "@/lib/dashboard-config";
 import HeritageOrnament from "@/components/newspaper/HeritageOrnament";
 import { getAllArticles } from "@/lib/content-store";
 import { getCategories } from "@/lib/category-store";
@@ -63,6 +65,7 @@ export default function Masthead() {
   useStoreVersion();
   const categories = getCategories();
   const { strings, toggleLanguage, t, formatDate } = useLanguage();
+  const { user, isAuthenticated } = useAuth();
   const [compactHeader, setCompactHeader] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -267,6 +270,25 @@ export default function Masthead() {
     day: "numeric",
   });
 
+  const workspacePath = user
+    ? getDefaultDashboardRoute(user.role)
+    : "/login";
+  const workspaceLabel =
+    user?.role === "admin"
+      ? "Admin Console"
+      : user?.role === "business"
+        ? "Business Workspace"
+        : "Reader Dashboard";
+  const quickAccess = [
+    { label: "Today's Front Page", path: "/news" },
+    ...(isAuthenticated
+      ? [{ label: workspaceLabel, path: workspacePath }]
+      : [
+          { label: "Reader Dashboard", path: "/login?journey=individual" },
+          { label: "Business Workspace", path: "/business" },
+        ]),
+  ];
+
   return (
     <>
       <header
@@ -359,11 +381,11 @@ export default function Masthead() {
               <div className="flex items-center gap-2">
                 <DarkModeToggle />
                 <Link
-                  to="/login"
+                  to={workspacePath}
                   className="hidden font-sans text-xs font-medium uppercase tracking-wider text-redacted transition-colors hover:text-heritage md:block"
                   onClick={closeAllPanels}
                 >
-                  {strings.signIn}
+                  {isAuthenticated ? "Workspace" : strings.signIn}
                 </Link>
               </div>
             </div>
@@ -538,12 +560,7 @@ export default function Masthead() {
                     Quick Access
                   </p>
                   <div className="mt-4 space-y-3">
-                    {[
-                      { label: "Today's Front Page", path: "/news" },
-                      { label: "Reader Dashboard", path: "/dashboard" },
-                      { label: "Business Workspace", path: "/business-dashboard" },
-                      { label: "Admin Console", path: "/admin" },
-                    ].map((item) => (
+                    {quickAccess.map((item) => (
                       <Link
                         key={item.path}
                         to={item.path}
@@ -692,8 +709,8 @@ export default function Masthead() {
                   {t(link.label)}
                 </Link>
               ))}
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="public-more-link">
-                {strings.signIn}
+              <Link to={workspacePath} onClick={() => setMenuOpen(false)} className="public-more-link">
+                {isAuthenticated ? "Workspace" : strings.signIn}
               </Link>
               <Link to="/delivery" onClick={() => setMenuOpen(false)} className="public-more-link">
                 {t("Track Delivery")}

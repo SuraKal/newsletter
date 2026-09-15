@@ -11,10 +11,16 @@ import {
 } from "@/components/dashboard/DashboardPrimitives";
 import {
   approveCompanyLead,
+  convertCompanyLead,
   declineCompanyLead,
   formatLeadDate,
   getCompanyEntityById,
+  getCompanyWorkflowPresentation,
+  getCompanyWorkflowState,
+  prepareCompanyQuote,
+  startCompanyReview,
 } from "@/lib/company-store";
+import { useStoreVersion } from "@/lib/store-bus";
 
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
@@ -26,6 +32,7 @@ const relatedLinks = [
 ];
 
 export default function AdminCompanyDetail() {
+  useStoreVersion();
   const { companyId } = useParams();
   const [, setRevision] = useState(0);
   const entity = getCompanyEntityById(companyId);
@@ -59,14 +66,15 @@ export default function AdminCompanyDetail() {
   }
 
   const lead = entity.lead || null;
-  const isPending = entity.status === "Pending review";
-  const isDeclined = entity.status === "Declined";
+  const workflowState = getCompanyWorkflowState(entity);
+  const workflow = getCompanyWorkflowPresentation(entity);
+  const canDecline = ["Submitted", "Under review", "Quote ready"].includes(workflowState);
 
   const accountFacts = [
     {
       label: "Status",
       value: (
-        <DashboardStatusBadge label={entity.status} tone={entity.tone} />
+        <DashboardStatusBadge label={workflow.label} tone={workflow.tone} />
       ),
     },
     ...(entity.tier ? [{ label: "Tier", value: entity.tier }] : []),
@@ -102,12 +110,18 @@ export default function AdminCompanyDetail() {
     : [];
 
   const handleApprove = () => {
-    approveCompanyLead(companyId);
+    const transition = {
+      Submitted: startCompanyReview,
+      "Under review": prepareCompanyQuote,
+      "Quote ready": approveCompanyLead,
+      Approved: convertCompanyLead,
+    }[workflowState];
+    transition?.(companyId);
     setRevision((value) => value + 1);
   };
 
   const handleDecline = () => {
-    declineCompanyLead(companyId);
+    if (canDecline) declineCompanyLead(companyId);
     setRevision((value) => value + 1);
   };
 
@@ -133,23 +147,29 @@ export default function AdminCompanyDetail() {
               <ArrowLeft className="h-4 w-4" />
               Back to companies
             </Link>
-            {isPending ? (
+            {canDecline || ["Submitted", "Under review", "Quote ready", "Approved"].includes(workflowState) ? (
               <>
-                <button
+                {canDecline ? <button
                   type="button"
                   onClick={handleDecline}
                   className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
                 >
                   <X className="h-4 w-4" />
                   Decline
-                </button>
+                </button> : null}
                 <button
                   type="button"
                   onClick={handleApprove}
                   className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 dark:bg-stone-100 dark:text-stone-900"
                 >
                   <Check className="h-4 w-4" />
-                  Approve request
+                  {workflowState === "Submitted"
+                    ? "Start review"
+                    : workflowState === "Under review"
+                      ? "Prepare quote"
+                      : workflowState === "Quote ready"
+                        ? "Approve quote"
+                        : "Convert account"}
                 </button>
               </>
             ) : null}
@@ -157,20 +177,20 @@ export default function AdminCompanyDetail() {
         }
       />
 
-      {isPending ? (
+      {workflowState !== "Converted to account" && workflowState !== "Declined" ? (
         <DashboardPanel
-          title="Awaiting review"
-          description="Approving this request opens a company account; declining closes the application."
+          title={workflow.label}
+          description={workflow.detail}
           className="p-5 sm:p-6"
         >
           <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
-            This application is not yet an active company account until it is
-            approved.
+            Use the page action to move this request through the next workflow
+            stage. The company workspace activates after conversion.
           </p>
         </DashboardPanel>
       ) : null}
 
-      {isDeclined ? (
+      {workflowState === "Declined" ? (
         <DashboardPanel
           title="Request declined"
           description="This application was closed and the company is not an active account."
@@ -210,6 +230,23 @@ export default function AdminCompanyDetail() {
           <p className="font-sans text-sm leading-6 text-stone-700 dark:text-stone-300">
             {lead.operationalNotes}
           </p>
+        </DashboardPanel>
+      ) : null}
+
+      {entity.quote ? (
+        <DashboardPanel
+          title="Prepared quote"
+          description="The mocked quote supporting the approval decision."
+          className="p-5 sm:p-6"
+        >
+          <DashboardFactList
+            items={[
+              { label: "Tier", value: entity.quote.tier },
+              { label: "Volume", value: entity.quote.volume },
+              { label: "Billing", value: entity.quote.billing },
+              { label: "Delivery", value: entity.quote.delivery },
+            ]}
+          />
         </DashboardPanel>
       ) : null}
 

@@ -4,6 +4,11 @@ import { ArrowRight, Building2, CheckCircle2, MapPinned, ReceiptText } from "luc
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import { appParams } from "@/lib/app-params";
+import {
+  getCompanyEntityById,
+  getCompanyWorkflowPresentation,
+} from "@/lib/company-store";
+import { useStoreVersion } from "@/lib/store-bus";
 
 const businessLeadStorageKey = `${appParams.storagePrefix}_business_leads`;
 
@@ -25,6 +30,7 @@ const readBusinessLeads = () => {
 };
 
 export default function BusinessApplySuccess() {
+  useStoreVersion();
   const [searchParams] = useSearchParams();
   const requestId = searchParams.get("request");
 
@@ -36,6 +42,13 @@ export default function BusinessApplySuccess() {
     const leads = readBusinessLeads();
     return leads[requestId] || null;
   }, [requestId]);
+
+  const entity = useMemo(
+    () => (requestId ? getCompanyEntityById(requestId) : null),
+    [requestId],
+  );
+  const workflow = getCompanyWorkflowPresentation(entity);
+  const requestDetails = entity?.lead || request;
 
   return (
     <div className="min-h-screen bg-paper">
@@ -51,7 +64,7 @@ export default function BusinessApplySuccess() {
                     Status
                   </p>
                   <p className="font-body text-sm text-emerald-900">
-                    Business request logged
+                    {workflow.label}
                   </p>
                 </div>
               </div>
@@ -59,7 +72,7 @@ export default function BusinessApplySuccess() {
           </div>
         </section>
 
-        {request ? (
+        {requestDetails ? (
           <>
             <section className="mt-10">
               <div className="rounded-[1.6rem] border border-stone-300/60 bg-paper p-6 shadow-[0_16px_38px_rgba(0,0,0,0.04)]">
@@ -75,10 +88,10 @@ export default function BusinessApplySuccess() {
                           Organization
                         </p>
                         <p className="mt-1 font-body text-sm text-ink">
-                          {request.organizationName}
+                          {requestDetails.organizationName}
                         </p>
                         <p className="font-body text-sm text-redacted">
-                          {request.requestType} · {request.companySize}
+                          {requestDetails.requestType} · {requestDetails.companySize}
                         </p>
                       </div>
                     </div>
@@ -91,10 +104,10 @@ export default function BusinessApplySuccess() {
                           Billing path
                         </p>
                         <p className="mt-1 font-body text-sm text-ink">
-                          {request.billingPreference}
+                          {requestDetails.billingPreference}
                         </p>
                         <p className="font-body text-sm text-redacted">
-                          {request.invoiceReference || "No invoice reference provided yet"}
+                          {requestDetails.invoiceReference || "No invoice reference provided yet"}
                         </p>
                       </div>
                     </div>
@@ -107,10 +120,10 @@ export default function BusinessApplySuccess() {
                           Fulfillment footprint
                         </p>
                         <p className="mt-1 font-body text-sm text-ink">
-                          {request.expectedCopies} copies across {request.deliveryLocations}
+                          {requestDetails.expectedCopies} copies across {requestDetails.deliveryLocations}
                         </p>
                         <p className="font-body text-sm text-redacted">
-                          {request.countryScope} · {request.launchTimeline}
+                          {requestDetails.countryScope} · {requestDetails.launchTimeline}
                         </p>
                       </div>
                     </div>
@@ -120,25 +133,53 @@ export default function BusinessApplySuccess() {
                       Contact and notes
                     </p>
                     <p className="mt-2 font-body text-sm text-ink">
-                      {request.primaryContact} · {request.workEmail}
+                      {requestDetails.primaryContact} · {requestDetails.workEmail}
                     </p>
                     <p className="font-body text-sm text-redacted">
-                      {request.workPhone || "No work phone provided"}
+                      {requestDetails.workPhone || "No work phone provided"}
                     </p>
                     <p className="mt-3 font-body text-sm leading-6 text-redacted">
-                      {request.operationalNotes || "No operational notes were added."}
+                      {requestDetails.operationalNotes || "No operational notes were added."}
                     </p>
                   </div>
+                </div>
+                <div className="mt-6 rounded-[1.1rem] border border-stone-300/50 bg-vellum/50 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-redacted">
+                        Workflow status
+                      </p>
+                      <p className="mt-1 font-body text-sm text-ink">
+                        {workflow.detail}
+                      </p>
+                    </div>
+                    <span className="inline-flex w-fit rounded-full border border-stone-300 bg-paper px-3 py-1 font-sans text-xs font-bold uppercase tracking-[0.14em] text-ink">
+                      {workflow.label}
+                    </span>
+                  </div>
+                  {entity?.quote ? (
+                    <div className="mt-4 grid gap-3 border-t border-stone-300/50 pt-4 sm:grid-cols-2">
+                      <p className="font-body text-sm text-ink">
+                        Quote tier: <strong>{entity.quote.tier}</strong>
+                      </p>
+                      <p className="font-body text-sm text-ink">
+                        Billing: <strong>{entity.quote.billing}</strong>
+                      </p>
+                      <p className="font-body text-sm text-redacted sm:col-span-2">
+                        Delivery scope: {entity.quote.delivery}
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </section>
 
             <section className="mt-10 flex flex-col gap-3 sm:flex-row">
               <Link
-                to="/business"
+                to={workflow.actionPath}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-heritage px-6 font-sans text-xs font-bold uppercase tracking-[0.22em] text-paper transition-colors hover:bg-ink"
               >
-                Return to business page
+                {workflow.action}
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link

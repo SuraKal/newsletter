@@ -12,50 +12,14 @@ import { Label } from "@/components/ui/label";
 import { appParams } from "@/lib/app-params";
 import { useAuth } from "@/lib/AuthContext";
 import { readerCheckoutSteps, readerPaymentMethods } from "@/lib/demoData";
-import { getReaderPlans, useSubscriptionPlans } from "@/lib/subscription-catalog";
+import {
+  getReaderPlans,
+  getSubscriptionQuote,
+  useSubscriptionPlans,
+} from "@/lib/subscription-catalog";
+import { notifyStoreChange } from "@/lib/store-bus";
 
 const checkoutStorageKey = `${appParams.storagePrefix}_checkout_sessions`;
-
-const formatDateLabel = (date) =>
-  new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-
-const addMonths = (date, count) => {
-  const next = new Date(date);
-  next.setMonth(next.getMonth() + count);
-  return next;
-};
-
-const addDays = (date, count) => {
-  const next = new Date(date);
-  next.setDate(next.getDate() + count);
-  return next;
-};
-
-const getQuote = (plan, billingCycle) => {
-  const today = new Date();
-  const amount =
-    billingCycle === "yearly"
-      ? Number(plan.yearlyPrice ?? plan.monthlyPrice * 12)
-      : plan.monthlyPrice;
-
-  return {
-    amount,
-    billingCycle,
-    deliveryMode:
-      plan.id === "print-digital" ? "Biweekly print + digital" : "Digital access only",
-    deliveryWindow:
-      plan.id === "print-digital"
-        ? `Next delivery window opens ${formatDateLabel(addDays(today, 14))}`
-        : "No print shipment is scheduled for the digital-only plan.",
-    nextChargeDate: formatDateLabel(
-      billingCycle === "yearly" ? addMonths(today, 12) : addMonths(today, 1),
-    ),
-  };
-};
 
 const readCheckoutSessions = () => {
   if (typeof window === "undefined") {
@@ -80,7 +44,33 @@ const writeCheckoutSessions = (sessions) => {
   }
 
   window.localStorage.setItem(checkoutStorageKey, JSON.stringify(sessions));
+  notifyStoreChange(checkoutStorageKey);
 };
+
+const MOCK_PAYMENT_STATES = new Set([
+  "succeeded",
+  "failed",
+  "cancelled",
+  "pending",
+  "expired",
+]);
+
+const MOCK_SUBSCRIPTION_STATES = new Set([
+  "active",
+  "trial",
+  "paused",
+  "cancelled",
+  "past_due",
+  "renewal_scheduled",
+]);
+
+const getMockPaymentState = (value) =>
+  MOCK_PAYMENT_STATES.has(value) ? value : "succeeded";
+
+const wait = (duration) =>
+  new Promise((resolve) => {
+    window.setTimeout(resolve, duration);
+  });
 
 export default function SubscribeCheckout() {
   const navigate = useNavigate();
@@ -106,6 +96,7 @@ export default function SubscribeCheckout() {
   );
   const [paymentMethodId, setPaymentMethodId] = useState("paypal");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentState, setPaymentState] = useState("idle");
   const [error, setError] = useState("");
   const [currentStepId, setCurrentStepId] = useState("plan");
   const [form, setForm] = useState({
@@ -137,7 +128,7 @@ export default function SubscribeCheckout() {
   );
 
   const quote = useMemo(
-    () => getQuote(selectedPlan, billingCycle),
+    () => getSubscriptionQuote(selectedPlan, billingCycle),
     [billingCycle, selectedPlan],
   );
 
@@ -217,30 +208,42 @@ export default function SubscribeCheckout() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setPaymentState("validating");
 
     const validationMessage = validateForm();
     if (validationMessage) {
       setError(validationMessage);
+      setPaymentState("idle");
       return;
     }
 
     setCurrentStepId("confirm");
     setIsSubmitting(true);
+    setPaymentState("processing");
 
     try {
-      await new Promise((resolve) => {
-        window.setTimeout(resolve, 900);
-      });
+      await wait(900);
 
       const sessionId = `checkout-${Date.now()}`;
       const sessions = readCheckoutSessions();
+      const paymentStatus = getMockPaymentState(searchParams.get("mockPayment"));
+      const requestedSubscriptionState = searchParams.get("mockSubscription");
       sessions[sessionId] = {
         id: sessionId,
         createdAt: new Date().toISOString(),
+        status: paymentStatus,
+        subscriptionStatus:
+          paymentStatus === "succeeded" &&
+          MOCK_SUBSCRIPTION_STATES.has(requestedSubscriptionState)
+            ? requestedSubscriptionState
+            : "active",
+        statusMessage:
+          paymentStatus === "succeeded"
+            ? "Payment return mocked successfully"
+            : "",
         plan: {
-          id: selectedPlan.id,
-          name: selectedPlan.name,
-          description: selectedPlan.description,
+          ...selectedPlan,
+          features: [...selectedPlan.features],
         },
         quote,
         customer: {
@@ -267,10 +270,12 @@ export default function SubscribeCheckout() {
       };
       writeCheckoutSessions(sessions);
 
+      setPaymentState("returning");
       navigate(`/subscribe/success?session=${sessionId}`, { replace: true });
     } catch {
       setError("The checkout session could not be created. Please try again.");
       setIsSubmitting(false);
+      setPaymentState("failed");
     }
   };
 
@@ -534,13 +539,30 @@ export default function SubscribeCheckout() {
                   </div>
                 ) : null}
 
+                {paymentState === "processing" || paymentState === "returning" ? (
+                  <div className="mt-5 rounded-[1rem] border border-heritage/20 bg-vellum px-4 py-3" role="status" aria-live="polite">
+                    <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
+                      {paymentState === "processing" ? "Processing payment" : "Returning from payment"}
+                    </p>
+                    <p className="mt-1 font-body text-sm text-redacted">
+                      This is a mocked processor return. Please keep this window open.
+                    </p>
+                  </div>
+                ) : null}
+
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <Button
                     type="submit"
                     disabled={isSubmitting}
                     className="h-12 flex-1 rounded-2xl bg-heritage px-6 font-sans text-xs font-bold uppercase tracking-[0.22em] text-paper hover:bg-ink"
                   >
-                    {isSubmitting ? "Completing checkout..." : "Complete checkout"}
+                    {paymentState === "validating"
+                      ? "Checking details..."
+                      : paymentState === "processing"
+                        ? "Processing payment..."
+                        : paymentState === "returning"
+                          ? "Returning..."
+                          : "Complete checkout"}
                     {!isSubmitting ? <ArrowRight className="h-4 w-4" /> : null}
                   </Button>
                   <Button

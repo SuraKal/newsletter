@@ -99,14 +99,20 @@ function buildSeedCategories() {
 function readAll() {
   if (!storage) return buildSeedCategories();
   const raw = storage.getItem(categoriesKey);
-  if (!raw) return buildSeedCategories();
+  if (!raw) {
+    const seeded = buildSeedCategories();
+    writeAll(seeded);
+    return seeded;
+  }
   try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length) return parsed;
   } catch {
     /* reseed */
   }
-  return buildSeedCategories();
+  const seeded = buildSeedCategories();
+  writeAll(seeded);
+  return seeded;
 }
 
 function writeAll(cats) {

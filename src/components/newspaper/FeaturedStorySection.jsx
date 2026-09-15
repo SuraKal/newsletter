@@ -4,8 +4,10 @@ import { Link } from "react-router-dom";
 import { getFeaturedStory } from "@/lib/content-store";
 
 import { useLanguage } from "@/lib/LanguageContext";
+import { useStoreVersion } from "@/lib/store-bus";
 
 export default function FeaturedStorySection() {
+  useStoreVersion();
   const { t } = useLanguage();
   const featuredStory = getFeaturedStory();
 

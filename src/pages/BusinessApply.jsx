@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
@@ -11,7 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/AuthContext";
 import { appParams } from "@/lib/app-params";
-import { submitCompanyLead } from "@/lib/company-store";
+import {
+  getCompanyEntityById,
+  saveCompanyLeadDraft,
+  submitCompanyLead,
+} from "@/lib/company-store";
 import {
   businessApplySteps,
   businessIntakeOptions,
@@ -46,7 +50,9 @@ const writeBusinessLeads = (leads) => {
 
 export default function BusinessApply() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const draftId = searchParams.get("draft");
   const [currentStepId, setCurrentStepId] = useState("profile");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,6 +75,14 @@ export default function BusinessApply() {
     consentCommercial: false,
     consentLogistics: false,
   });
+
+  useEffect(() => {
+    if (!draftId) return;
+    const draft = getCompanyEntityById(draftId)?.lead;
+    if (draft) {
+      setForm((current) => ({ ...current, ...draft }));
+    }
+  }, [draftId]);
 
   const selectedRequestType = useMemo(
     () => form.requestType || businessIntakeOptions.requestTypes[0],
@@ -121,7 +135,7 @@ export default function BusinessApply() {
         window.setTimeout(resolve, 900);
       });
 
-      const requestId = `business-lead-${Date.now()}`;
+      const requestId = draftId || `business-lead-${Date.now()}`;
       const leads = readBusinessLeads();
       leads[requestId] = {
         id: requestId,
@@ -138,6 +152,21 @@ export default function BusinessApply() {
       setError("The business request could not be saved. Please try again.");
       setIsSubmitting(false);
     }
+  };
+
+  const handleSaveDraft = () => {
+    setError("");
+    const requestId = draftId || `business-draft-${Date.now()}`;
+    const record = {
+      id: requestId,
+      createdAt: new Date().toISOString(),
+      ...form,
+    };
+    const leads = readBusinessLeads();
+    leads[requestId] = record;
+    writeBusinessLeads(leads);
+    saveCompanyLeadDraft(record);
+    navigate(`/business/apply/success?request=${requestId}`, { replace: true });
   };
 
   return (
@@ -411,6 +440,15 @@ export default function BusinessApply() {
                 ) : null}
 
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSaveDraft}
+                    disabled={isSubmitting}
+                    className="h-12 rounded-2xl border-2 border-stone-300 px-6 font-sans text-xs font-bold uppercase tracking-[0.22em] text-ink"
+                  >
+                    Save draft
+                  </Button>
                   <Button
                     type="submit"
                     disabled={isSubmitting}

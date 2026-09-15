@@ -179,6 +179,9 @@ export default function BusinessPage() {
               Copy counts and routing needs vary widely between organizations,
               so commercial plans are banded by delivery volume.
             </p>
+            <p className="mt-3 font-sans text-xs font-bold uppercase tracking-[0.16em] text-heritage">
+              Public company pricing · separate from reader subscriptions
+            </p>
           </div>
         </ScrollReveal>
 

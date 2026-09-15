@@ -1654,6 +1654,148 @@ TASK-280B delivered behaviors:
 
 TASK-280B status: `completed`
 
+## Phase 30 - Frontend Mocked Workflow Completion
+
+Phase goal: close the remaining frontend workflow gaps so the project behaves like one connected subscription newspaper platform while keeping payment, logistics, authentication, and persistence mocked in the frontend.
+
+Phase rules:
+
+- Treat this phase as `frontend-only mocked workflow completion`.
+- Do not implement Stripe APIs, Stripe webhooks, real payment processing, logistics APIs, backend endpoints, or production database persistence.
+- Use the existing local mock client, shared browser storage, seeded demo data, and route-based flows as the source of truth for frontend behavior.
+- Preserve the distinction between reader subscriptions and company bulk-order pricing while making the handoff between them clear.
+- Every task must cover loading, empty, error, success, cancellation, and mobile-responsive states where the workflow supports them.
+- Any mock state added in this phase must be visible consistently across the relevant public page, checkout or onboarding flow, dashboard, and admin surface.
+- Keep the UI concise and informative; do not solve workflow gaps by adding large blocks of instructional copy.
+
+### TASK-300A: Frontend - Complete Mock Payment State Simulation
+- **Phase:** `Phase 30 - Frontend Mocked Workflow Completion`
+- **Owner:** `Frontend`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Public guest / User / Admin`
+- **Route(s) or endpoint(s):** `/subscriptions, /subscribe/checkout, /subscribe/success, mocked checkout session storage, future Stripe return-state placeholders`
+- **Files touched:** `src/pages/Subscriptions.jsx`, `src/pages/SubscribeCheckout.jsx`, `src/pages/SubscribeSuccess.jsx`, `src/components/forms/*`, `src/api/appClient.js`, `src/lib/*`
+- **Depends on:** `TASK-180B`, `TASK-200A`
+- **Spec:** `docs/project.md Sections 4.2, 4.4, 5, 6.1`, `docs/Agent tasks.md Phase 18 subscription checkout requirements`
+- **Setup reference:** `README.md`, `docs/project.md`
+- **Conventions:** `Follow CONVENTIONS.md`
+- **Definition of Done:** `The mocked reader checkout visibly supports idle, validating, processing, success, failed, cancelled, pending, and expired-session states with clear recovery actions and no implication that a real payment has been processed.`
+- **Runtime Verification:** `frontend dev proxy; browser smoke for monthly success, yearly success, validation failure, cancelled payment, failed payment, pending payment, and expired session; fail-fast lint and typecheck`
+- **Blockers:** `none`
+- **Description:** `Turn the current mocked checkout into a complete payment-state simulation that can later map cleanly to Stripe Checkout and webhook outcomes without implementing Stripe itself.`
+
+### TASK-300B: Frontend - Model Reader Subscription Lifecycle States
+- **Phase:** `Phase 30 - Frontend Mocked Workflow Completion`
+- **Owner:** `Frontend`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `User / Admin`
+- **Route(s) or endpoint(s):** `/dashboard/overview, /dashboard/billing, /dashboard/deliveries, /news, /article/:id, mocked subscription state storage`
+- **Files touched:** `src/lib/reader-subscription.js`, `src/api/appClient.js`, `src/components/dashboard/ReaderOverviewPage.jsx`, `src/components/dashboard/ReaderWorkspacePages.jsx`, `src/pages/News.jsx`, `src/pages/ArticleDetail.jsx`, `src/components/newspaper/NewsCard.jsx`, `src/components/dashboard/*`
+- **Depends on:** `TASK-300A`, `TASK-200B`, `TASK-200C`
+- **Spec:** `docs/project.md Sections 4.2, 4.5, 5`
+- **Setup reference:** `README.md`, `docs/project.md`
+- **Conventions:** `Follow CONVENTIONS.md`
+- **Definition of Done:** `Reader surfaces consistently render active, trial, paused, cancelled, past-due, renewal-scheduled, and no-subscription states, and each state drives the correct access, billing, delivery, and recovery CTA behavior.`
+- **Runtime Verification:** `frontend dev proxy; browser smoke for every lifecycle state across overview, billing, delivery, news, and article detail; fail-fast lint and typecheck`
+- **Blockers:** `none`
+- **Description:** `Create one frontend subscription-state model so the reader dashboard and content access surfaces stop relying on isolated boolean checks and instead demonstrate the complete subscription lifecycle.`
+
+### TASK-300C: Frontend - Preserve Plan And Billing Continuity Through Checkout
+- **Phase:** `Phase 30 - Frontend Mocked Workflow Completion`
+- **Owner:** `Frontend`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Public guest / User`
+- **Route(s) or endpoint(s):** `/subscriptions, /subscribe/checkout, /subscribe/success, /admin/subscriptions`
+- **Files touched:** `src/pages/Subscriptions.jsx`, `src/pages/SubscribeCheckout.jsx`, `src/pages/SubscribeSuccess.jsx`, `src/components/forms/ReaderPlanPicker.jsx`, `src/components/forms/SubscriptionOrderSummary.jsx`, `src/lib/subscription-catalog.js`
+- **Depends on:** `TASK-180B`, `TASK-300A`
+- **Spec:** `docs/project.md Sections 4.2, 4.4`, `docs/Agent tasks.md TASK-180B`
+- **Setup reference:** `README.md`, `docs/project.md`
+- **Conventions:** `Follow CONVENTIONS.md`
+- **Definition of Done:** `The selected plan, monthly or yearly billing cycle, stored price, delivery mode, features, renewal date, and amount due remain visible and consistent from public plan selection through checkout and success, including after browser refresh or direct URL entry.`
+- **Runtime Verification:** `frontend dev proxy; direct URL smoke for every reader plan and billing cycle; browser refresh and back-navigation checks; fail-fast lint and typecheck`
+- **Blockers:** `none`
+- **Description:** `Make the public catalog, checkout, and success page behave as one continuous purchase journey instead of separate screens that can drift in price or plan context.`
+
+### TASK-300D: Frontend - Complete Business Quote And Approval Lifecycle
+- **Phase:** `Phase 30 - Frontend Mocked Workflow Completion`
+- **Owner:** `Both`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Public guest / Company / Admin / Front desk`
+- **Route(s) or endpoint(s):** `/business, /business/apply, /business/apply/success, /admin/companies, /business-dashboard/overview, mocked business lead storage`
+- **Files touched:** `src/pages/BusinessPage.jsx`, `src/pages/BusinessApply.jsx`, `src/pages/BusinessApplySuccess.jsx`, `src/pages/AdminCompanies.jsx`, `src/pages/AdminCompanyDetail.jsx`, `src/components/dashboard/BusinessOverviewPage.jsx`, `src/lib/company-store.js`, `src/components/forms/*`
+- **Depends on:** `TASK-180C`, `TASK-240A`, `TASK-260C`
+- **Spec:** `docs/project.md Sections 4.4, 4.5, 5, 9`, `docs/Agent tasks.md TASK-180C`
+- **Setup reference:** `README.md`, `docs/project.md`
+- **Conventions:** `Follow CONVENTIONS.md`
+- **Definition of Done:** `Business applications visibly move through draft, submitted, under review, quote ready, approved, declined, and converted-to-account states, with the correct company CTA and dashboard handoff for each state.`
+- **Runtime Verification:** `frontend dev proxy; browser smoke for new application, saved draft, submitted request, admin approval, admin decline, quote-ready review, and converted company account; fail-fast lint and typecheck`
+- **Blockers:** `none`
+- **Description:** `Complete the company journey as a quote-led workflow and keep it separate from reader self-service checkout while still making clear that company users receive reader access plus bulk-order capabilities.`
+
+### TASK-300E: Frontend - Add Admin Preview And Public Reflection States
+- **Phase:** `Phase 30 - Frontend Mocked Workflow Completion`
+- **Owner:** `Frontend`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Admin / Public guest`
+- **Route(s) or endpoint(s):** `/admin/subscriptions, /admin/pricing, /subscriptions, /business, homepage subscription section, shared mock catalogs`
+- **Files touched:** `src/pages/AdminSubscriptions.jsx`, `src/pages/AdminPricing.jsx`, `src/components/dashboard/AdminSubscriptionCatalog.jsx`, `src/components/dashboard/AdminBusinessPricingCatalog.jsx`, `src/pages/Subscriptions.jsx`, `src/pages/BusinessPage.jsx`, `src/components/newspaper/SubscriptionSection.jsx`, `src/lib/subscription-catalog.js`, `src/lib/business-pricing-catalog.js`
+- **Depends on:** `TASK-300C`, `TASK-300D`
+- **Spec:** `docs/project.md Sections 4.2, 4.4, 4.6`, `docs/Agent tasks.md TASK-260D`
+- **Setup reference:** `README.md`, `docs/project.md`
+- **Conventions:** `Follow CONVENTIONS.md`
+- **Definition of Done:** `Admins can preview the selected reader plan and business tier in public-card form before saving, and saved changes visibly update the correct public routes without crossing reader and company pricing boundaries.`
+- **Runtime Verification:** `frontend dev proxy; browser smoke for admin preview, save, reset, public refresh, mobile layout, and direct route access; fail-fast lint and typecheck`
+- **Blockers:** `none`
+- **Description:** `Give administrators confidence that catalog edits affect the intended public surface by adding compact previews and explicit reader-versus-company reflection states.`
+
+### TASK-300F: Frontend - Unify Shared Mock Data And Cross-Surface Synchronization
+- **Phase:** `Phase 30 - Frontend Mocked Workflow Completion`
+- **Owner:** `Frontend`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Public guest / User / Company / Admin`
+- **Route(s) or endpoint(s):** `all public, reader, business, and admin routes; localStorage mock stores; browser storage update events`
+- **Files touched:** `src/api/appClient.js`, `src/lib/subscription-catalog.js`, `src/lib/business-pricing-catalog.js`, `src/lib/reader-subscription.js`, `src/lib/company-store.js`, `src/lib/content-store.js`, `src/lib/store-bus.js`, `src/pages/*`, `src/components/*`
+- **Depends on:** `TASK-300A`, `TASK-300B`, `TASK-300D`, `TASK-300E`
+- **Spec:** `docs/project.md Sections 4.1 through 4.6`, `docs/Agent tasks.md Phase 14 shared foundation rules`
+- **Setup reference:** `README.md`, `docs/project.md`
+- **Conventions:** `Follow CONVENTIONS.md`
+- **Definition of Done:** `Each mocked record has one clear frontend source of truth, updates propagate between relevant routes and browser tabs, seeded data remains stable, and no public or dashboard page silently falls back to a conflicting duplicate dataset.`
+- **Runtime Verification:** `frontend dev proxy; cross-route refresh checks, same-tab update checks, cross-tab storage checks, reset-seed checks, and empty/corrupt-storage recovery; fail-fast lint and typecheck`
+- **Blockers:** `none`
+- **Description:** `Consolidate the frontend mock state so the prototype demonstrates the same consistency expected from a later API-backed system without introducing backend work.`
+
+### TASK-300G: Frontend - Strengthen Role Boundaries And Journey Routing
+- **Phase:** `Phase 30 - Frontend Mocked Workflow Completion`
+- **Owner:** `Frontend`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Public guest / User / Company / Admin`
+- **Route(s) or endpoint(s):** `/login, /register, /subscriptions, /business, /dashboard/*, /business-dashboard/*, /admin/*`
+- **Files touched:** `src/pages/Login.jsx`, `src/pages/Register.jsx`, `src/lib/AuthContext.jsx`, `src/App.jsx`, `src/components/dashboard/DashboardShell.jsx`, `src/pages/Subscriptions.jsx`, `src/pages/BusinessPage.jsx`, `src/components/newspaper/Masthead.jsx`
+- **Depends on:** `TASK-180A`, `TASK-240A`, `TASK-260A`, `TASK-300B`, `TASK-300D`
+- **Spec:** `docs/project.md Sections 4.5, 4.6, 5`, `docs/Agent tasks.md TASK-180A`
+- **Setup reference:** `README.md`, `docs/project.md`
+- **Conventions:** `Follow CONVENTIONS.md`
+- **Definition of Done:** `Reader, company, admin, and public guest journeys have clear entry points, role-safe redirects, route-level empty and unauthorized states, and no reader checkout or admin controls leak into the wrong journey.`
+- **Runtime Verification:** `frontend dev proxy; browser smoke with guest, reader, company, and admin demo accounts across direct URLs and post-login redirects; fail-fast lint and typecheck`
+- **Blockers:** `none`
+- **Description:** `Make the three product journeys legible and safe at the route level so users understand whether they are reading, subscribing, ordering in bulk, or operating the platform.`
+
+### TASK-300H: Frontend - Run Complete Mocked Workflow Acceptance Pass
+- **Phase:** `Phase 30 - Frontend Mocked Workflow Completion`
+- **Owner:** `Frontend`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Public guest / User / Company / Admin / Front desk`
+- **Route(s) or endpoint(s):** `all frontend routes and mocked workflow stores`
+- **Files touched:** `src/App.jsx`, `src/pages/*`, `src/components/*`, `src/lib/*`, `src/api/appClient.js`, `docs/Agent tasks.md`
+- **Depends on:** `TASK-300A`, `TASK-300B`, `TASK-300C`, `TASK-300D`, `TASK-300E`, `TASK-300F`, `TASK-300G`
+- **Spec:** `docs/project.md Sections 2 through 12`, `docs/Agent tasks.md Phase 30`
+- **Setup reference:** `README.md`, `docs/project.md`
+- **Conventions:** `Follow CONVENTIONS.md`
+- **Definition of Done:** `A fresh browser can complete the public reader, reader checkout, reader dashboard, business quote, company dashboard, and admin configuration journeys with coherent mock state, correct route boundaries, responsive layouts, and no unresolved frontend gap from Phase 30.`
+- **Runtime Verification:** `frontend dev proxy; full browser route matrix; mobile and tablet smoke; seeded, empty, error, cancellation, and success-state checks; npm run lint; npm run typecheck; npm run build`
+- **Blockers:** `none`
+- **Description:** `Perform the final frontend-only acceptance pass and close any regression discovered across the seven gap areas. This task must not expand into Stripe, backend, webhook, database, or logistics integration work.`
+
 ## Suggested Start Order
 
 1. `TASK-120A`
@@ -1666,6 +1808,14 @@ TASK-280B status: `completed`
 8. `TASK-180A`
 9. `TASK-180B`
 10. `TASK-200A`
+11. `TASK-300A`
+12. `TASK-300B`
+13. `TASK-300C`
+14. `TASK-300D`
+15. `TASK-300E`
+16. `TASK-300F`
+17. `TASK-300G`
+18. `TASK-300H`
 
 ## First Executable Slice
 

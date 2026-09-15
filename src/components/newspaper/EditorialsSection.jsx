@@ -2,8 +2,10 @@ import React from "react";
 import { getEditorials } from "@/lib/content-store";
 import SectionHeader from "@/components/newspaper/SectionHeader";
 import NewsCard from "@/components/newspaper/NewsCard";
+import { useStoreVersion } from "@/lib/store-bus";
 
 export default function EditorialsSection() {
+  useStoreVersion();
   const editorials = getEditorials();
   return (
     <section className="mx-auto max-w-7xl px-4 py-12">

@@ -14,6 +14,7 @@ import {
   DashboardShortcuts,
   DashboardPanel,
   DashboardRelatedLinks,
+  DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
 import { useWorkspaceSectionBadges } from "@/lib/notifications";
@@ -27,6 +28,7 @@ const sectionIconMap = {
 };
 
 const factRows = [
+  { key: "status", label: "Subscription status", get: (s) => s.subscriptionStatus },
   { key: "plan", label: "Current plan", get: (s) => s.planName },
   { key: "billing", label: "Next billing", get: (s) => s.nextBillingDate },
   { key: "delivery", label: "Next delivery", get: (s) => s.nextDeliveryDate },
@@ -92,6 +94,25 @@ export default function ReaderOverviewPage() {
           ))}
         </dl>
       </DashboardPanel>
+
+      {!overview.hasReadingAccess ? (
+        <DashboardPanel title="Subscription action" className="border-l-4 border-l-amber-500 p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <DashboardStatusBadge label={overview.subscriptionStatus} tone="warning" />
+              <p className="mt-3 max-w-2xl font-sans text-sm leading-5 text-stone-600 dark:text-stone-400">
+                {overview.accessState}. Choose the next action to restore or start reader access.
+              </p>
+            </div>
+            <Link
+              to={overview.recoveryPath}
+              className="inline-flex shrink-0 items-center justify-center rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:bg-stone-700"
+            >
+              {overview.recoveryAction}
+            </Link>
+          </div>
+        </DashboardPanel>
+      ) : null}
 
       <DashboardRelatedLinks
         title="Related links"

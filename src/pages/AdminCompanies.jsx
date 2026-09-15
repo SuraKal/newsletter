@@ -12,12 +12,17 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
+import { useStoreVersion } from "@/lib/store-bus";
 import {
   approveCompanyLead,
+  convertCompanyLead,
   declineCompanyLead,
   formatLeadDate,
   getCompanyAccounts,
   getCompanyLeads,
+  getCompanyWorkflowState,
+  prepareCompanyQuote,
+  startCompanyReview,
 } from "@/lib/company-store";
 
 const companyColumns = [
@@ -40,7 +45,7 @@ const companyColumns = [
     key: "status",
     label: "Status",
     render: (value, row) => (
-      <DashboardStatusBadge label={value} tone={row.tone} />
+      <DashboardStatusBadge label={getCompanyWorkflowState(row)} tone={row.tone} />
     ),
   },
 ];
@@ -55,6 +60,7 @@ const matchesLeadSearch = (lead, query) =>
     lead.lead?.launchTimeline,
     lead.volume,
     lead.lead?.deliveryLocations,
+    getCompanyWorkflowState(lead),
   ].some((value) => String(value ?? "").toLowerCase().includes(query));
 
 const matchesAccountSearch = (row, query) =>
@@ -75,7 +81,7 @@ const companyFilterGroups = [
   {
     key: "status",
     label: "Status",
-    options: ["Pending review", "Onboarding", "Active", "Invoice review"],
+    options: ["Draft", "Submitted", "Under review", "Quote ready", "Approved", "Declined"],
   },
   {
     key: "tier",
@@ -85,6 +91,7 @@ const companyFilterGroups = [
 ];
 
 export default function AdminCompanies() {
+  useStoreVersion();
   const [, setRevision] = useState(0);
   const [query, setQuery] = useState("");
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
@@ -105,13 +112,8 @@ export default function AdminCompanies() {
     filterGroups: companyFilterGroups,
   });
 
-  const handleApprove = (id) => {
-    approveCompanyLead(id);
-    setRevision((value) => value + 1);
-  };
-
-  const handleDecline = (id) => {
-    declineCompanyLead(id);
+  const handleTransition = (id, transition) => {
+    transition(id);
     setRevision((value) => value + 1);
   };
 
@@ -182,7 +184,10 @@ export default function AdminCompanies() {
           <p className="font-sans text-sm text-stone-700 dark:text-stone-300">
             {formatLeadDate(lead.createdAt)}
           </p>
-          <DashboardStatusBadge label="Pending review" tone="warning" />
+          <DashboardStatusBadge
+            label={getCompanyWorkflowState(lead)}
+            tone={lead.tone}
+          />
         </div>
       ),
     },
@@ -191,22 +196,31 @@ export default function AdminCompanies() {
       label: "Decision",
       render: (value, lead) => (
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => handleApprove(lead.id)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-emerald-700"
-          >
-            <Check className="h-3.5 w-3.5" />
-            Approve
-          </button>
-          <button
-            type="button"
-            onClick={() => handleDecline(lead.id)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700"
-          >
-            <X className="h-3.5 w-3.5" />
-            Decline
-          </button>
+          {getCompanyWorkflowState(lead) === "Submitted" ? (
+            <button type="button" onClick={() => handleTransition(lead.id, startCompanyReview)} className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-stone-700">
+              <Check className="h-3.5 w-3.5" /> Start review
+            </button>
+          ) : null}
+          {getCompanyWorkflowState(lead) === "Under review" ? (
+            <button type="button" onClick={() => handleTransition(lead.id, prepareCompanyQuote)} className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-stone-700">
+              <Check className="h-3.5 w-3.5" /> Prepare quote
+            </button>
+          ) : null}
+          {getCompanyWorkflowState(lead) === "Quote ready" ? (
+            <button type="button" onClick={() => handleTransition(lead.id, approveCompanyLead)} className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-emerald-700">
+              <Check className="h-3.5 w-3.5" /> Approve quote
+            </button>
+          ) : null}
+          {getCompanyWorkflowState(lead) === "Approved" ? (
+            <button type="button" onClick={() => handleTransition(lead.id, convertCompanyLead)} className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-emerald-700">
+              <Check className="h-3.5 w-3.5" /> Convert account
+            </button>
+          ) : null}
+          {["Submitted", "Under review", "Quote ready"].includes(getCompanyWorkflowState(lead)) ? (
+            <button type="button" onClick={() => handleTransition(lead.id, declineCompanyLead)} className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700">
+              <X className="h-3.5 w-3.5" /> Decline
+            </button>
+          ) : null}
         </div>
       ),
     },
@@ -217,7 +231,7 @@ export default function AdminCompanies() {
       <DashboardPageHeader
         eyebrow="Admin companies"
         title="Company accounts"
-        description="Review incoming business requests and manage company account health."
+        description="Move business requests from submission through quote review and account conversion."
         breadcrumbs={[
           { label: "Admin workspace", to: "/admin/overview" },
           { label: "Companies" },
@@ -250,7 +264,7 @@ export default function AdminCompanies() {
         onClearFilters={clearFilters}
         filters={[
           `${accounts.length} company accounts`,
-          `${leads.length} pending requests`,
+          `${leads.length} workflow requests`,
           "Belgium + Germany accounts",
         ]}
         action={
@@ -266,7 +280,7 @@ export default function AdminCompanies() {
 
       <DashboardPanel
         title="Incoming business requests"
-        description="Requests submitted from the public business application appear here for approval."
+        description="Move each business request from submission through quote review and account conversion."
         className="p-5 sm:p-6"
       >
         {leads.length ? (
@@ -293,8 +307,8 @@ export default function AdminCompanies() {
           )
         ) : (
           <DashboardEmptyState
-            title="No pending requests"
-            description="Applications submitted from the public business onboarding path will appear here for review and approval."
+            title="No workflow requests"
+            description="Applications saved or submitted from the public business onboarding path will appear here."
           />
         )}
       </DashboardPanel>

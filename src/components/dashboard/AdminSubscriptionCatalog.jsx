@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, RotateCcw, Save } from "lucide-react";
 import { appClient } from "@/api/appClient";
-import { useSubscriptionPlans } from "@/lib/subscription-catalog";
+import {
+  getReaderPlans,
+  getSubscriptionPrice,
+  useSubscriptionPlans,
+} from "@/lib/subscription-catalog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +33,8 @@ const toPlanUpdates = (form) => ({
 });
 
 export default function AdminSubscriptionCatalog() {
-  const plans = useSubscriptionPlans();
+  const allPlans = useSubscriptionPlans();
+  const plans = getReaderPlans(allPlans);
   const [selectedId, setSelectedId] = useState(plans[0]?.id || "");
   const [form, setForm] = useState(() =>
     plans[0] ? toFormState(plans[0]) : null,
@@ -176,6 +181,47 @@ export default function AdminSubscriptionCatalog() {
             {status ? <span className="font-sans text-xs text-stone-500">{status}</span> : null}
           </div>
         </form>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-[#4A2A08]/20 bg-[#4A2A08]/[0.04] p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#4A2A08]">
+              Unsaved public preview
+            </p>
+            <h3 className="mt-1 font-display text-xl font-bold text-stone-900">
+              {form.name}
+            </h3>
+            <p className="mt-1 font-sans text-sm text-stone-600">
+              Reader plan card shown on `/subscriptions`, the homepage, and reader checkout.
+            </p>
+          </div>
+          {form.highlighted ? (
+            <span className="rounded-full bg-[#4A2A08] px-3 py-1 font-sans text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white">
+              Highlighted plan
+            </span>
+          ) : null}
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {[
+            ["Monthly", getSubscriptionPrice(form, "monthly")],
+            ["Yearly", getSubscriptionPrice(form, "yearly")],
+          ].map(([label, amount]) => (
+            <div key={label} className="rounded-xl border border-stone-200 bg-white p-4">
+              <p className="font-sans text-xs font-bold uppercase tracking-[0.16em] text-stone-500">{label} reader billing</p>
+              <p className="mt-1 font-display text-2xl font-black text-stone-900">€{Number(amount).toFixed(2)}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <p className="rounded-xl border border-stone-200 bg-white p-4 font-sans text-sm text-stone-700">{form.deliveryNote}</p>
+          <p className="rounded-xl border border-stone-200 bg-white p-4 font-sans text-sm text-stone-700">{form.paymentNote}</p>
+        </div>
+        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+          {form.featuresText.split("\n").filter(Boolean).slice(0, 4).map((feature) => (
+            <li key={feature} className="font-sans text-sm text-stone-700">✓ {feature}</li>
+          ))}
+        </ul>
       </div>
 
       <div className="mt-5 flex items-center gap-2 border-t border-stone-200 pt-4 font-sans text-xs text-stone-500">

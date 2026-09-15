@@ -8,8 +8,10 @@ import { homepageHeroSlides } from "@/lib/demoData";
 import { getLatestNews, getSidebarArticles } from "@/lib/content-store";
 import NewsCard from "@/components/newspaper/NewsCard";
 import { useLanguage } from "@/lib/LanguageContext";
+import { useStoreVersion } from "@/lib/store-bus";
 
 export default function HeroSection() {
+  useStoreVersion();
   const { t } = useLanguage();
   const [api, setApi] = React.useState(null);
   const [selectedIndex, setSelectedIndex] = React.useState(0);

@@ -6,6 +6,32 @@ const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
 const accountsKey = `${appParams.storagePrefix}_company_accounts`;
 
+export const COMPANY_WORKFLOW_STATES = [
+  "Draft",
+  "Submitted",
+  "Under review",
+  "Quote ready",
+  "Approved",
+  "Declined",
+  "Converted to account",
+];
+
+const legacyStateMap = {
+  "Pending review": "Under review",
+  Onboarding: "Approved",
+  Active: "Converted to account",
+};
+
+const workflowTone = {
+  Draft: "neutral",
+  Submitted: "info",
+  "Under review": "warning",
+  "Quote ready": "info",
+  Approved: "success",
+  Declined: "neutral",
+  "Converted to account": "success",
+};
+
 const tierForLead = (lead = {}) => {
   const size = String(lead.companySize || "");
   if (size.includes("1000") || size.includes("200")) return "Enterprise Route";
@@ -100,7 +126,13 @@ export function formatLeadDate(iso) {
 
 export function getCompanyLeads() {
   return readAll()
-    .filter((entity) => entity.status === "Pending review")
+    .filter((entity) => {
+      const state = getCompanyWorkflowState(entity);
+      return (
+        state !== "Converted to account" &&
+        !["Active", "Onboarding", "Invoice review"].includes(entity.status)
+      );
+    })
     .sort(
       (a, b) =>
         new Date(b.createdAt || 0).getTime() -
@@ -111,8 +143,71 @@ export function getCompanyLeads() {
 export function getCompanyAccounts() {
   return readAll().filter(
     (entity) =>
-      entity.status !== "Pending review" && entity.status !== "Declined",
+      getCompanyWorkflowState(entity) === "Converted to account" ||
+      ["Onboarding", "Invoice review"].includes(entity.status),
   );
+}
+
+export function getCompanyWorkflowState(entity) {
+  if (!entity) return null;
+  return legacyStateMap[entity.status] || entity.status || "Draft";
+}
+
+export function getCompanyWorkflowPresentation(entity) {
+  const state = getCompanyWorkflowState(entity);
+  const presentation = {
+    Draft: {
+      label: "Draft",
+      tone: "neutral",
+      detail: "The request is saved but has not been submitted for commercial review.",
+      action: "Continue application",
+      actionPath: entity?.id ? `/business/apply?draft=${entity.id}` : "/business/apply",
+    },
+    Submitted: {
+      label: "Submitted",
+      tone: "info",
+      detail: "The request is queued for the commercial team to review.",
+      action: "View request",
+      actionPath: entity?.id ? `/business/apply/success?request=${entity.id}` : "/business",
+    },
+    "Under review": {
+      label: "Under review",
+      tone: "warning",
+      detail: "The commercial team is checking volume, billing, and delivery scope.",
+      action: "View review status",
+      actionPath: entity?.id ? `/business/apply/success?request=${entity.id}` : "/business",
+    },
+    "Quote ready": {
+      label: "Quote ready",
+      tone: "info",
+      detail: "A volume and delivery quote is ready for approval.",
+      action: "Review quote",
+      actionPath: entity?.id ? `/business/apply/success?request=${entity.id}` : "/business",
+    },
+    Approved: {
+      label: "Approved",
+      tone: "success",
+      detail: "The request is approved and waiting for account conversion.",
+      action: "View approval",
+      actionPath: "/business-dashboard/overview",
+    },
+    Declined: {
+      label: "Declined",
+      tone: "neutral",
+      detail: "The commercial team declined this request. A new request can be started.",
+      action: "Start new request",
+      actionPath: "/business/apply",
+    },
+    "Converted to account": {
+      label: "Converted to account",
+      tone: "success",
+      detail: "The company account is active and ready for business workspace operations.",
+      action: "Open business dashboard",
+      actionPath: "/business-dashboard/overview",
+    },
+  };
+
+  return presentation[state] || presentation.Draft;
 }
 
 export function getCompanyEntityById(id) {
@@ -126,12 +221,20 @@ export function getBusinessCompanySnapshot(userEmail) {
   ).toLowerCase();
   const all = readAll();
 
-  const owned = all.find(
-    (entity) =>
-      (entity.ownerEmail &&
-        entity.ownerEmail.toLowerCase() === email) ||
-      entity.ownerUserId === "business-1",
-  );
+  const ownedByEmail = all
+    .filter(
+      (entity) =>
+        (entity.ownerEmail && entity.ownerEmail.toLowerCase() === email) ||
+        (entity.workEmail && entity.workEmail.toLowerCase() === email),
+    )
+    .sort(
+      (left, right) =>
+        new Date(right.createdAt || 0).getTime() -
+        new Date(left.createdAt || 0).getTime(),
+    )[0];
+  if (ownedByEmail) return ownedByEmail;
+
+  const owned = all.find((entity) => entity.ownerUserId === "business-1");
   if (owned) return owned;
 
   return (
@@ -143,27 +246,26 @@ export function getBusinessCompanySnapshot(userEmail) {
   );
 }
 
-export function submitCompanyLead(record) {
-  if (!record?.id) return null;
+const buildCompanyEntity = (record, status) => ({
+  id: record.id,
+  company:
+    record.organizationName || record.company || "Unnamed organization",
+  status,
+  tone: workflowTone[status],
+  tier: null,
+  volume: record.expectedCopies || "",
+  billing: record.billingPreference || "",
+  region: record.countryScope || "",
+  workEmail: record.workEmail || "",
+  ownerEmail: record.workEmail || null,
+  ownerUserId: null,
+  createdAt: record.createdAt || new Date().toISOString(),
+  reviewedAt: null,
+  quote: null,
+  lead: record,
+});
 
-  const entity = {
-    id: record.id,
-    company:
-      record.organizationName || record.company || "Unnamed organization",
-    status: "Pending review",
-    tone: "warning",
-    tier: null,
-    volume: record.expectedCopies || "",
-    billing: record.billingPreference || "",
-    region: record.countryScope || "",
-    workEmail: record.workEmail || "",
-    ownerEmail: null,
-    ownerUserId: null,
-    createdAt: record.createdAt || new Date().toISOString(),
-    reviewedAt: null,
-    lead: record,
-  };
-
+const saveCompanyEntity = (entity) => {
   const all = readAll();
   const index = all.findIndex((entry) => entry.id === entity.id);
 
@@ -175,46 +277,68 @@ export function submitCompanyLead(record) {
 
   writeAll(all);
   return entity;
+};
+
+export function saveCompanyLeadDraft(record) {
+  if (!record?.id) return null;
+  return saveCompanyEntity(buildCompanyEntity(record, "Draft"));
 }
 
-export function approveCompanyLead(id) {
+export function submitCompanyLead(record) {
+  if (!record?.id) return null;
+
+  return saveCompanyEntity(buildCompanyEntity(record, "Submitted"));
+}
+
+export function transitionCompanyLead(id, nextState) {
+  if (!COMPANY_WORKFLOW_STATES.includes(nextState)) return null;
   const all = readAll();
   const index = all.findIndex((entry) => entry.id === id);
   if (index < 0) return null;
 
   const current = all[index];
-  if (current.status !== "Pending review") return current;
-
   const next = {
     ...current,
-    status: "Onboarding",
-    tone: "neutral",
-    tier: tierForLead(current.lead),
+    status: nextState,
+    tone: workflowTone[nextState],
+    tier:
+      nextState === "Quote ready" || nextState === "Approved" || nextState === "Converted to account"
+        ? tierForLead(current.lead)
+        : current.tier,
     volume: current.lead?.expectedCopies || current.volume || "",
-    reviewedAt: new Date().toISOString(),
+    reviewedAt:
+      ["Under review", "Quote ready", "Approved", "Declined", "Converted to account"].includes(nextState)
+        ? new Date().toISOString()
+        : current.reviewedAt,
   };
+
+  if (nextState === "Quote ready") {
+    next.quote = {
+      tier: tierForLead(current.lead),
+      volume: current.lead?.expectedCopies || current.volume || "Not specified",
+      billing: current.lead?.billingPreference || current.billing || "To be confirmed",
+      delivery: current.lead?.deliveryLocations || "To be confirmed",
+      preparedAt: new Date().toISOString(),
+      note: "Mock quote prepared for commercial approval.",
+    };
+  }
+
+  if (nextState === "Converted to account") {
+    next.ownerEmail = current.lead?.workEmail || current.workEmail || current.ownerEmail;
+    next.accountActivatedAt = new Date().toISOString();
+  }
 
   all[index] = next;
   writeAll(all);
   return next;
 }
+
+export const startCompanyReview = (id) => transitionCompanyLead(id, "Under review");
+export const prepareCompanyQuote = (id) => transitionCompanyLead(id, "Quote ready");
+export const approveCompanyLead = (id) => transitionCompanyLead(id, "Approved");
+export const convertCompanyLead = (id) =>
+  transitionCompanyLead(id, "Converted to account");
 
 export function declineCompanyLead(id) {
-  const all = readAll();
-  const index = all.findIndex((entry) => entry.id === id);
-  if (index < 0) return null;
-
-  const current = all[index];
-  if (current.status !== "Pending review") return current;
-
-  const next = {
-    ...current,
-    status: "Declined",
-    tone: "neutral",
-    reviewedAt: new Date().toISOString(),
-  };
-
-  all[index] = next;
-  writeAll(all);
-  return next;
+  return transitionCompanyLead(id, "Declined");
 }

@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
 import { getHeroArticle, getPublicListingArticles } from "@/lib/content-store";
 import { getArticleAccessState } from "@/lib/demoData";
+import { useStoreVersion } from "@/lib/store-bus";
 
 const PAGE_SIZE = 6;
 
@@ -43,6 +44,7 @@ function getPageItems(currentPage, totalPages) {
 }
 
 export default function News() {
+  useStoreVersion();
   const { user } = useAuth();
   const hasSubscriberAccess = hasActiveReaderSubscription(user);
   const heroArticle = getHeroArticle();

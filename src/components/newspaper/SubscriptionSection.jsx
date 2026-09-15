@@ -1,13 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
-import { useSubscriptionPlans } from "@/lib/subscription-catalog";
+import { getReaderPlans, useSubscriptionPlans } from "@/lib/subscription-catalog";
 import SectionHeader from "@/components/newspaper/SectionHeader";
 import { useLanguage } from "@/lib/LanguageContext";
 
 export default function SubscriptionSection() {
   const { t } = useLanguage();
   const subscriptionPlans = useSubscriptionPlans();
+  const readerPlans = getReaderPlans(subscriptionPlans);
 
   return (
     <section className="bg-vellum py-16">
@@ -18,8 +19,8 @@ export default function SubscriptionSection() {
         />
 
         <div className="grid grid-cols-1 gap-7 md:grid-cols-3 lg:gap-6">
-          {subscriptionPlans.map((plan) => (
-            <div key={plan.name} className="h-full">
+          {readerPlans.map((plan) => (
+            <div key={plan.id} className="h-full">
               <div
                 className={`h-full rounded-[1.25rem] border p-7 shadow-[0_12px_30px_rgba(0,0,0,0.04)] ${
                   plan.highlighted
@@ -47,8 +48,7 @@ export default function SubscriptionSection() {
                 </p>
                 <div className="mb-6 mt-4">
                   <span className={`font-display text-4xl font-black ${plan.highlighted ? "text-paper" : "text-ink"}`}>
-                    {plan.pricePrefix === "" ? "" : "$"}
-                    {plan.price}
+                    €{plan.monthlyPrice.toFixed(2)}
                   </span>
                   <span className={`font-sans text-sm ${plan.highlighted ? "text-paper/70" : "text-redacted"}`}>
                     {t(plan.period)}
@@ -82,6 +82,20 @@ export default function SubscriptionSection() {
               </div>
             </div>
           ))}
+        </div>
+        <div className="mt-7 flex flex-col items-start justify-between gap-3 rounded-2xl border border-heritage/20 bg-paper px-5 py-4 sm:flex-row sm:items-center">
+          <div>
+            <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
+              Company pricing is separate
+            </p>
+            <p className="mt-1 font-body text-sm text-redacted">
+              Bulk copies, locations, and invoicing follow a quote-led business workflow.
+            </p>
+          </div>
+          <Link to="/business" className="inline-flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-[0.16em] text-heritage hover:text-ink">
+            Explore business plans
+            <span aria-hidden>→</span>
+          </Link>
         </div>
       </div>
     </section>

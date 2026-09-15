@@ -1,219 +1,203 @@
 import React, { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Building2,
+  CheckCircle2,
   KeyRound,
   Lock,
   Mail,
   Newspaper,
+  ShieldCheck,
 } from "lucide-react";
 import { authJourneyContent, useAuth } from "@/lib/AuthContext";
 import { appClient } from "@/api/appClient";
 import { getDefaultDashboardRoute } from "@/lib/dashboard-config";
-import Masthead from "@/components/newspaper/Masthead";
-import Footer from "@/components/newspaper/Footer";
 
 const journeyOptions = [
   { key: "individual", icon: Newspaper, title: "Individual reader" },
   { key: "business", icon: Building2, title: "Company account" },
+  { key: "admin", icon: ShieldCheck, title: "Admin operator" },
 ];
 
+const roleForJourney = {
+  individual: "reader",
+  business: "business",
+  admin: "admin",
+};
+
+const normalizeJourney = (value) =>
+  ["business", "admin"].includes(value) ? value : "individual";
+
+const getSafeReturnPath = (from, journey) => {
+  if (!from || !from.startsWith("/") || from.startsWith("//")) {
+    return getDefaultDashboardRoute(roleForJourney[journey]);
+  }
+
+  const allowedPrefix = {
+    individual: "/dashboard",
+    business: "/business-dashboard",
+    admin: "/admin",
+  }[journey];
+
+  return from === allowedPrefix || from.startsWith(`${allowedPrefix}/`)
+    ? from
+    : getDefaultDashboardRoute(roleForJourney[journey]);
+};
+
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { checkUserAuth } = useAuth();
+  const initialJourney = normalizeJourney(
+    new URLSearchParams(location.search).get("journey"),
+  );
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [journeyKey, setJourneyKey] = useState(initialJourney);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { checkUserAuth } = useAuth();
-  const journeyKey =
-    searchParams.get("journey") === "business" ? "business" : "individual";
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const selectJourney = (nextJourney) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("journey", nextJourney);
-    setSearchParams(nextParams, { replace: true });
+  const searchParams = new URLSearchParams(location.search);
+  const journey = authJourneyContent[journeyKey] || authJourneyContent.individual;
+  const expectedRole = roleForJourney[journeyKey];
+  const activeOption =
+    journeyOptions.find((option) => option.key === journeyKey) ||
+    journeyOptions[0];
+
+  const updateField = (field) => (event) => {
+    const nextValue = event.currentTarget.value;
+    setForm((current) => ({ ...current, [field]: nextValue }));
+    if (error) setError("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const selectJourney = (nextJourney) => {
+    setJourneyKey(normalizeJourney(nextJourney));
     setError("");
-    setLoading(true);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+
+    const email = form.email.trim().toLowerCase();
+    if (!email || !form.password) {
+      setError("Enter your email and password to continue.");
+      return;
+    }
+
+    setError("");
+    setIsSubmitting(true);
 
     try {
       const signedInUser = await appClient.auth.login({
         email,
-        password,
+        password: form.password,
         rememberMe,
       });
+
+      if (signedInUser.role !== expectedRole) {
+        appClient.auth.logout();
+        throw new Error(
+          `This account belongs to the ${
+            signedInUser.role === "business" ? "company" : signedInUser.role
+          } journey. Select the matching sign-in option.`,
+        );
+      }
+
       await checkUserAuth();
-      navigate(
-        searchParams.get("from") || getDefaultDashboardRoute(signedInUser.role),
-        { replace: true },
-      );
+      navigate(getSafeReturnPath(searchParams.get("from"), journeyKey), {
+        replace: true,
+      });
     } catch (authError) {
-      setError(authError.message || "Unable to sign in");
+      setError(authError.message || "Unable to sign in. Check your details.");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-paper">
-      <Masthead />
-      <main className="relative overflow-hidden">
-        <div className="absolute inset-x-0 top-0 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(72,60,50,0.1),_transparent_60%)]" />
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:py-20">
-          <section className="relative overflow-hidden rounded-[2rem] border border-stone-300/50 bg-vellum/70 p-8 shadow-[0_25px_80px_rgba(40,30,20,0.08)] lg:p-10">
-            <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-heritage/10 blur-3xl" />
-            <div className="relative">
-              <p className="category-label">Member Access</p>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                {journeyOptions.map((option) => {
-                  const OptionIcon = option.icon;
-                  const isActive = option.key === journeyKey;
-
-                  return (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={() => selectJourney(option.key)}
-                      className={`rounded-[1.5rem] border p-5 text-left transition ${
-                        isActive
-                          ? "border-heritage bg-paper shadow-[0_18px_38px_rgba(76,43,8,0.08)]"
-                          : "border-stone-300/50 bg-paper/80 hover:border-stone-400"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300/60 bg-vellum">
-                          <OptionIcon className="h-5 w-5 text-heritage" />
-                        </div>
-                        <div>
-                          <p className="font-sans text-[0.64rem] font-bold uppercase tracking-[0.24em] text-heritage">
-                            {authJourneyContent[option.key].eyebrow}
-                          </p>
-                          <p className="mt-1 font-display text-xl font-bold text-ink">
-                            {option.title}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+    <main className="min-h-screen bg-[#f4efe6] px-4 py-8 text-[#2a1b12] sm:py-12">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center justify-center">
+        <div className="grid w-full overflow-hidden rounded-[2rem] border border-[#d5c8b8] bg-[#fffdf8] shadow-[0_24px_80px_rgba(42,27,18,0.12)] lg:grid-cols-[0.9fr_1.1fr]">
+          <section className="hidden bg-[#4A2A08] p-10 text-[#fffdf8] lg:flex lg:flex-col lg:justify-between">
+            <div>
+              <Link to="/" className="inline-flex items-center gap-3">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[#d9b77c]/60 font-display text-2xl font-black text-[#f1d6a5]">
+                  ን
+                </span>
+                <span>
+                  <span className="block font-display text-2xl font-black tracking-tight">ንቐደም</span>
+                  <span className="block font-sans text-[0.6rem] font-bold uppercase tracking-[0.24em] text-[#e7d5bd]">Independent journalism</span>
+                </span>
+              </Link>
+              <div className="mt-24 max-w-md">
+                <p className="font-sans text-xs font-bold uppercase tracking-[0.28em] text-[#e0bb7f]">Member access</p>
+                <h1 className="mt-4 font-display text-5xl font-black leading-[0.98]">Return to your newsroom.</h1>
+                <p className="mt-6 max-w-sm font-body text-base leading-7 text-[#eadfce]">Sign in to continue reading, manage deliveries, coordinate company orders, or operate the newsroom.</p>
               </div>
             </div>
+            <div className="border-t border-[#d9b77c]/30 pt-6 font-sans text-xs uppercase tracking-[0.18em] text-[#e7d5bd]">Independent Journalism Since 2024</div>
           </section>
 
-          <section className="rounded-[2rem] border border-stone-300/50 bg-paper p-6 shadow-[0_20px_70px_rgba(30,20,10,0.08)] sm:p-8">
-            <div className="flex items-center justify-between gap-4">
+          <section className="p-6 sm:p-10 lg:p-12">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.28em] text-heritage">
-                  {journeyKey === "business"
-                    ? "Business Sign In"
-                    : "Reader Sign In"}
-                </p>
-                <h2 className="mt-2 font-display text-3xl font-black text-ink">
-                  Welcome back
-                </h2>
+                <Link to="/" className="font-display text-2xl font-black text-[#4A2A08] lg:hidden">ንቐደም</Link>
+                <p className="mt-6 font-sans text-[0.65rem] font-bold uppercase tracking-[0.28em] text-[#8b5f32] lg:mt-0">{journey.eyebrow}</p>
+                <h2 className="mt-2 font-display text-3xl font-black tracking-tight sm:text-4xl">Sign in</h2>
               </div>
-              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-stone-300/60 bg-vellum">
-                <KeyRound className="h-6 w-6 text-heritage" />
-              </div>
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#d5c8b8] bg-[#f4efe6] text-[#4A2A08]"><KeyRound className="h-5 w-5" /></div>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-              {error ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sans text-xs text-red-700">
-                  {error}
-                </div>
-              ) : null}
+            <div className="mt-8 grid gap-2 sm:grid-cols-3">
+              {journeyOptions.map((option) => {
+                const Icon = option.icon;
+                const isActive = option.key === activeOption.key;
+                return (
+                  <button key={option.key} type="button" onClick={() => selectJourney(option.key)} className={`flex min-h-16 w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${isActive ? "border-[#4A2A08] bg-[#4A2A08] text-white" : "border-[#d5c8b8] bg-white text-[#5f4c3d] hover:border-[#8b5f32]"}`}>
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="font-sans text-[0.68rem] font-bold uppercase leading-4 tracking-[0.08em]">{option.title}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-              <label className="block">
-                <span className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.22em] text-ink">
-                  Email
-                </span>
-                <div className="flex items-center gap-3 rounded-2xl border border-stone-300/70 bg-vellum/35 px-4 py-3 focus-within:border-heritage">
-                  <Mail className="h-4 w-4 text-redacted" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    placeholder={
-                      journeyKey === "business"
-                        ? "operations@company.com"
-                        : "reader@nekedem.local"
-                    }
-                    className="w-full bg-transparent font-body text-sm text-ink outline-none placeholder:text-redacted/60"
-                  />
-                </div>
-              </label>
+            <p className="mt-4 font-body text-sm leading-6 text-[#756253]">{journey.description}</p>
 
-              <label className="block">
-                <span className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.22em] text-ink">
-                  Password
-                </span>
-                <div className="flex items-center gap-3 rounded-2xl border border-stone-300/70 bg-vellum/35 px-4 py-3 focus-within:border-heritage">
-                  <Lock className="h-4 w-4 text-redacted" />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="Enter your password"
-                    className="w-full bg-transparent font-body text-sm text-ink outline-none placeholder:text-redacted/60"
-                  />
+            <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
+              {error ? <div role="alert" className="rounded-xl border border-[#c98d86] bg-[#fff3f1] px-4 py-3 text-sm leading-5 text-[#8b3027]">{error}</div> : null}
+
+              <div>
+                <label htmlFor="login-email" className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.18em] text-[#4c392b]">Email address</label>
+                <div className="flex w-full items-center rounded-xl border border-[#cfc0af] bg-white transition-colors focus-within:border-[#4A2A08] focus-within:ring-2 focus-within:ring-[#4A2A08]/15">
+                  <Mail className="ml-4 h-4 w-4 shrink-0 text-[#8b5f32]" />
+                  <input id="login-email" name="email" type="email" inputMode="email" autoComplete="username" autoCapitalize="none" spellCheck="false" value={form.email} onChange={updateField("email")} required placeholder={journeyKey === "business" ? "operations@nekedem.local" : "reader@nekedem.local"} className="min-h-14 w-full rounded-xl bg-transparent px-3 text-base text-[#2a1b12] outline-none placeholder:text-[#9b8c7d]" />
                 </div>
-              </label>
+              </div>
+
+              <div>
+                <label htmlFor="login-password" className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.18em] text-[#4c392b]">Password</label>
+                <div className="flex w-full items-center rounded-xl border border-[#cfc0af] bg-white transition-colors focus-within:border-[#4A2A08] focus-within:ring-2 focus-within:ring-[#4A2A08]/15">
+                  <Lock className="ml-4 h-4 w-4 shrink-0 text-[#8b5f32]" />
+                  <input id="login-password" name="password" type="password" autoComplete="current-password" value={form.password} onChange={updateField("password")} required placeholder="Enter your password" className="min-h-14 w-full rounded-xl bg-transparent px-3 text-base text-[#2a1b12] outline-none placeholder:text-[#9b8c7d]" />
+                </div>
+              </div>
 
               <div className="flex items-center justify-between gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="accent-heritage"
-                  />
-                  <span className="font-sans text-xs text-redacted">
-                    Keep me signed in
-                  </span>
-                </label>
-                <Link
-                  to={`/forgot-password?journey=${journeyKey}`}
-                  className="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-heritage hover:underline"
-                >
-                  Forgot password
-                </Link>
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-[#756253]"><input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.currentTarget.checked)} className="h-4 w-4 accent-[#4A2A08]" />Keep me signed in</label>
+                <Link to={`/forgot-password?journey=${journeyKey}`} className="text-xs font-bold uppercase tracking-[0.12em] text-[#4A2A08] hover:underline">Forgot password</Link>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-heritage px-6 py-4 font-sans text-xs font-bold uppercase tracking-[0.24em] text-paper transition-colors hover:bg-ink disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                <span>{loading ? "Signing In..." : "Enter Newsroom"}</span>
-                {!loading ? <ArrowRight className="h-4 w-4" /> : null}
-              </button>
+              <button type="submit" disabled={isSubmitting} className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#4A2A08] px-6 font-sans text-sm font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#2a1b12] disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? "Signing in..." : "Sign in"}{!isSubmitting ? <ArrowRight className="h-4 w-4" /> : null}</button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="font-sans text-xs text-redacted">
-                Don't have an account?{" "}
-                <Link
-                  to={`/register?journey=${journeyKey}`}
-                  className="font-semibold uppercase tracking-[0.16em] text-heritage hover:underline"
-                >
-                  Create one
-                </Link>
-              </p>
-            </div>
+            <div className="mt-8 grid gap-2 rounded-xl border border-[#e2d7ca] bg-[#faf6ef] p-4 text-sm text-[#756253]"><p className="flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-[0.16em] text-[#4A2A08]"><CheckCircle2 className="h-4 w-4" />Demo access</p><p>Reader, company, and admin demo credentials are available in the project handoff notes.</p></div>
+
+            <p className="mt-6 text-center text-sm text-[#756253]">{journeyKey === "admin" ? "Admin accounts are provisioned for internal operators." : <>Don&apos;t have an account? <Link to={`/register?journey=${journeyKey}`} className="font-bold text-[#4A2A08] hover:underline">Create one</Link></>}</p>
           </section>
         </div>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </main>
   );
 }

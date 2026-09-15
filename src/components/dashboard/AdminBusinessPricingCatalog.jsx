@@ -69,6 +69,40 @@ export default function AdminBusinessPricingCatalog() {
         </Button>
       </div>
 
+      <div className="mt-6 rounded-2xl border border-[#4A2A08]/20 bg-[#4A2A08]/[0.04] p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#4A2A08]">
+              Unsaved public preview
+            </p>
+            <h3 className="mt-1 font-display text-xl font-bold text-stone-900">
+              {form.tier}
+            </h3>
+            <p className="mt-1 font-sans text-sm text-stone-600">
+              Company-only pricing card shown on `/business`; it never changes reader checkout prices.
+            </p>
+          </div>
+          <span className="rounded-full bg-stone-900 px-3 py-1 font-sans text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white">
+            Company pricing
+          </span>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-stone-200 bg-white p-4">
+            <p className="font-sans text-xs font-bold uppercase tracking-[0.16em] text-stone-500">Volume</p>
+            <p className="mt-1 font-sans text-sm font-semibold text-stone-900">{form.volume}</p>
+          </div>
+          <div className="rounded-xl border border-stone-200 bg-white p-4">
+            <p className="font-sans text-xs font-bold uppercase tracking-[0.16em] text-stone-500">Pricing</p>
+            <p className="mt-1 font-sans text-sm font-semibold text-stone-900">{form.pricing}</p>
+          </div>
+          <div className="rounded-xl border border-stone-200 bg-white p-4">
+            <p className="font-sans text-xs font-bold uppercase tracking-[0.16em] text-stone-500">Billing</p>
+            <p className="mt-1 font-sans text-sm font-semibold text-stone-900">{form.billing}</p>
+          </div>
+        </div>
+        <p className="mt-4 rounded-xl border border-stone-200 bg-white p-4 font-sans text-sm text-stone-700">{form.note}</p>
+      </div>
+
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(180px,0.7fr)_minmax(0,1.5fr)]">
         <div className="space-y-2">
           {tiers.map((tier) => (

@@ -15,8 +15,10 @@ import {
   toggleArticleSaved,
 } from "@/lib/reading-history";
 import { getArticleAccessState } from "@/lib/demoData";
+import { useStoreVersion } from "@/lib/store-bus";
 
 export default function ArticleDetail() {
+  useStoreVersion();
   const { id } = useParams();
   const { user } = useAuth();
   const article = getArticleById(id) || getHeroArticle();

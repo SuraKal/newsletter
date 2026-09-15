@@ -1,10 +1,21 @@
 import React, { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowRight, CheckCircle2, CreditCard, MapPin, Newspaper } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Clock3,
+  CreditCard,
+  MapPin,
+  Newspaper,
+  RefreshCw,
+  XCircle,
+} from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import { appParams } from "@/lib/app-params";
 import { useAuth } from "@/lib/AuthContext";
+import { useStoreVersion } from "@/lib/store-bus";
 
 const checkoutStorageKey = `${appParams.storagePrefix}_checkout_sessions`;
 
@@ -25,7 +36,53 @@ const readCheckoutSessions = () => {
   }
 };
 
+const statusContent = {
+  succeeded: {
+    label: "Payment return",
+    title: "Subscription ready",
+    message: "Your mocked payment return was successful and your reader access can now begin.",
+    tone: "success",
+    Icon: CheckCircle2,
+  },
+  failed: {
+    label: "Payment failed",
+    title: "Payment was not completed",
+    message: "The mocked processor returned a failed payment. Your subscription has not been activated.",
+    tone: "danger",
+    Icon: AlertCircle,
+  },
+  cancelled: {
+    label: "Payment cancelled",
+    title: "Payment was cancelled",
+    message: "You left the mocked payment flow before completing it. Your plan and billing choice are still available to retry.",
+    tone: "neutral",
+    Icon: XCircle,
+  },
+  pending: {
+    label: "Payment pending",
+    title: "Payment is being reviewed",
+    message: "The mocked processor has not confirmed this payment yet. Reader access remains inactive until confirmation.",
+    tone: "warning",
+    Icon: Clock3,
+  },
+  expired: {
+    label: "Session expired",
+    title: "This checkout session is no longer available",
+    message: "Start a new checkout session to confirm the current plan price and billing cycle.",
+    tone: "danger",
+    Icon: AlertCircle,
+  },
+};
+
+const statusToneClass = {
+  success: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  danger: "border-red-200 bg-red-50 text-red-900",
+  warning: "border-amber-200 bg-amber-50 text-amber-900",
+  neutral: "border-stone-300 bg-stone-100 text-stone-800",
+};
+
 export default function SubscribeSuccess() {
+  useStoreVersion();
   const [searchParams] = useSearchParams();
   const { isAuthenticated } = useAuth();
   const sessionId = searchParams.get("session");
@@ -39,29 +96,36 @@ export default function SubscribeSuccess() {
     return sessions[sessionId] || null;
   }, [sessionId]);
 
+  const paymentStatus = session?.status || searchParams.get("status") || "expired";
+  const status = statusContent[paymentStatus] || statusContent.expired;
+  const StatusIcon = status.Icon;
+  const isSuccessful = paymentStatus === "succeeded";
+  const retryUrl = session
+    ? `/subscribe/checkout?plan=${session.plan.id}&billing=${session.quote.billingCycle}`
+    : "/subscriptions";
+
   return (
     <div className="min-h-screen bg-paper">
       <Masthead />
       <main className="mx-auto max-w-6xl px-4 py-12 lg:py-16">
-        <section className="rounded-[2rem] border border-stone-300/60 bg-vellum/75 p-8 shadow-[0_25px_80px_rgba(40,30,20,0.08)]">
-          <div className="flex items-center justify-end">
-            <div className="rounded-[1.3rem] border border-emerald-200 bg-emerald-50 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 text-emerald-700" />
-                <div>
-                  <p className="font-sans text-[0.64rem] font-bold uppercase tracking-[0.2em] text-emerald-700">
-                    Status
-                  </p>
-                  <p className="font-body text-sm text-emerald-900">
-                    Payment return mocked successfully
-                  </p>
-                </div>
-              </div>
+        <section className={`rounded-[2rem] border p-8 shadow-[0_25px_80px_rgba(40,30,20,0.08)] ${statusToneClass[status.tone]}`}>
+          <div className="flex items-start gap-4">
+            <StatusIcon className="mt-1 h-6 w-6 shrink-0" />
+            <div>
+              <p className="font-sans text-[0.64rem] font-bold uppercase tracking-[0.2em]">
+                {status.label}
+              </p>
+              <h1 className="mt-2 font-display text-3xl font-black md:text-5xl">
+                {status.title}
+              </h1>
+              <p className="mt-3 max-w-2xl font-body text-base leading-7">
+                {session?.statusMessage || status.message}
+              </p>
             </div>
           </div>
         </section>
 
-        {session ? (
+        {session && isSuccessful ? (
           <>
             <section className="mt-10">
               <div className="rounded-[1.6rem] border border-stone-300/60 bg-paper p-6 shadow-[0_16px_38px_rgba(0,0,0,0.04)]">
@@ -101,6 +165,22 @@ export default function SubscribeSuccess() {
                       </div>
                     </div>
                   </div>
+                  <div className="rounded-[1.1rem] border border-stone-300/50 bg-vellum/50 p-4">
+                    <div className="flex items-start gap-3">
+                      <RefreshCw className="mt-1 h-5 w-5 text-heritage" />
+                      <div>
+                        <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-redacted">
+                          Renewal
+                        </p>
+                        <p className="mt-1 font-body text-sm text-ink">
+                          {session.quote.nextChargeDate}
+                        </p>
+                        <p className="font-body text-sm text-redacted">
+                          €{session.quote.amount.toFixed(2)} due today · {session.quote.billingCycle} renewal
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                   <div className="rounded-[1.1rem] border border-stone-300/50 bg-vellum/50 p-4 md:col-span-2">
                     <div className="flex items-start gap-3">
                       <MapPin className="mt-1 h-5 w-5 text-heritage" />
@@ -118,6 +198,19 @@ export default function SubscribeSuccess() {
                       </div>
                     </div>
                   </div>
+                </div>
+                <div className="mt-6 rounded-[1.1rem] border border-stone-300/50 bg-vellum/50 p-4">
+                  <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-redacted">
+                    Plan features
+                  </p>
+                  <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {(session.plan.features || []).map((feature) => (
+                      <li key={feature} className="flex items-start gap-2 font-body text-sm text-ink">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-heritage" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             </section>
@@ -138,11 +231,31 @@ export default function SubscribeSuccess() {
               </Link>
             </section>
           </>
+        ) : session ? (
+          <section className="mt-10 rounded-[1.5rem] border border-stone-300/60 bg-paper p-8 shadow-[0_16px_38px_rgba(0,0,0,0.04)]">
+            <p className="font-body text-base leading-7 text-redacted">
+              This attempt was recorded as <strong className="text-ink">{paymentStatus}</strong>. Reader access remains inactive until the payment is successful.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Link
+                to={retryUrl}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-heritage px-6 font-sans text-xs font-bold uppercase tracking-[0.22em] text-paper transition-colors hover:bg-ink"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Try checkout again
+              </Link>
+              <Link
+                to="/subscriptions"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border-2 border-ink px-6 font-sans text-xs font-bold uppercase tracking-[0.22em] text-ink transition-colors hover:bg-ink hover:text-paper"
+              >
+                Back to subscription plans
+              </Link>
+            </div>
+          </section>
         ) : (
           <section className="mt-10 rounded-[1.5rem] border border-stone-300/60 bg-paper p-8 shadow-[0_16px_38px_rgba(0,0,0,0.04)]">
             <p className="font-body text-base leading-7 text-redacted">
-              A success route was opened without a saved checkout session. Start again from the
-              reader subscription plans to generate a mocked checkout return.
+              Start a new checkout session from the reader subscription plans to continue.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link

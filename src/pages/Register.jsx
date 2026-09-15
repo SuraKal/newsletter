@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
   Building2,
@@ -44,6 +44,10 @@ export default function Register() {
   const journeyKey =
     searchParams.get("journey") === "business" ? "business" : "individual";
   const isBusinessJourney = journeyKey === "business";
+
+  if (searchParams.get("journey") === "admin") {
+    return <Navigate to="/login?journey=admin" replace />;
+  }
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));

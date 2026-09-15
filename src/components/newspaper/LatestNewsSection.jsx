@@ -3,6 +3,7 @@ import SectionHeader from "@/components/newspaper/SectionHeader";
 import NewsCard from "@/components/newspaper/NewsCard";
 import { getLatestNews } from "@/lib/content-store";
 import { useLanguage } from "@/lib/LanguageContext";
+import { useStoreVersion } from "@/lib/store-bus";
 
 const accessToneClassMap = {
   subscriber: "bg-heritage text-paper",
@@ -23,6 +24,7 @@ const getAccessTone = (label) => {
 };
 
 export default function LatestNewsSection() {
+  useStoreVersion();
   const { t } = useLanguage();
   const latestNews = getLatestNews();
 

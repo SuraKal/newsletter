@@ -1,5 +1,6 @@
 import { appParams } from "@/lib/app-params";
 import { parseArticleDate, readerHistoryRows } from "@/lib/demoData";
+import { notifyStoreChange } from "@/lib/store-bus";
 
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
@@ -50,7 +51,10 @@ const readAll = () => {
 };
 
 const writeAll = (records) => {
-  if (storage) storage.setItem(historyKey, JSON.stringify(records));
+  if (storage) {
+    storage.setItem(historyKey, JSON.stringify(records));
+    notifyStoreChange(historyKey);
+  }
 };
 
 const baseRecordFromArticle = (article) => ({

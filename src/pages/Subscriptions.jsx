@@ -1,24 +1,45 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight, Check } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
-import { useSubscriptionPlans } from "@/lib/subscription-catalog";
+import {
+  getSubscriptionPrice,
+  getReaderPlans,
+  useSubscriptionPlans,
+} from "@/lib/subscription-catalog";
 
 export default function Subscriptions() {
-  const [billing, setBilling] = useState("monthly");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedBilling = searchParams.get("billing");
+  const [billing, setBilling] = useState(
+    requestedBilling === "yearly" ? "yearly" : "monthly",
+  );
   const subscriptionPlans = useSubscriptionPlans();
+  const readerPlans = useMemo(
+    () => getReaderPlans(subscriptionPlans),
+    [subscriptionPlans],
+  );
+
+  useEffect(() => {
+    if (requestedBilling === "monthly" || requestedBilling === "yearly") {
+      setBilling(requestedBilling);
+    }
+  }, [requestedBilling]);
+
+  const updateBilling = (nextBilling) => {
+    setBilling(nextBilling);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("billing", nextBilling);
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const getDisplayPrice = (plan) => {
     if (plan.price === "Custom") {
       return "Custom";
     }
 
-    if (billing === "yearly") {
-      return Number(plan.yearlyPrice ?? plan.monthlyPrice * 12).toFixed(2);
-    }
-
-    return plan.price;
+    return getSubscriptionPrice(plan, billing).toFixed(2);
   };
 
   const getDisplayPeriod = (plan) => {
@@ -48,7 +69,7 @@ export default function Subscriptions() {
           <div className="mt-8 inline-flex flex-wrap items-center justify-center gap-3 rounded-full border border-stone-300/60 bg-paper p-2 shadow-[0_10px_24px_rgba(0,0,0,0.04)]">
             <button
               type="button"
-              onClick={() => setBilling("monthly")}
+              onClick={() => updateBilling("monthly")}
               className={`px-5 py-2 font-sans text-xs font-bold uppercase tracking-wider transition-colors ${
                 billing === "monthly"
                   ? "bg-heritage text-paper"
@@ -59,7 +80,7 @@ export default function Subscriptions() {
             </button>
             <button
               type="button"
-              onClick={() => setBilling("yearly")}
+              onClick={() => updateBilling("yearly")}
               className={`px-5 py-2 font-sans text-xs font-bold uppercase tracking-wider transition-colors ${
                 billing === "yearly"
                   ? "bg-heritage text-paper"
@@ -69,13 +90,24 @@ export default function Subscriptions() {
               Yearly billing
             </button>
           </div>
+          <div className="mx-auto mt-5 max-w-2xl rounded-2xl border border-heritage/20 bg-heritage/[0.05] px-4 py-3 text-left">
+            <p className="font-sans text-xs font-bold uppercase tracking-[0.16em] text-heritage">
+              Reader catalog
+            </p>
+            <p className="mt-1 font-body text-sm leading-6 text-redacted">
+              These plans are for individual reader access. Companies use separate volume pricing and quote-led billing on the business page.
+            </p>
+            <Link to="/business" className="mt-2 inline-flex font-sans text-xs font-bold uppercase tracking-[0.14em] text-heritage hover:text-ink">
+              View company pricing <ArrowRight className="ml-1 h-3.5 w-3.5" />
+            </Link>
+          </div>
         </section>
 
         <section className="mx-auto max-w-7xl px-4 pb-16">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {subscriptionPlans.map((plan) => (
+            {readerPlans.map((plan) => (
               <article
-                key={plan.name}
+                  key={plan.id}
                 className={`rounded-[1.35rem] border p-8 shadow-[0_16px_38px_rgba(0,0,0,0.05)] ${
                   plan.highlighted
                     ? "border-heritage/25 bg-paper"

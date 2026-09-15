@@ -138,6 +138,32 @@ const BrandLoader = ({
   );
 };
 
+const roleJourney = {
+  reader: "individual",
+  business: "business",
+  admin: "admin",
+};
+
+const RoleBoundary = ({ role, children }) => {
+  const { user, isLoadingAuth } = useAuth();
+  const location = useLocation();
+
+  if (isLoadingAuth) {
+    return <BrandLoader label="Checking workspace access" />;
+  }
+
+  if (!user || user.role !== role) {
+    const from = `${location.pathname}${location.search}`;
+    const params = new URLSearchParams({
+      journey: roleJourney[role] || "individual",
+      from,
+    });
+    return <Navigate to={`/login?${params.toString()}`} replace />;
+  }
+
+  return children;
+};
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } =
     useAuth();
@@ -184,7 +210,14 @@ const AuthenticatedApp = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/dashboard" element={<ReaderDashboard />}>
+        <Route
+          path="/dashboard"
+          element={
+            <RoleBoundary role="reader">
+              <ReaderDashboard />
+            </RoleBoundary>
+          }
+        >
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<ReaderOverviewPage />} />
           <Route path="deliveries" element={<ReaderDeliveriesPage />} />
@@ -197,7 +230,14 @@ const AuthenticatedApp = () => {
           <Route path="profile" element={<ReaderProfilePage />} />
           <Route path="privacy" element={<ReaderPrivacyPage />} />
         </Route>
-        <Route path="/business-dashboard" element={<BusinessDashboard />}>
+        <Route
+          path="/business-dashboard"
+          element={
+            <RoleBoundary role="business">
+              <BusinessDashboard />
+            </RoleBoundary>
+          }
+        >
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<BusinessOverviewPage />} />
           <Route path="team" element={<BusinessTeam />} />
@@ -223,7 +263,14 @@ const AuthenticatedApp = () => {
           />
           <Route path="settings" element={<BusinessSettings />} />
         </Route>
-        <Route path="/admin" element={<AdminDashboard />}>
+        <Route
+          path="/admin"
+          element={
+            <RoleBoundary role="admin">
+              <AdminDashboard />
+            </RoleBoundary>
+          }
+        >
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<AdminOverviewPage />} />
           <Route path="content" element={<AdminContentList />} />

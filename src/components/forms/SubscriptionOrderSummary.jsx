@@ -1,5 +1,5 @@
 import React from "react";
-import { CalendarDays, CreditCard, MapPin, Truck } from "lucide-react";
+import { CalendarDays, Check, CreditCard, MapPin, Truck } from "lucide-react";
 
 export default function SubscriptionOrderSummary({
   plan,
@@ -24,6 +24,20 @@ export default function SubscriptionOrderSummary({
       </p>
 
       <div className="newspaper-rule my-6" />
+
+      <div className="mb-6 rounded-[1rem] border border-stone-300/50 bg-paper/70 p-4">
+        <p className="font-sans text-[0.64rem] font-bold uppercase tracking-[0.2em] text-heritage">
+          Included in this plan
+        </p>
+        <ul className="mt-3 space-y-2">
+          {plan.features.slice(0, 4).map((feature) => (
+            <li key={feature} className="flex items-start gap-2 font-body text-sm text-ink">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-heritage" />
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
 
       <div className="space-y-4">
         <div className="flex items-start gap-3">
