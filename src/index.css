@@ -232,6 +232,65 @@
   box-shadow: 0 12px 30px rgba(76, 43, 8, 0.08);
 }
 
+.classic-article-page {
+  background:
+    linear-gradient(rgba(236, 225, 209, 0.94), rgba(236, 225, 209, 0.94)),
+    repeating-linear-gradient(0deg, rgba(76, 43, 8, 0.045) 0 1px, transparent 1px 4px);
+}
+
+.classic-article-sheet {
+  box-shadow: 0 14px 36px rgba(76, 43, 8, 0.08);
+}
+
+.classic-rule-double {
+  border-top: 4px double hsl(var(--ink));
+}
+
+.classic-folio {
+  border-top: 2px solid hsl(var(--ink));
+  border-bottom: 1px solid rgba(76, 43, 8, 0.45);
+  background: rgba(239, 227, 205, 0.8);
+}
+
+.classic-plate-img {
+  filter: sepia(0.34) contrast(0.95) saturate(0.82);
+  mix-blend-mode: multiply;
+}
+
+@media (min-width: 1200px) {
+  .classic-body-copy {
+    column-count: 2;
+    column-gap: 2rem;
+  }
+
+  .classic-body-copy > p,
+  .classic-body-copy > div {
+    break-inside: avoid;
+  }
+
+.classic-comments {
+    column-span: all;
+    clear: both;
+  }
+
+  .classic-lock-panel {
+    column-span: all;
+    clear: both;
+  }
+
+  .classic-pullquote {
+    column-span: all;
+    clear: both;
+  }
+}
+
+/* Modern broadsheet article layout */
+.newspaper-article-page {
+  background:
+    linear-gradient(rgba(247, 243, 235, 0.9), rgba(247, 243, 235, 0.9)),
+    repeating-linear-gradient(0deg, rgba(76, 43, 8, 0.025) 0 1px, transparent 1px 4px);
+}
+
 .newspaper-rule-thick {
   border-top: 2px solid hsl(var(--ink));
 }
@@ -242,6 +301,82 @@
 
 .newspaper-rule-vertical {
   border-right: 1px solid rgba(120, 113, 108, 0.3);
+}
+
+@media (min-width: 1200px) {
+  .newspaper-copy {
+    column-count: 2;
+    column-gap: 2rem;
+  }
+
+  .newspaper-copy > p,
+  .newspaper-copy > div {
+    break-inside: avoid;
+  }
+
+  .newspaper-comments {
+    column-span: all;
+    clear: both;
+  }
+
+  .newspaper-lock-panel {
+    column-span: all;
+    clear: both;
+  }
+
+  .newspaper-pullquote {
+    column-span: all;
+    clear: both;
+  }
+}
+
+/* Magazine article layout */
+.magazine-article-page {
+  background:
+    radial-gradient(1200px 500px at 50% -10%, rgba(76, 43, 8, 0.06), rgba(76, 43, 8, 0) 60%),
+    linear-gradient(rgba(250, 246, 236, 0.96), rgba(250, 246, 236, 0.96));
+}
+
+.magazine-copy {
+  max-width: 68ch;
+}
+
+.magazine-lock-panel {
+  clear: both;
+}
+
+/* Tabloid / Express article layout */
+.tabloid-article-page {
+  background:
+    linear-gradient(rgba(250, 246, 236, 0.95), rgba(250, 246, 236, 0.95)),
+    repeating-linear-gradient(45deg, rgba(76, 43, 8, 0.03) 0 1px, transparent 1px 8px);
+}
+
+.tabloid-copy {
+  max-width: 72ch;
+}
+
+.tabloid-rule {
+  border-top: 0.4rem solid hsl(var(--ink));
+  border-bottom: 0.2rem double hsl(var(--heritage));
+}
+
+/* Newsletter / Dispatch article layout */
+.newsletter-article-page {
+  background:
+    radial-gradient(1200px 260px at 50% 0%, rgba(178, 142, 77, 0.08), transparent 70%);
+}
+
+.newsletter-masthead {
+  border-block: 0.38rem double hsl(var(--ink));
+}
+
+.newsletter-copy {
+  max-width: 72ch;
+}
+
+.newsletter-lock-panel {
+  clear: both;
 }
 
 /* Drop cap for featured articles */
