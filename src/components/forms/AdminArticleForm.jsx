@@ -1,10 +1,12 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ARTICLE_PLACEMENTS } from "@/lib/content-store";
-import { getCategoryLabels } from "@/lib/category-store";
+import { getCategoryLabels, getCategoryTemplate } from "@/lib/category-store";
+import { getTemplateLabel } from "@/lib/article-templates";
 import { useStoreVersion } from "@/lib/store-bus";
 
 const MAX_IMAGE_DIMENSION = 1200;
@@ -51,6 +53,8 @@ export default function AdminArticleForm({
   const selectedPlacement = ARTICLE_PLACEMENTS.find(
     (option) => option.value === form.source,
   );
+  const selectedTemplate = getCategoryTemplate(form.category);
+  const previewUrl = `/templates?layout=${selectedTemplate}`;
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
@@ -113,8 +117,18 @@ export default function AdminArticleForm({
             ))}
           </select>
           <p className="text-xs leading-5 text-stone-500">
-            Controls the badge and category page grouping.
+            Controls the badge and category page grouping. Articles in this
+            category use the <span className="font-semibold">{getTemplateLabel(selectedTemplate)}</span> layout by default.
           </p>
+          <Link
+            to={previewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-flex items-center gap-1.5 font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-heritage hover:text-ink"
+          >
+            Preview this layout
+            <span aria-hidden="true">&nearr;</span>
+          </Link>
         </div>
 
         <div className="space-y-2 md:col-span-2">

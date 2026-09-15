@@ -73,6 +73,7 @@ const BusinessInvoiceDetail = lazy(
 );
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
+const TemplatePreview = lazy(() => import("@/pages/TemplatePreview"));
 const ReaderOverviewPage = lazy(
   () => import("@/components/dashboard/ReaderOverviewPage"),
 );
@@ -303,6 +304,7 @@ const AuthenticatedApp = () => {
         </Route>
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/templates" element={<TemplatePreview />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </Suspense>

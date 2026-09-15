@@ -1,5 +1,9 @@
 import { appParams } from "@/lib/app-params";
 import { IMAGES, CATEGORIES } from "@/lib/constants";
+import {
+  DEFAULT_ARTICLE_TEMPLATE,
+  isValidArticleTemplate,
+} from "@/lib/article-templates";
 import { getAdminContentRows } from "@/lib/content-store";
 import { notifyStoreChange } from "@/lib/store-bus";
 
@@ -18,6 +22,19 @@ const imageMap = {
   "Advice Corner": IMAGES.featured,
   "Serial Novels": IMAGES.featured,
   Other: IMAGES.hero,
+};
+
+const templateSeed = {
+  News: "newspaper",
+  Community: "classic",
+  Business: "magazine",
+  "Jobs & Marketplace": "tabloid",
+  Events: "feature",
+  "Culture & Lifestyle": "magazine",
+  Technology: "feature",
+  "Advice Corner": "newsletter",
+  "Serial Novels": "newsletter",
+  Other: "feature",
 };
 
 const subcategorySeed = {
@@ -93,6 +110,7 @@ function buildSeedCategories() {
     label,
     image: imageMap[label] || IMAGES.hero,
     subcategories: subcategorySeed[label] || [],
+    template: templateSeed[label] || DEFAULT_ARTICLE_TEMPLATE,
   }));
 }
 
@@ -106,7 +124,15 @@ function readAll() {
   }
   try {
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length) return parsed;
+    if (Array.isArray(parsed) && parsed.length) {
+      return parsed.map((cat) => ({
+        ...cat,
+        template:
+          isValidArticleTemplate(cat.template) && cat.template
+            ? cat.template
+            : templateSeed[cat.label] || DEFAULT_ARTICLE_TEMPLATE,
+      }));
+    }
   } catch {
     /* reseed */
   }
@@ -130,6 +156,16 @@ export function getCategoryLabels() {
 
 export function getCategoryById(id) {
   return readAll().find((cat) => cat.id === id) || null;
+}
+
+export function getCategoryTemplate(label) {
+  const match = readAll().find(
+    (cat) => cat.label.toLowerCase() === String(label || "").toLowerCase(),
+  );
+  if (!match) return DEFAULT_ARTICLE_TEMPLATE;
+  return isValidArticleTemplate(match.template)
+    ? match.template
+    : DEFAULT_ARTICLE_TEMPLATE;
 }
 
 export function saveCategory(data) {

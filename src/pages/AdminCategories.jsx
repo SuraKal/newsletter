@@ -25,9 +25,19 @@ import {
 } from "@/lib/category-store";
 import { useStoreVersion } from "@/lib/store-bus";
 import { getAdminContentRows } from "@/lib/content-store";
+import {
+  ARTICLE_TEMPLATES,
+  DEFAULT_ARTICLE_TEMPLATE,
+  getTemplateLabel,
+} from "@/lib/article-templates";
 
 const matchesSearch = (row, query) =>
-  [row.label, row.image, row.subcategories.join(", ")].some((value) =>
+  [
+    row.label,
+    row.image,
+    row.template,
+    row.subcategories.join(", "),
+  ].some((value) =>
     String(value ?? "").toLowerCase().includes(query),
   );
 
@@ -58,7 +68,12 @@ function CategoryThumb({ src, alt }) {
   );
 }
 
-const emptyForm = { label: "", image: "", subcategories: [] };
+const emptyForm = {
+  label: "",
+  image: "",
+  subcategories: [],
+  template: DEFAULT_ARTICLE_TEMPLATE,
+};
 
 const MAX_COVER_DIMENSION = 640;
 
@@ -87,6 +102,7 @@ export default function AdminCategories() {
     label: cat.label,
     image: cat.image,
     subcategories: cat.subcategories,
+    template: cat.template,
     articleCount: articleCounts[cat.label] || 0,
     totalClicks: categoryClicksMap[cat.label] || 0,
     index,
@@ -158,7 +174,12 @@ export default function AdminCategories() {
 
   const startEdit = (cat) => {
     setEditingId(cat.id);
-    setForm({ label: cat.label, image: cat.image, subcategories: cat.subcategories });
+    setForm({
+      label: cat.label,
+      image: cat.image,
+      subcategories: cat.subcategories,
+      template: cat.template || DEFAULT_ARTICLE_TEMPLATE,
+    });
     setFormError("");
   };
 
@@ -198,6 +219,7 @@ export default function AdminCategories() {
       label,
       image: form.image.trim() || existing?.image || IMAGES.hero,
       subcategories: [...new Set(form.subcategories.map((sub) => sub.trim()).filter(Boolean))],
+      template: form.template || DEFAULT_ARTICLE_TEMPLATE,
     });
     setNotice(editingId ? `Updated "${label}".` : `Added "${label}".`);
     cancelEdit();
@@ -272,6 +294,22 @@ export default function AdminCategories() {
           </div>
         );
       },
+    },
+    {
+      key: "template",
+      label: "Template",
+      hideOnMobile: true,
+      render: (value) => (
+        <Link
+          to={`/templates?layout=${value}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 font-sans text-[0.66rem] font-semibold text-stone-700 transition-colors hover:border-heritage hover:text-heritage dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:border-heritage dark:hover:text-heritage"
+        >
+          {getTemplateLabel(value)}
+          <ExternalLink className="h-3 w-3" />
+        </Link>
+      ),
     },
     {
       key: "articleCount",
@@ -461,7 +499,7 @@ export default function AdminCategories() {
         title={editingId ? "Edit category" : "New category"}
         description={
           editingId
-            ? "Update the label, cover image, or subcategories for this category."
+            ? "Update the label, cover image, subcategories, or article template for this category."
             : "Add a category that immediately appears across the public site and the publishing form."
         }
         className="p-5 sm:p-6"
@@ -578,6 +616,52 @@ export default function AdminCategories() {
               No subcategories yet. Subcategories appear as filters on the category page.
             </p>
           )}
+        </div>
+
+        <div className="mt-5">
+          <span className="mb-1.5 block font-sans text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-300">
+            Article template
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {ARTICLE_TEMPLATES.map((template) => {
+              const active = form.template === template.key;
+              return (
+                <span key={template.key} className="inline-flex items-center gap-1">
+                  <button
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() =>
+                      setForm((prev) => ({ ...prev, template: template.key }))
+                    }
+                    className={`rounded-full border px-3.5 py-1.5 font-sans text-xs font-semibold transition-colors ${
+                      active
+                        ? "border-heritage bg-heritage text-white"
+                        : "border-stone-300 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
+                    }`}
+                  >
+                    {template.label}
+                  </button>
+                  <Link
+                    to={`/templates?layout=${template.key}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Preview ${template.label} layout`}
+                    className={`inline-flex h-6 w-6 items-center justify-center rounded-full transition-colors ${
+                      active
+                        ? "text-white/80 hover:text-white"
+                        : "text-stone-400 hover:text-heritage dark:text-stone-500 dark:hover:text-heritage"
+                    }`}
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                </span>
+              );
+            })}
+          </div>
+          <p className="mt-2 font-sans text-xs text-stone-500">
+            Every article tagged under this category renders with this template
+            on the public site.
+          </p>
         </div>
 
         <div className="mt-5 flex items-center gap-2 border-t border-stone-100 pt-4 dark:border-stone-800">
