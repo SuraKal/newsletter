@@ -2,33 +2,48 @@
 
 ## Project Context
 
-This is a Base44 app repository. Treat it as user-owned application code, keep changes focused on the user's request, and preserve existing project conventions.
+This is a monorepo for the Nekedem newsletter platform. Treat it as user-owned
+application code, keep changes focused on the user's request, and preserve
+existing project conventions.
 
-Start with `README.md` for local setup, environment variables, and publish workflow.
+- `frontend/`: React + Vite Single Page Application (no Base44 dependency).
+- `backend/`: Flask API (MySQL, JWT auth, Alembic migrations).
+- `base44/`: leftover Base44 entity definitions; no longer wired into the app.
+
+Start with `README.md` for local setup, environment variables, and run workflow.
 
 ## Base44 References
 
 - CLI overview: https://docs.base44.com/developers/references/cli/get-started/overview.md
 - Agent skills: https://docs.base44.com/developers/backend/overview/skills.md
 
-If your agent supports Agent Skills, install or update Base44 skills before Base44-specific work:
+If your agent supports Agent Skills, install or update Base44 skills before
+Base44-specific work:
 
 ```bash
 npx skills add base44/skills
 ```
 
+> Note: the frontend currently ships as a plain Vite app. Only use Base44
+> knowledge if work explicitly targets the leftover `base44/` files.
+
 ## Key Files
 
-- `src/`: frontend application source.
-- `src/api/base44Client.js`: frontend Base44 SDK client.
-- `vite.config.js`: Vite config and Base44 Vite plugin setup.
-- `.env.local`: local-only environment values; never commit secrets.
+- `frontend/src/`: frontend application source.
+- `frontend/src/api/appClient.js`: frontend app client (localStorage mock in
+  `localStorage`; backend wiring is future work).
+- `frontend/vite.config.ts`: Vite config. It proxies `/api/*` to the Flask
+  backend at `http://localhost:5050`.
+- `frontend/.env`: local-only frontend environment values; never commit secrets.
+- `backend/`: Flask application (see `backend/README.md`).
+- `backend/.env`: local-only backend environment values; never commit secrets.
 
 ## Working Notes
 
-- Use `base44 dev` as the default local development command when you need the local Base44 backend. It can run the backend and frontend together.
-- When docs or code mention the frontend being started automatically, that usually means the Base44 project config includes `site.serveCommand`, for example `"serveCommand": "npm run dev"` in `base44/config.jsonc`.
-- Use `npm run dev` only for frontend-only work against the hosted Base44 backend.
-- Prefer the existing Base44 CLI workflow over adding new npm scripts for Base44-specific tasks.
-- Reuse the existing SDK client and Vite plugin patterns before adding new Base44 integration paths.
-- Run the relevant checks from `package.json` before finishing code changes.
+- Backend: run `python app.py` from `backend/` (port 5050). See
+  `backend/README.md` for database setup and migrations.
+- Frontend: run `npm run dev` from `frontend/` for frontend-only work against
+  the local mock client, or start the backend as well and use `/api` through
+  the Vite proxy.
+- Run the relevant checks from `frontend/package.json` (`npm run lint`,
+  `npm run typecheck`, `npm run build`) before finishing frontend code changes.

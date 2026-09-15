@@ -4,9 +4,13 @@ Project references:
 
 - Product scope: `docs/project.md`
 - Dashboard inspiration: `docs/designs.jpg`
-- Current app routes: `src/App.jsx`
+- Current app routes: `frontend/src/App.jsx`
 - Local setup: `README.md`
 - Repo guidance: `AGENTS.md`, `CLAUDE.md`
+
+> Frontend source paths referenced throughout this file (e.g. `src/App.jsx`,
+> `src/components/*`, `src/lib/*`) now live under `frontend/` in the monorepo
+> layout.
 
 Assumptions:
 
@@ -1796,6 +1800,138 @@ Phase rules:
 - **Blockers:** `none`
 - **Description:** `Perform the final frontend-only acceptance pass and close any regression discovered across the seven gap areas. This task must not expand into Stripe, backend, webhook, database, or logistics integration work.`
 
+## Phase 32 - Flask Backend Foundation: Users, Subscriptions, And Auth
+
+### TASK-320A: Backend - Define User, SubscriptionPlan, And UserSubscription Models
+- **Phase:** `Phase 32 - Flask Backend Foundation: Users, Subscriptions, And Auth`
+- **Owner:** `Backend`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `N/A`
+- **Files touched:** `backend/models/user.py`, `backend/models/subscription.py`, `backend/models/__init__.py`
+- **Depends on:** `none`
+- **Spec:** `docs/Agent tasks.md TASK-300H`, `docs/project.md`
+- **Setup reference:** `backend/README.md`
+- **Conventions:** `backend/CONVENTIONS.md`
+- **Definition of Done:** `User, SubscriptionPlan, and UserSubscription SQLAlchemy models are defined with relationships, serialization helpers, password hashing, and JSON features column. Models are registered via models/__init__.py so Flask-Migrate can detect them.`
+- **Runtime Verification:** `flask db migrate generates a migration with all three tables; pytest or manual import confirms models load`
+- **Blockers:** `none`
+- **Description:** `Define the core SQLAlchemy models for users, subscription plans, and user-to-plan bindings. User stores role (reader/business/admin), hashed password, and account type. SubscriptionPlan mirrors the frontend subscriptionPlans in demoData.js (digital, print-digital, business-regional, business-enterprise). UserSubscription links a user to a plan with billing cycle, status, start date, and renewal date.`
+
+### TASK-320B: Backend - Create And Apply MySQL Migration
+- **Phase:** `Phase 32 - Flask Backend Foundation: Users, Subscriptions, And Auth`
+- **Owner:** `Backend`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `N/A`
+- **Files touched:** `backend/migrations/versions/`
+- **Depends on:** `TASK-320A`
+- **Spec:** `docs/Agent tasks.md TASK-320A`
+- **Setup reference:** `backend/README.md`
+- **Conventions:** `backend/CONVENTIONS.md`
+- **Definition of Done:** `flask db migrate generates the migration and flask db upgrade applies it. Three MySQL tables exist: users, subscription_plans, user_subscriptions with correct columns, indexes, foreign keys, and unique constraints.`
+- **Runtime Verification:** `mysql -u root nekedem -e "SHOW TABLES"` shows all three tables; verify columns with DESCRIBE; no rollback errors`
+- **Blockers:** `none`
+- **Description:** `Generate the Alembic migration for the three new models and apply it to the nekedem MySQL database. Ensure indexes on users.email and user_subscriptions.user_id, foreign key constraints, and correct data types for all columns.`
+
+### TASK-320C: Backend - Implement JWT Auth API
+- **Phase:** `Phase 32 - Flask Backend Foundation: Users, Subscriptions, And Auth`
+- **Owner:** `Backend`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Public guest / User / Company / Admin`
+- **Route(s) or endpoint(s):** `POST /api/v1/auth/register, POST /api/v1/auth/login, GET /api/v1/auth/me`
+- **Files touched:** `backend/routes/auth.py`, `backend/app.py`, `backend/middleware/auth.py`
+- **Depends on:** `TASK-320A`, `TASK-320B`
+- **Spec:** `docs/Agent tasks.md TASK-320B`, `docs/project.md Section 4.5`
+- **Setup reference:** `backend/README.md`
+- **Conventions:** `backend/CONVENTIONS.md`
+- **Definition of Done:** `POST /login returns {accessToken, user} for valid credentials, 401 for invalid. POST /register creates a reader/business user (max 8-char password rejected), returns 409 for duplicate email. GET /me returns the authenticated user with subscriptions. JWT identity is user id (string), role stored in additional claims. role_required middleware reads role from get_jwt()["role"].`
+- **Runtime Verification:** `curl login for each seeded user; curl /me with Bearer token; register new reader; register duplicate returns 409; short password returns 400`
+- **Blockers:** `none`
+- **Description:** `Implement a Flask Blueprint at /api/v1/auth with login, register, and /me endpoints. JWT identity is the user id string (not a dict) with role in additional_claims. Update middleware/auth.py to read role from get_jwt() claims instead of the dict identity.`
+
+### TASK-320D: Backend - Add Public Subscription Plans Endpoint
+- **Phase:** `Phase 32 - Flask Backend Foundation: Users, Subscriptions, And Auth`
+- **Owner:** `Backend`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Public guest / User / Company / Admin`
+- **Route(s) or endpoint(s):** `GET /api/v1/subscriptions/plans`
+- **Files touched:** `backend/routes/subscriptions.py`, `backend/app.py`
+- **Depends on:** `TASK-320A`, `TASK-320B`
+- **Spec:** `docs/Agent tasks.md TASK-320A`, `docs/project.md Section 4.4`
+- **Setup reference:** `backend/README.md`
+- **Conventions:** `backend/CONVENTIONS.md`
+- **Definition of Done:** `GET /api/v1/subscriptions/plans returns {plans: [...]} with all subscription plans and correct JSON fields (id, name, monthlyPrice, yearlyPrice, features, etc). Response is public, no auth required.`
+- **Runtime Verification:** `curl /api/v1/subscriptions/plans returns 200 with 4 plans; verify JSON shape matches frontend demoData.js subscriptionPlans`
+- **Blockers:** `none`
+- **Description:** `Create a Flask Blueprint at /api/v1/subscriptions with a GET /plans endpoint that returns all SubscriptionPlan rows serialized via their to_dict method. This endpoint is public and requires no authentication.`
+
+### TASK-320E: Backend - Seed Demo Users And Subscription Plans
+- **Phase:** `Phase 32 - Flask Backend Foundation: Users, Subscriptions, And Auth`
+- **Owner:** `Backend`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `flask seed (CLI)`
+- **Files touched:** `backend/seed.py`, `backend/app.py`
+- **Depends on:** `TASK-320A`, `TASK-320B`, `TASK-320C`
+- **Spec:** `docs/Agent tasks.md TASK-320C`
+- **Setup reference:** `backend/README.md`
+- **Conventions:** `backend/CONVENTIONS.md`
+- **Definition of Done:** `flask seed upserts 4 plans and 4 users: admin (admin@nekedem.local / admin12345, role=admin), viewer (viewer@nekedem.local / viewer12345, role=reader, Digital monthly), org1 (org1@nekedem.local / org112345, role=business, Business Regional yearly), org2 (org2@nekedem.local / org212345, role=business, Business Enterprise yearly). Seed is idempotent; re-running does not duplicate rows.`
+- **Runtime Verification:** `flask seed prints the 4 accounts; login succeeds for each via POST /api/v1/auth/login; /me returns correct role and subscription; mysql query confirms exactly 3 subscriptions`
+- **Blockers:** `none`
+- **Description:** `Create a seed.py with a flask CLI command that upserts 4 SubscriptionPlans (digital, print-digital, business-regional, business-enterprise), 4 Users (1 admin, 1 reader, 2 business), and exactly 3 UserSubscriptions (viewer->digital monthly, org1->business-regional yearly, org2->business-enterprise yearly). The admin has no subscription. Seed is idempotent: re-running updates existing rows rather than duplicating them.`
+
+## Phase 34 - Backend: Article Template Registry
+
+### TASK-340A: Backend - Define ArticleTemplate Model And Migration
+- **Phase:** `Phase 34 - Backend: Article Template Registry`
+- **Owner:** `Backend`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `N/A`
+- **Files touched:** `backend/models/template.py`, `backend/models/__init__.py`, `backend/migrations/versions/`
+- **Depends on:** `none`
+- **Spec:** `docs/Agent tasks.md`, `UI/src/lib/article-templates.js`
+- **Setup reference:** `backend/README.md`
+- **Conventions:** `backend/CONVENTIONS.md`
+- **Definition of Done:** `ArticleTemplate model exists with key (unique), label, description, active, sort_order, created_at, updated_at. Registered in models/__init__.py. Alembic migration generated and applied, creating the article_templates table.`
+- **Runtime Verification:** `flask db migrate + flask db upgrade succeed; mysql SHOW TABLES shows article_templates with expected columns`
+- **Blockers:** `none`
+- **Description:** `Create a SQLAlchemy model that mirrors the frontend ARTICLE_TEMPLATES registry (feature, classic, newspaper, magazine, tabloid, newsletter) so templates can be managed from the backend instead of code.`
+
+### TASK-340B: Backend - Add Templates API For Management
+- **Phase:** `Phase 34 - Backend: Article Template Registry`
+- **Owner:** `Backend`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Public guest / Admin`
+- **Route(s) or endpoint(s):** `GET /api/v1/templates, PUT /api/v1/templates/<key>, DELETE /api/v1/templates/<key>`
+- **Files touched:** `backend/routes/templates.py`, `backend/app.py`
+- **Depends on:** `TASK-340A`
+- **Spec:** `docs/Agent tasks.md TASK-340A`, `docs/project.md`
+- **Setup reference:** `backend/README.md`
+- **Conventions:** `backend/CONVENTIONS.md`
+- **Definition of Done:** `GET list orders by sort_order and is public. PUT updates label/description/active/sort_order and is restricted to admin (role_required). DELETE removes a template and is admin-only. Routes registered in app.py.`
+- **Runtime Verification:** `GET returns the 6 seeded templates; PUT as admin returns 200 and persists; PUT as reader returns 403; DELETE as admin returns 200`
+- **Blockers:** `none`
+- **Description:** `Expose a small CRUD API so templates live in MySQL and admins can enable, reorder, rename, or remove them without touching frontend code.`
+
+### TASK-340C: Backend - Seed The Current Article Templates
+- **Phase:** `Phase 34 - Backend: Article Template Registry`
+- **Owner:** `Backend`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `flask seed (CLI)`
+- **Files touched:** `backend/seed.py`
+- **Depends on:** `TASK-340A`, `TASK-340B`
+- **Spec:** `UI/src/lib/article-templates.js`, `UI/src/lib/category-store.js`
+- **Setup reference:** `backend/README.md`
+- **Conventions:** `backend/CONVENTIONS.md`
+- **Definition of Done:** `flask seed upserts all 6 current article templates (feature, classic, newspaper, magazine, tabloid, newsletter) with label, description, active=true, and sort_order 1-6 matching the frontend ARTICLE_TEMPLATES order. Idempotent: re-running updates rather than duplicating.`
+- **Runtime Verification:** `flask seed prints the 6 registered templates; GET /api/v1/templates returns 6 rows in sort_order; mysql SELECT confirms 6 rows`
+- **Blockers:** `none`
+- **Description:** `Register the current frontend template catalog into the article_templates table so the backend and frontend stay in sync, categories can reference template keys, and admins get visibility into the template set.`
+
 ## Suggested Start Order
 
 1. `TASK-120A`
@@ -1816,6 +1952,14 @@ Phase rules:
 16. `TASK-300F`
 17. `TASK-300G`
 18. `TASK-300H`
+19. `TASK-320A`
+20. `TASK-320B`
+21. `TASK-320C`
+22. `TASK-320D`
+23. `TASK-320E`
+24. `TASK-340A`
+25. `TASK-340B`
+26. `TASK-340C`
 
 ## First Executable Slice
 
