@@ -12,6 +12,7 @@ import { notifyStoreChange, useStoreVersion } from "@/lib/store-bus";
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
 const categoriesKey = `${appParams.storagePrefix}_categories`;
+const categoriesSyncKey = `${appParams.storagePrefix}_categories_sync`;
 
 const imageMap = {
   News: IMAGES.politics,
@@ -148,6 +149,22 @@ function writeAll(cats) {
   notifyStoreChange();
 }
 
+// Keeps the backend-synced snapshot in step with local authoring edits. This
+// is what makes template changes propagate to article rendering: `getCategoryTemplate`
+// reads the synced snapshot first, so any save/delete/move below must mirror into
+// it. When the backend is reachable `appClient.refreshCategoriesFromBackend()`
+// overwrites this key with authoritative rows, so this mirror only fills the gap
+// for offline mock edits.
+function writeSynced(cats) {
+  if (!storage) return;
+  if (Array.isArray(cats) && cats.length) {
+    storage.setItem(categoriesSyncKey, JSON.stringify(cats.map(toAppCategory)));
+    notifyStoreChange();
+  } else {
+    storage.removeItem(categoriesSyncKey);
+  }
+}
+
 export function getCategories() {
   return readAll();
 }
@@ -161,13 +178,31 @@ export function getCategoryById(id) {
 }
 
 export function getCategoryTemplate(label) {
-  const match = readAll().find(
+  const match = (readSynced() || readAll()).find(
     (cat) => cat.label.toLowerCase() === String(label || "").toLowerCase(),
   );
   if (!match) return DEFAULT_ARTICLE_TEMPLATE;
   return isValidArticleTemplate(match.template)
     ? match.template
     : DEFAULT_ARTICLE_TEMPLATE;
+}
+
+// Reads the backend-synced category snapshot (the "wired" read path). Returns
+// null when the backend has never pushed a snapshot so callers fall back to the
+// seeded mock store instead. This is the same key `appClient` fills via
+// `refreshCategoriesFromBackend`, so backend template changes flow through to
+// article rendering here.
+function readSynced() {
+  if (!storage) return null;
+  const raw = storage.getItem(categoriesSyncKey);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length) return parsed;
+  } catch {
+    // fall through to null
+  }
+  return null;
 }
 
 export function saveCategory(data) {
@@ -187,11 +222,14 @@ export function saveCategory(data) {
   }
 
   writeAll(cats);
+  writeSynced(cats);
   return record;
 }
 
 export function deleteCategory(id) {
-  writeAll(readAll().filter((cat) => cat.id !== id));
+  const next = readAll().filter((cat) => cat.id !== id);
+  writeAll(next);
+  writeSynced(next);
 }
 
 export function moveCategory(id, direction) {
@@ -204,6 +242,7 @@ export function moveCategory(id, direction) {
 
   [cats[index], cats[target]] = [cats[target], cats[index]];
   writeAll(cats);
+  writeSynced(cats);
 }
 
 export function getCategoryArticleCounts() {
@@ -217,7 +256,10 @@ export function getCategoryArticleCounts() {
 }
 
 export function resetCategoryStore() {
-  if (storage) storage.removeItem(categoriesKey);
+  if (storage) {
+    storage.removeItem(categoriesKey);
+    storage.removeItem(categoriesSyncKey);
+  }
   notifyStoreChange();
 }
 
@@ -235,8 +277,18 @@ export function toAppCategory(category) {
           .filter(Boolean)
       : [],
     template:
-      category.templateKey || DEFAULT_ARTICLE_TEMPLATE,
+      category.templateKey || category.template || DEFAULT_ARTICLE_TEMPLATE,
   };
+}
+
+// Mirrors a freshly fetched backend category list into the synced snapshot so
+// template changes made against the Flask API are picked up immediately by
+// `getCategoryTemplate` (and therefore article rendering) without waiting for a
+// reload. No-op on network failure: the mock mirror from the authoring helpers
+// stays in place.
+export function syncCategoriesFromBackend(categories) {
+  if (!Array.isArray(categories) || !categories.length) return;
+  writeSynced(categories.map(toAppCategory));
 }
 
 // Public category data source. Tries the Flask backend first; when it is

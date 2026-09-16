@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, CirclePlus } from "lucide-react";
 import {
@@ -12,6 +12,7 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
+import { backendArticles, isNetworkError } from "@/api/backendClient";
 import { getAdminContentRows, getPlacementLabel } from "@/lib/content-store";
 
 const contentColumns = [
@@ -79,10 +80,54 @@ const relatedLinks = [
   { label: "Pricing", to: "/admin/pricing" },
 ];
 
+// Maps a backend article into the row shape `getAdminContentRows()` produces so
+// the list, filters, and links behave identically for DB and mock data.
+function toAdminContentRow(article) {
+  return {
+    id: article.id,
+    headline: article.headline,
+    sector: article.categoryLabel || "News",
+    editor: article.editor || "Editorial desk",
+    status: article.status,
+    tone: article.tone,
+    publishWindow:
+      [article.publishDate, article.publishTime].filter(Boolean).join(" · ") ||
+      "Awaiting editor sign-off",
+    image: article.image || null,
+    category: article.categoryLabel || "News",
+    source: article.source || "admin",
+    clicks: Number(article.clicks) || 0,
+  };
+}
+
 export default function AdminContentList() {
-  const adminContentRows = getAdminContentRows();
+  const [adminContentRows, setAdminContentRows] = useState(() =>
+    getAdminContentRows(),
+  );
   const [query, setQuery] = useState("");
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
+
+  useEffect(() => {
+    let active = true;
+    backendArticles
+      .adminList()
+      .then((list) => {
+        if (!active) return;
+        setAdminContentRows(
+          Array.isArray(list) && list.length ? list.map(toAdminContentRow) : [],
+        );
+      })
+      .catch((error) => {
+        if (!active) return;
+        if (isNetworkError(error)) {
+          setAdminContentRows(getAdminContentRows());
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const table = useTableQuery({
     rows: adminContentRows,
     query,

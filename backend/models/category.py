@@ -38,6 +38,8 @@ class Category(db.Model):
         order_by="Subcategory.sort_order",
     )
 
+    articles = db.relationship("Article", back_populates="category")
+
     def to_dict(self):
         return {
             "id": self.id,

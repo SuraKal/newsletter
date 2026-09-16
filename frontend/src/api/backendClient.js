@@ -193,3 +193,81 @@ export const backendCategories = {
     return payload.category;
   },
 };
+
+// Maps a backend article into the shape content-store consumers expect.
+// The backend stores `body` as a single text blob and template extras in `meta`,
+// so the mapper guarantees a string body and a flat object for template fields.
+export const toAppArticle = (article) => ({
+  id: article.id,
+  headline: article.headline || "",
+  summary: article.summary || "",
+  body: Array.isArray(article.body)
+    ? article.body.join("\n\n")
+    : String(article.body || ""),
+  image: article.image || null,
+  author: article.author || "",
+  editor: article.editor || "",
+  status: article.status || "Draft",
+  tone: article.tone || "neutral",
+  source: article.source || "latest",
+  categoryId: article.categoryId || null,
+  categoryLabel: article.categoryLabel || "",
+  readTime: article.readTime || "",
+  accessLabel: article.accessLabel || "",
+  publishDate: article.publishDate || "",
+  publishTime: article.publishTime || "",
+  clicks: Number(article.clicks) || 0,
+  meta: article.meta && typeof article.meta === "object" ? article.meta : {},
+});
+
+export const backendArticles = {
+  async list(params = {}) {
+    const query = new URLSearchParams();
+    if (params.category) query.set("category", params.category);
+    if (params.source) query.set("source", params.source);
+    const suffix = query.toString() ? `?${query.toString()}` : "";
+    const payload = await request(`/articles${suffix}`, { auth: false });
+    return (payload.articles || []).map(toAppArticle);
+  },
+
+  async get(idOrSlug) {
+    const payload = await request(`/articles/${encodeURIComponent(idOrSlug)}`, { auth: false });
+    return payload.article ? toAppArticle(payload.article) : null;
+  },
+
+  async adminList() {
+    const payload = await request("/admin/articles");
+    return (payload.articles || []).map(toAppArticle);
+  },
+
+  async adminCreate(data) {
+    const payload = await request("/admin/articles", { method: "POST", body: data });
+    return toAppArticle(payload.article);
+  },
+
+  async adminUpdate(id, data) {
+    const payload = await request(`/admin/articles/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: data,
+    });
+    return toAppArticle(payload.article);
+  },
+
+  async adminDelete(id) {
+    await request(`/admin/articles/${encodeURIComponent(id)}`, { method: "DELETE" });
+  },
+
+  async adminPublish(id) {
+    const payload = await request(`/admin/articles/${encodeURIComponent(id)}/publish`, {
+      method: "POST",
+    });
+    return toAppArticle(payload.article);
+  },
+
+  async adminUnpublish(id) {
+    const payload = await request(`/admin/articles/${encodeURIComponent(id)}/unpublish`, {
+      method: "POST",
+    });
+    return toAppArticle(payload.article);
+  },
+};

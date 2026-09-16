@@ -15,6 +15,7 @@ import { notifyStoreChange } from "@/lib/store-bus";
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
 const contentKey = `${appParams.storagePrefix}_content_articles`;
+const articlesSyncKey = `${appParams.storagePrefix}_articles_sync`;
 
 const byDateDesc = (a, b) => {
   const timeA = parseArticleDate(a.publishDate || a.date)?.getTime() || 0;
@@ -118,6 +119,84 @@ function readAll() {
   return seeded;
 }
 
+// Reads the backend-synced article cache (the "wired" read path). Returns null
+// when the backend has never pushed a snapshot so consumers fall back to the
+// seeded mock store instead.
+function readSynced() {
+  if (!storage) return null;
+  const raw = storage.getItem(articlesSyncKey);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length) return parsed;
+  } catch {
+    // fall through to null
+  }
+  return null;
+}
+
+function writeSynced(articles) {
+  if (storage) storage.setItem(articlesSyncKey, JSON.stringify(articles));
+  notifyStoreChange();
+}
+
+// Maps a backend article (as produced by `backendArticles.list()` /
+// `toAppArticle`) into the canonical store shape getters consume: a flat
+// category/sector label, a publish window string, and template extras flattened
+// out of the backend `meta` object.
+export function toStoreArticle(article) {
+  const category =
+    article.categoryLabel || article.category || article.sector || "News";
+  return {
+    id: article.id,
+    headline: article.headline || "",
+    category,
+    sector: article.sector || article.category || category,
+    image: article.image || null,
+    date: article.date || article.publishDate || "",
+    summary: article.summary || "",
+    author: article.author || "Editorial desk",
+    readTime: article.readTime || null,
+    accessLabel: article.accessLabel || null,
+    publicAccessDate: article.publicAccessDate || null,
+    body: Array.isArray(article.body)
+      ? article.body.join("\n\n")
+      : String(article.body || ""),
+    status: article.status || "Published",
+    tone: article.tone || "neutral",
+    editor: article.editor || "Editorial desk",
+    publishDate: article.publishDate || article.date || "",
+    publishTime: article.publishTime || "",
+    publishWindow: publishWindowFor(article),
+    source: article.source || "latest",
+    categoryKey: categoryKeyFor(category),
+    councilSession: article.meta?.councilSession || article.councilSession || "",
+    eventDate: article.meta?.eventDate || article.eventDate || "",
+    location: article.meta?.location || article.location || "",
+    scorelineFocus: article.meta?.scorelineFocus || article.scorelineFocus || "",
+    marketImpact: article.meta?.marketImpact || article.marketImpact || "",
+    clicks: Number(article.clicks) || 0,
+  };
+}
+
+// Replaces the backend-synced article cache. This is the appClient sync sink:
+// when the Flask backend is reachable its published articles become the source
+// of truth for every public getter, while the seeded mock store is untouched
+// and stays as the offline/boot fallback.
+export function syncArticlesFromBackend(articles) {
+  const rows = (Array.isArray(articles) ? articles : [])
+    .map(toStoreArticle)
+    .filter(Boolean);
+  if (!rows.length) return;
+  writeSynced(rows);
+}
+
+// Public read source: prefers the backend-synced snapshot when one exists and
+// otherwise falls back to the seeded mock store.
+function readPublic() {
+  return readSynced() || readAll();
+}
+
 function writeAll(articles) {
   if (storage) storage.setItem(contentKey, JSON.stringify(articles));
   notifyStoreChange();
@@ -185,14 +264,14 @@ export function getPlacementLabel(source) {
 }
 
 export function getAllArticles() {
-  return readAll()
+  return readPublic()
     .filter((item) => item.status === "Published")
     .map(toRenderArticle);
 }
 
 export function getArticleById(id) {
   if (!id) return null;
-  const article = readAll().find((item) => item.id === id);
+  const article = readPublic().find((item) => item.id === id);
   return article ? toRenderArticle(article) : null;
 }
 
@@ -202,48 +281,48 @@ export function getRawArticleById(id) {
 }
 
 export function getHeroArticle() {
-  const hero = readAll().find(
+  const hero = readPublic().find(
     (item) => item.source === "hero" && item.status === "Published",
   );
   return toRenderArticle(hero || buildSeedArticles()[0]);
 }
 
 export function getRightColumnArticle() {
-  const right = readAll().find(
+  const right = readPublic().find(
     (item) => item.source === "right" && item.status === "Published",
   );
   return toRenderArticle(right || heroArticle);
 }
 
 export function getFeaturedStory() {
-  const featured = readAll().find(
+  const featured = readPublic().find(
     (item) => item.source === "featured" && item.status === "Published",
   );
   return toRenderArticle(featured || featuredStory);
 }
 
 export function getSidebarArticles() {
-  return readAll()
+  return readPublic()
     .filter((item) => item.source === "sidebar" && item.status === "Published")
     .map(toRenderArticle);
 }
 
 export function getLatestNews() {
-  return readAll()
+  return readPublic()
     .filter((item) => item.source === "latest" && item.status === "Published")
     .sort(byDateDesc)
     .map(toRenderArticle);
 }
 
 export function getEditorials() {
-  return readAll()
+  return readPublic()
     .filter((item) => item.source === "editorial" && item.status === "Published")
     .map(toRenderArticle);
 }
 
 export function getCategoryArticles(categoryLabels = null) {
   const groups = {};
-  readAll().forEach((article) => {
+  readPublic().forEach((article) => {
     let key;
     if (categoryLabels) {
       const match = categoryLabels.find(
@@ -265,7 +344,7 @@ export function getCategoryArticles(categoryLabels = null) {
 
 export function getPublicListingArticles() {
   const featuredIds = new Set(["featured", "hero", "right"]);
-  return readAll()
+  return readPublic()
     .filter((article) => !featuredIds.has(article.source) && article.status === "Published")
     .sort(byDateDesc)
     .map(toRenderArticle);
@@ -291,15 +370,20 @@ export function deleteArticle(id) {
 
 export function registerArticleClick(id) {
   if (!id) return;
-  const all = readAll();
-  const index = all.findIndex((item) => item.id === id);
+  const synced = readSynced();
+  const source = synced || readAll();
+  const index = source.findIndex((item) => item.id === id);
   if (index < 0) return;
-  all[index] = { ...all[index], clicks: (Number(all[index].clicks) || 0) + 1 };
-  writeAll(all);
+  source[index] = { ...source[index], clicks: (Number(source[index].clicks) || 0) + 1 };
+  if (synced) writeSynced(source);
+  else writeAll(source);
 }
 
 export function resetContentStore() {
-  if (storage) storage.removeItem(contentKey);
+  if (storage) {
+    storage.removeItem(contentKey);
+    storage.removeItem(articlesSyncKey);
+  }
   notifyStoreChange();
 }
 

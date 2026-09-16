@@ -18,9 +18,13 @@ export default function AdminArticleForm({
   isSaving,
   successMessage,
   templateFields = [],
+  categoryOptions,
 }) {
   useStoreVersion();
-  const CATEGORY_OPTIONS = [...getCategoryLabels(), "Editorial", "Opinion", "Analysis"];
+  const CATEGORY_OPTIONS =
+    Array.isArray(categoryOptions) && categoryOptions.length
+      ? categoryOptions
+      : [...getCategoryLabels(), "Editorial", "Opinion", "Analysis"];
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;

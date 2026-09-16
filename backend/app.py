@@ -7,6 +7,7 @@ from flask_migrate import Migrate
 from models import db
 from config import config_by_name
 from routes.auth import auth_bp
+from routes.articles import articles_bp
 from routes.categories import categories_bp
 from routes.subscriptions import subscriptions_bp
 from routes.templates import templates_bp
@@ -29,6 +30,7 @@ def create_app(config_name=None):
     app.register_blueprint(subscriptions_bp)
     app.register_blueprint(templates_bp)
     app.register_blueprint(categories_bp)
+    app.register_blueprint(articles_bp)
     app.cli.add_command(seed_command)
 
     @app.route("/api/v1/health")

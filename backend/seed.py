@@ -4,6 +4,7 @@ import click
 from flask.cli import with_appcontext
 
 from models import (
+    Article,
     ArticleTemplate,
     Category,
     SubscriptionPlan,
@@ -377,11 +378,94 @@ def _upsert_categories():
             )
 
 
+SEEDED_ARTICLES = [
+    {
+        "headline": "City council approves the new harbour market plan",
+        "summary": "Councillors voted 8–2 to begin the phased redevelopment of the harbour market quarter.",
+        "body": "The harbour market quarter will be rebuilt in three phases starting early next year. Retailers will be relocated during construction.",
+        "author": "Nael Desk",
+        "editor": "Editorial desk",
+        "status": "Published",
+        "tone": "success",
+        "access_label": "Subscriber-only",
+        "read_time": "4 min",
+        "source": "hero",
+        "category_label": "News",
+        "date": "September 11, 2026",
+        "public_access_date": "October 11, 2026",
+        "publish_date": "September 11, 2026",
+        "publish_time": "2:00 PM",
+        "clicks": 210,
+        "meta": {"location": "Harbour quarter", "councilSession": "September 2026"},
+    },
+    {
+        "headline": "Small businesses see a recovery quarter in the region",
+        "summary": "Regional business groups report rising orders and new hires for the first time this year.",
+        "body": "Local chambers of commerce recorded a 12% rise in new business registrations last quarter.",
+        "author": "Nael Desk",
+        "editor": "Editorial desk",
+        "status": "Published",
+        "tone": "success",
+        "access_label": "Public",
+        "read_time": "6 min",
+        "source": "featured",
+        "category_label": "Business",
+        "date": "September 10, 2026",
+        "public_access_date": "",
+        "publish_date": "September 10, 2026",
+        "publish_time": "8:30 AM",
+        "clicks": 145,
+        "meta": {"marketImpact": "Regional employment outlook positive"},
+    },
+    {
+        "headline": "A weekend guide to the autumn festival opening",
+        "summary": "Parades, food stalls, and evening concerts mark the opening weekend of the autumn festival.",
+        "body": "The festival opens Saturday with a street parade and closes Sunday with a headline concert in the main square.",
+        "author": "Nael Desk",
+        "editor": "Editorial desk",
+        "status": "Scheduled",
+        "tone": "neutral",
+        "access_label": "Public",
+        "read_time": "3 min",
+        "source": "latest",
+        "category_label": "Events",
+        "date": "",
+        "public_access_date": "",
+        "publish_date": "September 18, 2026",
+        "publish_time": "10:00 AM",
+        "clicks": 0,
+        "meta": {"eventDate": "Sep 19-20, 2026", "location": "City centre"},
+    },
+]
+
+
+def _upsert_articles():
+    for article_seed in SEEDED_ARTICLES:
+        article_data = dict(article_seed)
+        category_label = article_data.pop("category_label")
+        category = Category.query.filter_by(label=category_label).first()
+        article = Article.query.filter_by(headline=article_data["headline"]).first()
+        if article is None:
+            db.session.add(
+                Article(
+                    category_id=category.id if category else None,
+                    category_label=category_label,
+                    **article_data,
+                )
+            )
+        else:
+            article.category_id = category.id if category else None
+            article.category_label = category_label
+            for key, value in article_data.items():
+                setattr(article, key, value)
+
+
 def seed_data():
     _upsert_plans()
     _upsert_users()
     _upsert_templates()
     _upsert_categories()
+    _upsert_articles()
     db.session.commit()
 
 
@@ -409,4 +493,10 @@ def seed_command():
         print(
             f"  - {category_data['label']:<22} template={category_data['template_key']:<9} "
             f"subcategories={len(category_data['subcategories'])}"
+        )
+    print("Seeded articles:")
+    for article_data in SEEDED_ARTICLES:
+        print(
+            f"  - {article_data['status']:<10} {article_data['source']:<9} "
+            f"{article_data['headline']}"
         )

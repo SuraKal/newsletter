@@ -22,6 +22,7 @@ import {
   moveCategory,
   resetCategoryStore,
   saveCategory,
+  syncCategoriesFromBackend,
 } from "@/lib/category-store";
 import { useStoreVersion } from "@/lib/store-bus";
 import { getAdminContentRows } from "@/lib/content-store";
@@ -110,9 +111,12 @@ export default function AdminCategories() {
     backendCategories
       .list()
       .then((list) => {
-        setCategories(
-          Array.isArray(list) && list.length ? list.map(toAdminCategory) : [],
-        );
+        if (Array.isArray(list) && list.length) {
+          syncCategoriesFromBackend(list);
+          setCategories(list.map(toAdminCategory));
+        } else {
+          setCategories([]);
+        }
       })
       .catch(() => {
         setCategories(getCategories().map(toAdminCategory));

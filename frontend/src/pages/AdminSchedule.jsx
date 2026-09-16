@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, PenSquare, Truck } from "lucide-react";
 import {
@@ -12,11 +12,8 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import {
-  getAdminScheduleRows,
-  getRawArticleById,
-  saveArticle,
-} from "@/lib/content-store";
+import { getAdminScheduleRows, getRawArticleById, saveArticle } from "@/lib/content-store";
+import { backendArticles, isNetworkError } from "@/api/backendClient";
 
 const createScheduleColumns = (handleRelease) => [
   { key: "slot", label: "Publish slot" },
@@ -75,6 +72,34 @@ const nextReleaseAction = (status) => {
   return null;
 };
 
+const byPublishSlot = (a, b) => {
+  const dateA = a.publishDate || "";
+  const dateB = b.publishDate || "";
+  if (dateA !== dateB) return dateA < dateB ? -1 : 1;
+  return (a.publishTime || "").localeCompare(b.publishTime || "");
+};
+
+const toAdminScheduleRow = (article) => {
+  const slot =
+    [article.publishDate, article.publishTime].filter(Boolean).join(" · ") ||
+    "Awaiting editor sign-off";
+  const release =
+    article.status === "Published"
+      ? "Live in newsroom"
+      : article.status === "Scheduled"
+        ? "Subscriber release"
+        : `Awaiting ${article.editor || "Editor"} sign-off`;
+  return {
+    id: article.id,
+    slot,
+    sector: article.categoryLabel || "News",
+    headline: article.headline,
+    status: article.status,
+    tone: article.tone,
+    release,
+  };
+};
+
 const matchesSearch = (row, query) =>
   [row.slot, row.sector, row.headline, row.status, row.release].some(
     (value) => String(value ?? "").toLowerCase().includes(query),
@@ -95,9 +120,10 @@ const relatedLinks = [
 ];
 
 export default function AdminSchedule() {
-  const adminScheduleRows = getAdminScheduleRows();
+  const [adminScheduleRows, setAdminScheduleRows] = useState(() =>
+    getAdminScheduleRows(),
+  );
   const [query, setQuery] = useState("");
-  const [, setRevision] = useState(0);
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const table = useTableQuery({
     rows: adminScheduleRows,
@@ -107,11 +133,44 @@ export default function AdminSchedule() {
     filterGroups: scheduleFilterGroups,
   });
 
+  const loadScheduleRows = () => {
+    backendArticles
+      .adminList()
+      .then((articles) => {
+        setAdminScheduleRows(
+          (Array.isArray(articles) ? articles : [])
+            .filter((article) => article.publishDate || article.publishTime)
+            .sort(byPublishSlot)
+            .map(toAdminScheduleRow),
+        );
+      })
+      .catch((error) => {
+        if (isNetworkError(error)) setAdminScheduleRows(getAdminScheduleRows());
+      });
+  };
+
+  useEffect(() => {
+    loadScheduleRows();
+  }, []);
+
   const handleRelease = (articleId, nextStatus) => {
-    const raw = getRawArticleById(articleId);
-    if (!raw) return;
-    saveArticle({ ...raw, status: nextStatus });
-    setRevision((value) => value + 1);
+    const applyFallback = () => {
+      const raw = getRawArticleById(articleId);
+      if (!raw) return;
+      saveArticle({ ...raw, status: nextStatus });
+      loadScheduleRows();
+    };
+
+    const backendAction =
+      nextStatus === "Published"
+        ? backendArticles.adminPublish(articleId)
+        : backendArticles.adminUpdate(articleId, { status: nextStatus });
+
+    backendAction
+      .then(loadScheduleRows)
+      .catch((error) => {
+        if (isNetworkError(error)) applyFallback();
+      });
   };
 
   const scheduleColumns = createScheduleColumns(handleRelease);
@@ -147,7 +206,11 @@ export default function AdminSchedule() {
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         filterOptions={table.filterOptions}
-        filters={["8 scheduled items", "3 print-linked releases", "2 review holds"]}
+        filters={[
+          `${adminScheduleRows.filter((row) => row.status === "Scheduled").length} scheduled items`,
+          `${adminScheduleRows.filter((row) => row.status === "Published").length} published releases`,
+          `${adminScheduleRows.filter((row) => row.status === "Draft" || row.status === "Needs review").length} review holds`,
+        ]}
         action={
           <Link
             to="/admin/shipments"

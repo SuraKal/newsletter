@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowRight, Clock3, Eye, EyeOff, FileText, Info, Send } from "lucide-react";
 import {
@@ -14,6 +14,7 @@ import {
   getRawArticleById,
   saveArticle,
 } from "@/lib/content-store";
+import { backendArticles, backendCategories, isNetworkError } from "@/api/backendClient";
 import { adminEditorTemplateFields, getArticleAccessState } from "@/lib/demoData";
 
 const accessToneClassMap = {
@@ -56,6 +57,80 @@ const createDefaultArticle = () => ({
   scorelineFocus: "",
   marketImpact: "",
 });
+
+// Keys inside the backend `meta` JSON that map onto the editor form's
+// category-specific template fields.
+const META_FORM_KEYS = [
+  "councilSession",
+  "eventDate",
+  "location",
+  "scorelineFocus",
+  "marketImpact",
+];
+
+// Flattens a backend article (camelCase + `meta` JSON) into the editor form
+// shape. Falls back to the mock record shape for offline seeding.
+function toEditorForm(source, fallback = createDefaultArticle) {
+  if (!source) return fallback();
+  const meta = source.meta && typeof source.meta === "object" ? source.meta : {};
+  return {
+    ...fallback(),
+    id: source.id,
+    headline: source.headline || "",
+    editor: source.editor || "Editorial desk",
+    status: source.status || "Draft",
+    tone: source.tone || "neutral",
+    summary: source.summary || "",
+    author: source.author || "Nael Desk",
+    source: source.source || "latest",
+    category: source.categoryLabel || source.category || "News",
+    image: source.image || "",
+    readTime: source.readTime || "",
+    accessLabel: source.accessLabel || "",
+    date: source.date || "",
+    publicAccessDate: source.publicAccessDate || "",
+    publishDate: source.publishDate || "",
+    publishTime: source.publishTime || "",
+    body: Array.isArray(source.body)
+      ? source.body.join("\n\n")
+      : String(source.body || ""),
+    councilSession: source.councilSession || meta.councilSession || "",
+    eventDate: source.eventDate || meta.eventDate || "",
+    location: source.location || meta.location || "",
+    scorelineFocus: source.scorelineFocus || meta.scorelineFocus || "",
+    marketImpact: source.marketImpact || meta.marketImpact || "",
+  };
+}
+
+// Unflattens the editor form back into the API payload, collecting the
+// category-specific template fields into the `meta` JSON object.
+function toArticlePayload(form) {
+  const meta = {};
+  META_FORM_KEYS.forEach((key) => {
+    const value = String(form[key] || "").trim();
+    if (value) meta[key] = value;
+  });
+  return {
+    headline: form.headline,
+    summary: form.summary,
+    body: form.body,
+    image: form.image || null,
+    author: form.author,
+    editor: form.editor,
+    status: form.status,
+    tone: form.tone,
+    source: form.source,
+    categoryLabel: form.category || "News",
+    readTime: form.readTime,
+    accessLabel: form.accessLabel,
+    date: form.date || form.publishDate || "",
+    publicAccessDate: form.publicAccessDate,
+    publishDate: form.publishDate,
+    publishTime: form.publishTime,
+    clicks: Number(form.clicks) || 0,
+    meta,
+  };
+}
 
 function SectionHeaderMock({ title, viewAll }) {
   return (
@@ -324,26 +399,62 @@ function PlacementPreviewPanel({ article }) {
 
 export default function AdminContentEditor() {
   const { id } = useParams();
-  const seed = useMemo(() => {
-    if (!id || id === "new") {
-      return createDefaultArticle();
-    }
-
-    return {
-      ...createDefaultArticle(),
-      ...(getRawArticleById(id) || {}),
-    };
-  }, [id]);
-
-  const [form, setForm] = useState(seed);
+  const [form, setForm] = useState(() => toEditorForm(null));
+  const [categoryOptions, setCategoryOptions] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [actionError, setActionError] = useState("");
 
   useEffect(() => {
-    setForm(seed);
+    let active = true;
+    backendCategories
+      .list()
+      .then((list) => {
+        if (!active) return;
+        const labels = (Array.isArray(list) ? list : [])
+          .map((cat) => cat.label)
+          .filter(Boolean);
+        if (labels.length) {
+          setCategoryOptions([...labels, "Editorial", "Opinion", "Analysis"]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
     setSuccessMessage("");
-  }, [seed]);
+    setActionError("");
+    if (!id || id === "new") {
+      setForm(toEditorForm(null));
+      return () => {
+        active = false;
+      };
+    }
+    const mockArticle = getRawArticleById(id);
+    setForm(toEditorForm(mockArticle));
+    backendArticles
+      .adminList()
+      .then((list) => {
+        if (!active) return;
+        const found = (Array.isArray(list) ? list : []).find(
+          (article) => article.id === id,
+        );
+        if (found) setForm(toEditorForm(found));
+      })
+      .catch((error) => {
+        if (!active) return;
+        if (!isNetworkError(error)) {
+          setForm(toEditorForm(mockArticle));
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [id]);
 
   const templateFields = adminEditorTemplateFields[form.category] || [];
   const isNewArticle = id === "new";
@@ -355,27 +466,50 @@ export default function AdminContentEditor() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setIsSaving(true);
     setSuccessMessage("");
+    setActionError("");
 
-    window.setTimeout(() => {
-      const draft = { ...form, date: form.date || form.publishDate || "" };
-      const saved = saveArticle(draft);
+    const saveFallback = () => {
+      window.setTimeout(() => {
+        const draft = { ...form, date: form.date || form.publishDate || "" };
+        const saved = saveArticle(draft);
+        setIsSaving(false);
+        if (form.id === "new") handleChange("id", saved.id);
+        setSuccessMessage(
+          saved.status === "Published"
+            ? "Article is live in the public newsroom and ready for reader access."
+            : "Editorial draft saved to the publishing queue.",
+        );
+      }, 300);
+    };
+
+    try {
+      const payload = toArticlePayload(form);
+      const saved =
+        form.id && form.id !== "new"
+          ? await backendArticles.adminUpdate(form.id, payload)
+          : await backendArticles.adminCreate(payload);
       setIsSaving(false);
-      if (form.id === "new") {
-        handleChange("id", saved.id);
-      }
+      if (form.id === "new") handleChange("id", saved.id);
       setSuccessMessage(
         saved.status === "Published"
           ? "Article is live in the public newsroom and ready for reader access."
           : "Editorial draft saved to the publishing queue.",
       );
-    }, 300);
+    } catch (error) {
+      if (isNetworkError(error)) {
+        saveFallback();
+        return;
+      }
+      setIsSaving(false);
+      setActionError(error.message || "Failed to save the article.");
+    }
   };
 
-  const handlePublishNow = () => {
+  const handlePublishNow = async () => {
     if (!form.headline.trim()) {
       setActionError("Add a headline before publishing this article.");
       setSuccessMessage("");
@@ -386,21 +520,44 @@ export default function AdminContentEditor() {
     setIsSaving(true);
     setSuccessMessage("");
 
-    window.setTimeout(() => {
-      const draft = {
-        ...form,
-        status: "Published",
-        date: form.date || form.publishDate || "",
-      };
-      const saved = saveArticle(draft);
-      setIsSaving(false);
-      if (form.id === "new") {
-        handleChange("id", saved.id);
+    const publishFallback = () => {
+      window.setTimeout(() => {
+        const draft = {
+          ...form,
+          status: "Published",
+          date: form.date || form.publishDate || "",
+        };
+        const saved = saveArticle(draft);
+        setIsSaving(false);
+        if (form.id === "new") handleChange("id", saved.id);
+        setSuccessMessage(
+          "Article is live in the public newsroom and ready for reader access.",
+        );
+      }, 300);
+    };
+
+    try {
+      let saved;
+      if (form.id && form.id !== "new") {
+        saved = await backendArticles.adminPublish(form.id);
+      } else {
+        saved = await backendArticles.adminCreate(
+          toArticlePayload({ ...form, status: "Published" }),
+        );
       }
+      setIsSaving(false);
+      if (form.id === "new") handleChange("id", saved.id);
       setSuccessMessage(
         "Article is live in the public newsroom and ready for reader access.",
       );
-    }, 300);
+    } catch (error) {
+      if (isNetworkError(error)) {
+        publishFallback();
+        return;
+      }
+      setIsSaving(false);
+      setActionError(error.message || "Failed to publish the article.");
+    }
   };
 
   return (
@@ -455,6 +612,7 @@ export default function AdminContentEditor() {
             isSaving={isSaving}
             successMessage={successMessage}
             templateFields={templateFields}
+            categoryOptions={categoryOptions}
           />
         </DashboardPanel>
 

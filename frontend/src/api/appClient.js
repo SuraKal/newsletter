@@ -1,5 +1,5 @@
-import { appParams } from "@/lib/app-params";
 import {
+  backendArticles,
   backendAuth,
   backendCategories,
   backendSubscriptions,
@@ -10,12 +10,14 @@ import {
   isNetworkError,
   saveAccessToken,
 } from "@/api/backendClient";
+import { appParams } from "@/lib/app-params";
 import {
   businessPricingFramework as defaultBusinessPricing,
   subscriptionPlans as defaultSubscriptionPlans,
 } from "@/lib/demoData";
-import { getCategories, toAppCategory } from "@/lib/category-store";
+import { getCategories, syncCategoriesFromBackend } from "@/lib/category-store";
 import { notifyStoreChange } from "@/lib/store-bus";
+import { syncArticlesFromBackend, getAllArticles } from "@/lib/content-store";
 
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
@@ -194,10 +196,25 @@ const refreshCategoriesFromBackend = async () => {
   try {
     const categories = await backendCategories.list();
     if (Array.isArray(categories) && categories.length) {
-      writeJson(categoriesSyncKey, categories.map(toAppCategory));
+      syncCategoriesFromBackend(categories);
     }
   } catch {
     // Backend unreachable or failing: keep the local mock catalog untouched.
+  }
+};
+
+// Refreshes the locally cached article snapshot from the Flask backend's
+// public read API. This writes into the content-store sync key so the
+// placement-driven getters (getHeroArticle, getFeaturedStory, etc.) serve
+// live backend data. The seeded mock cache is kept untouched for offline fallback.
+const refreshArticlesFromBackend = async () => {
+  try {
+    const articles = await backendArticles.list();
+    if (Array.isArray(articles) && articles.length) {
+      syncArticlesFromBackend(articles);
+    }
+  } catch {
+    // Backend unreachable or failing: keep the local mock article cache untouched.
   }
 };
 
@@ -374,6 +391,7 @@ const buildLoginUrl = (fromUrl) => {
 ensureSeedData();
 refreshPlansFromBackend();
 refreshCategoriesFromBackend();
+refreshArticlesFromBackend();
 
 export const appClient = {
   businessPricing: {
@@ -481,6 +499,17 @@ export const appClient = {
       }
       return getCategories();
     },
+    refresh() {
+      return refreshCategoriesFromBackend();
+    },
+  },
+  articles: {
+    list() {
+      return getAllArticles();
+    },
+    refresh() {
+      return refreshArticlesFromBackend();
+    },
   },
   auth: {
     async me() {
@@ -522,6 +551,7 @@ export const appClient = {
         cacheBackendUser(user);
         await refreshPlansFromBackend();
         await refreshCategoriesFromBackend();
+        await refreshArticlesFromBackend();
         return user;
       } catch (error) {
         if (!isNetworkError(error)) {
@@ -563,6 +593,7 @@ export const appClient = {
         cacheBackendUser(user);
         await refreshPlansFromBackend();
         await refreshCategoriesFromBackend();
+        await refreshArticlesFromBackend();
         return user;
       } catch (error) {
         if (!isNetworkError(error)) {
