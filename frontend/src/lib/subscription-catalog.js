@@ -9,7 +9,11 @@ export const useSubscriptionPlans = () => {
 };
 
 export const getReaderPlans = (plans) =>
-  plans.filter((plan) => plan.id !== "business");
+  plans.filter(
+    (plan) =>
+      plan.id !== "business" &&
+      !String(plan.id || "").startsWith("business"),
+  );
 
 export const getSubscriptionPrice = (plan, billingCycle = "monthly") => {
   if (!plan || plan.price === "Custom") {

@@ -1,12 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import SectionHeader from "@/components/newspaper/SectionHeader";
-import { getCategories } from "@/lib/category-store";
-import { useStoreVersion } from "@/lib/store-bus";
+import { useSyncedCategories } from "@/lib/category-store";
 
 export default function CategoriesSection() {
-  useStoreVersion();
-  const categories = getCategories();
+  const categories = useSyncedCategories();
 
   return (
     <section className="max-w-7xl mx-auto px-4 py-10">

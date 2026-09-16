@@ -40,8 +40,10 @@ flask db migrate -m "describe the change"
 flask db upgrade
 ```
 
-> No tables exist yet. Add SQLAlchemy models in `models/` (e.g.
-> `models/user.py`) then register them, then run `flask db migrate`.
+> After `flask db upgrade`, seed demo data (auth credentials, subscription
+> plans, article templates, and the default categories) with `flask seed`.
+> Add SQLAlchemy models in `models/` (e.g. `models/user.py`), register them,
+> then run `flask db migrate`.
 
 ## Conventions
 

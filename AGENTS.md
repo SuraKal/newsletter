@@ -30,8 +30,10 @@ npx skills add base44/skills
 ## Key Files
 
 - `frontend/src/`: frontend application source.
-- `frontend/src/api/appClient.js`: frontend app client (localStorage mock in
-  `localStorage`; backend wiring is future work).
+- `frontend/src/api/appClient.js`: frontend app client. Auth and subscription-plans
+  reads hit the Flask backend (`frontend/src/api/backendClient.js`) with a
+  graceful `localStorage` fallback; account, company, admin, pricing, checkout,
+  and delivery surfaces are still mocked and wired block by block.
 - `frontend/vite.config.ts`: Vite config. It proxies `/api/*` to the Flask
   backend at `http://localhost:5050`.
 - `frontend/.env`: local-only frontend environment values; never commit secrets.

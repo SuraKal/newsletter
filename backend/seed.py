@@ -3,7 +3,16 @@ from datetime import datetime, timedelta
 import click
 from flask.cli import with_appcontext
 
-from models import ArticleTemplate, SubscriptionPlan, User, UserSubscription, db
+from models import (
+    ArticleTemplate,
+    Category,
+    SubscriptionPlan,
+    Subcategory,
+    User,
+    UserSubscription,
+    db,
+)
+from models.category import slugify
 
 SEEDED_PLANS = [
     {
@@ -174,6 +183,115 @@ SEEDED_TEMPLATES = [
     },
 ]
 
+SEEDED_CATEGORIES = [
+    {
+        "label": "News",
+        "image": "https://media.base44.com/images/public/6a49054c34809c470a6304a1/500bf7e07_generated_d7201537.png",
+        "template_key": "newspaper",
+        "subcategories": ["Local News", "International", "Community Updates"],
+    },
+    {
+        "label": "Community",
+        "image": "https://media.base44.com/images/public/6a49054c34809c470a6304a1/a7968ed35_generated_d6ba078b.png",
+        "template_key": "classic",
+        "subcategories": [
+            "Weddings & Love Stories",
+            "Birth Announcements",
+            "Graduations",
+            "Memorials",
+            "Success Stories",
+            "Community Announcements",
+            "Volunteer Opportunities",
+        ],
+    },
+    {
+        "label": "Business",
+        "image": "https://media.base44.com/images/public/6a49054c34809c470a6304a1/a3afdeb7e_generated_3e8f6d5f.png",
+        "template_key": "magazine",
+        "subcategories": [
+            "Business News",
+            "Featured Businesses",
+            "Entrepreneur Stories",
+            "Investment",
+            "Sponsored Businesses",
+        ],
+    },
+    {
+        "label": "Jobs & Marketplace",
+        "image": "https://media.base44.com/images/public/6a49054c34809c470a6304a1/81560dac8_generated_9e4048c1.png",
+        "template_key": "tabloid",
+        "subcategories": [
+            "Job Vacancies",
+            "Businesses Hiring",
+            "Buy & Sell",
+            "Cars",
+            "Houses & Apartments",
+            "Services",
+        ],
+    },
+    {
+        "label": "Events",
+        "image": "https://media.base44.com/images/public/6a49054c34809c470a6304a1/aa6b8b143_generated_4e407147.png",
+        "template_key": "feature",
+        "subcategories": [
+            "Community Events",
+            "Church Events",
+            "Festivals",
+            "Concerts",
+            "Sports Events",
+        ],
+    },
+    {
+        "label": "Culture & Lifestyle",
+        "image": "https://media.base44.com/images/public/6a49054c34809c470a6304a1/a7968ed35_generated_d6ba078b.png",
+        "template_key": "magazine",
+        "subcategories": [
+            "Culture",
+            "Food",
+            "Health",
+            "Travel",
+            "Fashion",
+            "Entertainment",
+        ],
+    },
+    {
+        "label": "Technology",
+        "image": "https://media.base44.com/images/public/6a49054c34809c470a6304a1/6dcf729e5_generated_89d63e00.png",
+        "template_key": "feature",
+        "subcategories": ["AI", "Apps", "Mobile", "Business Technology", "Digital Tips"],
+    },
+    {
+        "label": "Advice Corner",
+        "image": "https://media.base44.com/images/public/6a49054c34809c470a6304a1/021cf2160_generated_cd75a79f.png",
+        "template_key": "newsletter",
+        "subcategories": [
+            "Anonymous Stories",
+            "Relationships",
+            "Family",
+            "Career Advice",
+            "Immigration & Legal Tips",
+            "Education",
+        ],
+    },
+    {
+        "label": "Serial Novels",
+        "image": "https://media.base44.com/images/public/6a49054c34809c470a6304a1/021cf2160_generated_cd75a79f.png",
+        "template_key": "newsletter",
+        "subcategories": [
+            "Romance",
+            "Mystery",
+            "Historical Fiction",
+            "Children's Stories",
+        ],
+    },
+    {
+        "label": "Other",
+        "image": "https://media.base44.com/images/public/6a49054c34809c470a6304a1/7f78d84fd_generated_d694e2fd.png",
+        "template_key": "feature",
+        "subcategories": ["Announcements", "General Interest", "Archive Picks"],
+    },
+]
+
 
 def _upsert_templates():
     for template_data in SEEDED_TEMPLATES:
@@ -231,10 +349,39 @@ def _upsert_users():
             )
 
 
+def _upsert_categories():
+    for index, category_seed in enumerate(SEEDED_CATEGORIES):
+        category_data = dict(category_seed)
+        subcategories = category_data.pop("subcategories")
+        slug = slugify(category_data["label"])
+        category = Category.query.filter_by(slug=slug).first()
+        if category is None:
+            category = Category(slug=slug, sort_order=index + 1, **category_data)
+            db.session.add(category)
+        else:
+            for key, value in category_data.items():
+                setattr(category, key, value)
+            category.sort_order = index + 1
+        db.session.flush()
+
+        # Reset subcategories so the seed matches the spec exactly.
+        Subcategory.query.filter_by(category_id=category.id).delete()
+        for sub_index, label in enumerate(subcategories):
+            db.session.add(
+                Subcategory(
+                    category_id=category.id,
+                    label=label,
+                    slug=slugify(label),
+                    sort_order=sub_index + 1,
+                )
+            )
+
+
 def seed_data():
     _upsert_plans()
     _upsert_users()
     _upsert_templates()
+    _upsert_categories()
     db.session.commit()
 
 
@@ -256,4 +403,10 @@ def seed_command():
         print(
             f"  - {template_data['key']:<16} {template_data['label']:<12} "
             f"active={template_data['active']} sort={template_data['sort_order']}"
+        )
+    print("Seeded categories:")
+    for category_data in SEEDED_CATEGORIES:
+        print(
+            f"  - {category_data['label']:<22} template={category_data['template_key']:<9} "
+            f"subcategories={len(category_data['subcategories'])}"
         )

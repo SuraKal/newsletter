@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import {
@@ -15,7 +15,8 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import { getCategoryById } from "@/lib/category-store";
+import { getCategoryById, toAppCategory } from "@/lib/category-store";
+import { backendCategories, isNetworkError } from "@/api/backendClient";
 import { useStoreVersion } from "@/lib/store-bus";
 import { getAdminContentRows, getPlacementLabel } from "@/lib/content-store";
 
@@ -72,9 +73,33 @@ export default function AdminCategoryDetail() {
   useStoreVersion();
   const { categoryId } = useParams();
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState(() => getCategoryById(categoryId));
+  const [resolved, setResolved] = useState(false);
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
 
-  const category = getCategoryById(categoryId);
+  useEffect(() => {
+    let active = true;
+    setResolved(false);
+    setCategory(getCategoryById(categoryId));
+    backendCategories
+      .get(categoryId)
+      .then((found) => {
+        if (!active) return;
+        if (found) setCategory(toAppCategory(found));
+      })
+      .catch((error) => {
+        if (!active) return;
+        if (isNetworkError(error)) {
+          setCategory(getCategoryById(categoryId));
+        }
+      })
+      .finally(() => {
+        if (active) setResolved(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [categoryId]);
 
   const attachedArticles = getAdminContentRows().filter(
     (row) =>
@@ -162,6 +187,23 @@ export default function AdminCategoryDetail() {
   });
 
   if (!category) {
+    if (!resolved) {
+      return (
+        <div className="space-y-6">
+          <DashboardPageHeader
+            eyebrow="Admin categories"
+            title="Loading category…"
+            breadcrumbs={[
+              { label: "Admin workspace", to: "/admin/overview" },
+              { label: "Categories", to: "/admin/categories" },
+            ]}
+          />
+          <DashboardPanel title="Category detail">
+            <DashboardEmptyState title="Loading category details…" />
+          </DashboardPanel>
+        </div>
+      );
+    }
     return <CategoryNotFound />;
   }
 

@@ -6,5 +6,14 @@ db = SQLAlchemy()
 from .user import User
 from .subscription import SubscriptionPlan, UserSubscription
 from .template import ArticleTemplate
+from .category import Category, Subcategory
 
-__all__ = ["db", "User", "SubscriptionPlan", "UserSubscription", "ArticleTemplate"]
+__all__ = [
+    "db",
+    "User",
+    "SubscriptionPlan",
+    "UserSubscription",
+    "ArticleTemplate",
+    "Category",
+    "Subcategory",
+]

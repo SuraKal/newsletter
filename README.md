@@ -5,6 +5,51 @@ Monorepo for the Nekedem newsletter platform. It contains two applications:
 - `frontend/` - React + Vite Single Page Application
 - `backend/` - Flask API (MySQL, JWT auth, Alembic migrations)
 
+## Quick Start (backend + frontend)
+
+Run the two services in separate terminals from the repo root.
+
+### 1. Start the backend
+
+```bash
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS nekedem CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+cd backend
+pip install -r requirements.txt
+cp .env.example .env   # first time only; edit credentials if needed
+python app.py          # serves http://localhost:5050
+```
+
+After the server is up, apply migrations and seed once:
+
+```bash
+cd backend
+$env:FLASK_APP = "app.py"
+flask db upgrade
+flask seed
+python app.py  
+```
+
+### 2. Start the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev            # serves http://localhost:5173
+```
+
+Open the local URL printed by Vite. The Vite dev server proxies `/api/*` to the
+Flask backend at `http://localhost:5050` (see `frontend/vite.config.ts`), so the
+site reads categories, subscription plans, and auth from the backend.
+
+> If the backend is offline, the frontend automatically falls back to its
+> `localStorage` mock for auth, plans, and categories, so the app still works.
+> Start both together for the full wired experience.
+
+### Verify both are running
+
+- Backend health check: open `http://localhost:5050/api/v1/health` → `{"status":"ok"}`
+- Frontend: open the Vite URL and browse the site (e.g. `/categories`)
+
 ## Frontend
 
 The frontend is a standard Vite app with no Base44 dependency.
@@ -42,8 +87,11 @@ VITE_SUPPORT_EMAIL=support@ንቐደም.local
 VITE_CONTACT_PHONE=+251900000000
 ```
 
-> Note: the frontend currently runs auth and data through a `localStorage` mock
-> (`frontend/src/api/appClient.js`). Wiring it to the Flask backend is future work.
+> Note: the frontend runs auth and subscription-plan reads through the Flask
+> backend when it is reachable (`frontend/src/api/backendClient.js`), and falls
+> back to the `localStorage` mock when it is not. The rest of the app client
+> (`account.*`, `company.*`, `admin.*`, `businessPricing.*`, checkout, and
+> delivery state) is still mocked and is being unwired block by block.
 
 ### Available Scripts (run from `frontend/`)
 

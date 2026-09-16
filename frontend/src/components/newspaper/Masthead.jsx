@@ -24,7 +24,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getDefaultDashboardRoute } from "@/lib/dashboard-config";
 import HeritageOrnament from "@/components/newspaper/HeritageOrnament";
 import { getAllArticles } from "@/lib/content-store";
-import { getCategories } from "@/lib/category-store";
+import { appClient } from "@/api/appClient";
 import { useStoreVersion } from "@/lib/store-bus";
 
 const SEARCH_INDEX = getAllArticles();
@@ -63,7 +63,7 @@ const MOBILE_PRIMARY_LINKS = [
 
 export default function Masthead() {
   useStoreVersion();
-  const categories = getCategories();
+  const categories = appClient.categories.list();
   const { strings, toggleLanguage, t, formatDate } = useLanguage();
   const { user, isAuthenticated } = useAuth();
   const [compactHeader, setCompactHeader] = useState(false);

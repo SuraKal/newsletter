@@ -1,18 +1,21 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/lib/LanguageContext";
+import { appClient } from "@/api/appClient";
+import { useStoreVersion } from "@/lib/store-bus";
 
-const footerSections = [
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+const baseFooterSections = [
   {
     title: "News",
-    links: [
-      { label: "News", path: "/categories?cat=news" },
-      { label: "Community", path: "/categories?cat=community" },
-      { label: "Business", path: "/categories?cat=business" },
-      { label: "Technology", path: "/categories?cat=technology" },
-      { label: "Events", path: "/categories?cat=events" },
-      { label: "Culture & Lifestyle", path: "/categories?cat=culture-and-lifestyle" },
-    ],
+    links: [],
   },
   {
     title: "Subscriptions",
@@ -50,6 +53,19 @@ const footerSections = [
 
 export default function Footer() {
   const { t } = useLanguage();
+  useStoreVersion();
+  const categories = appClient.categories.list();
+  const footerSections = baseFooterSections.map((section) =>
+    section.title === "News"
+      ? {
+          ...section,
+          links: categories.map((cat) => ({
+            label: cat.label,
+            path: `/categories?cat=${slugify(cat.label)}`,
+          })),
+        }
+      : section,
+  );
 
   return (
     <footer className="bg-night text-cream/80">

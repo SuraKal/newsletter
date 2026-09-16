@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowDown, ArrowUp, ExternalLink, Pencil, Plus, RotateCcw, Tag, Trash2, Upload, X } from "lucide-react";
 import {
@@ -14,11 +14,11 @@ import {
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import { IMAGES } from "@/lib/constants";
+import { backendCategories, isNetworkError } from "@/api/backendClient";
 import {
   deleteCategory,
   getCategories,
   getCategoryArticleCounts,
-  getCategoryById,
   moveCategory,
   resetCategoryStore,
   saveCategory,
@@ -77,6 +77,23 @@ const emptyForm = {
 
 const MAX_COVER_DIMENSION = 640;
 
+function toAdminCategory(cat) {
+  return {
+    id: cat.id,
+    label: cat.label,
+    image: cat.image,
+    subcategories: Array.isArray(cat.subcategories)
+      ? cat.subcategories.map((sub) =>
+          typeof sub === "string"
+            ? { id: null, label: sub }
+            : { id: sub.id || null, label: sub.label },
+        )
+      : [],
+    template: cat.templateKey || cat.template || DEFAULT_ARTICLE_TEMPLATE,
+    sortOrder: cat.sortOrder ?? null,
+  };
+}
+
 export default function AdminCategories() {
   useStoreVersion();
   const [query, setQuery] = useState("");
@@ -87,8 +104,25 @@ export default function AdminCategories() {
   const [pendingDelete, setPendingDelete] = useState(null);
   const [draftSubcategory, setDraftSubcategory] = useState("");
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
+  const [categories, setCategories] = useState([]);
 
-  const categories = getCategories();
+  const loadCategories = () => {
+    backendCategories
+      .list()
+      .then((list) => {
+        setCategories(
+          Array.isArray(list) && list.length ? list.map(toAdminCategory) : [],
+        );
+      })
+      .catch(() => {
+        setCategories(getCategories().map(toAdminCategory));
+      });
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
   const articleCounts = getCategoryArticleCounts();
   const contentRows = getAdminContentRows();
   const categoryClicksMap = {};
@@ -101,7 +135,7 @@ export default function AdminCategories() {
     id: cat.id,
     label: cat.label,
     image: cat.image,
-    subcategories: cat.subcategories,
+    subcategories: cat.subcategories.map((sub) => sub.label),
     template: cat.template,
     articleCount: articleCounts[cat.label] || 0,
     totalClicks: categoryClicksMap[cat.label] || 0,
@@ -131,8 +165,23 @@ export default function AdminCategories() {
 
   const usedCategories = rows.filter((cat) => cat.articleCount > 0).length;
 
-  const handleMove = (id, direction) => {
-    moveCategory(id, direction);
+  const handleMove = async (id, direction) => {
+    const index = categories.findIndex((cat) => cat.id === id);
+    if (index < 0) return;
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= categories.length) return;
+    const currentOrder = categories[index].sortOrder ?? index;
+    const targetOrder = categories[target].sortOrder ?? target;
+    try {
+      await backendCategories.adminReorder(id, targetOrder);
+      await backendCategories.adminReorder(categories[target].id, currentOrder);
+      loadCategories();
+    } catch (err) {
+      if (isNetworkError(err)) {
+        moveCategory(id, direction);
+        loadCategories();
+      }
+    }
   };
 
   const handleImageUpload = (event) => {
@@ -192,11 +241,18 @@ export default function AdminCategories() {
   const addSubcategory = () => {
     const value = draftSubcategory.trim();
     if (!value) return;
-    if (form.subcategories.some((sub) => sub.toLowerCase() === value.toLowerCase())) {
+    if (
+      form.subcategories.some(
+        (sub) => sub.label.toLowerCase() === value.toLowerCase(),
+      )
+    ) {
       setDraftSubcategory("");
       return;
     }
-    setForm((prev) => ({ ...prev, subcategories: [...prev.subcategories, value] }));
+    setForm((prev) => ({
+      ...prev,
+      subcategories: [...prev.subcategories, { id: null, label: value }],
+    }));
     setDraftSubcategory("");
   };
 
@@ -207,29 +263,71 @@ export default function AdminCategories() {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const label = form.label.trim();
     if (!label) {
       setFormError("Enter a category label before saving.");
       return;
     }
-    const existing = getCategoryById(editingId);
-    saveCategory({
-      id: editingId || undefined,
+    const existing = categories.find((cat) => cat.id === editingId);
+    const subcategories = form.subcategories
+      .map((sub) => ({ ...sub, label: sub.label.trim() }))
+      .filter((sub) => sub.label);
+    const deduped = [
+      ...new Map(subcategories.map((sub) => [sub.label.toLowerCase(), sub])).values(),
+    ];
+    const payload = {
       label,
       image: form.image.trim() || existing?.image || IMAGES.hero,
-      subcategories: [...new Set(form.subcategories.map((sub) => sub.trim()).filter(Boolean))],
-      template: form.template || DEFAULT_ARTICLE_TEMPLATE,
-    });
-    setNotice(editingId ? `Updated "${label}".` : `Added "${label}".`);
-    cancelEdit();
+      templateKey: form.template || DEFAULT_ARTICLE_TEMPLATE,
+      subcategories: deduped.map((sub) => ({
+        id: sub.id || undefined,
+        label: sub.label,
+      })),
+    };
+    const noticeText = editingId ? `Updated "${label}".` : `Added "${label}".`;
+    try {
+      if (editingId) {
+        await backendCategories.adminUpdate(editingId, payload);
+      } else {
+        await backendCategories.adminCreate(payload);
+      }
+      setNotice(noticeText);
+      cancelEdit();
+      loadCategories();
+    } catch (err) {
+      if (isNetworkError(err)) {
+        saveCategory({
+          id: editingId || undefined,
+          label,
+          image: payload.image,
+          subcategories: deduped.map((sub) => sub.label),
+          template: payload.templateKey,
+        });
+        setNotice(noticeText);
+        cancelEdit();
+        loadCategories();
+      } else {
+        setFormError(err.message || "Failed to save the category.");
+      }
+    }
   };
 
-  const handleDelete = (cat) => {
+  const handleDelete = async (cat) => {
     if (pendingDelete === cat.id) {
-      deleteCategory(cat.id);
-      setNotice(`Deleted "${cat.label}".`);
-      setPendingDelete(null);
+      try {
+        await backendCategories.adminDelete(cat.id);
+        setNotice(`Deleted "${cat.label}".`);
+        setPendingDelete(null);
+        loadCategories();
+      } catch (err) {
+        if (isNetworkError(err)) {
+          deleteCategory(cat.id);
+          setNotice(`Deleted "${cat.label}".`);
+          setPendingDelete(null);
+          loadCategories();
+        }
+      }
       return;
     }
     setPendingDelete(cat.id);
@@ -240,6 +338,7 @@ export default function AdminCategories() {
     resetCategoryStore();
     setNotice("Categories restored to the default list.");
     cancelEdit();
+    loadCategories();
   };
 
   const columns = [
@@ -596,14 +695,14 @@ export default function AdminCategories() {
             <div className="mt-3 flex flex-wrap gap-2">
               {form.subcategories.map((sub, index) => (
                 <span
-                  key={`${sub}-${index}`}
+                  key={`${sub.id || sub.label}-${index}`}
                   className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 font-sans text-xs font-medium text-stone-700 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200"
                 >
-                  {sub}
+                  {sub.label}
                   <button
                     type="button"
                     onClick={() => removeSubcategory(index)}
-                    aria-label={`Remove ${sub}`}
+                    aria-label={`Remove ${sub.label}`}
                     className="inline-flex h-4 w-4 items-center justify-center rounded-full text-stone-400 transition-colors hover:bg-stone-200 hover:text-stone-700 dark:hover:bg-stone-700 dark:hover:text-stone-100"
                   >
                     <X className="h-3 w-3" />
@@ -725,7 +824,7 @@ export default function AdminCategories() {
 
       <div className="flex items-center gap-2 font-sans text-xs text-stone-500">
         <DashboardNavBadge count={categories.length} />
-        <span>Categories are stored locally and sync across the public site automatically.</span>
+        <span>Categories are stored in the backend and sync across the public site. If the backend is offline, a local copy is used.</span>
       </div>
 
       <DashboardRelatedLinks title="Quick links" items={relatedLinks} />

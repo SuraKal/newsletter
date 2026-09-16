@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { backendCategories } from "@/api/backendClient";
 import { appParams } from "@/lib/app-params";
 import { IMAGES, CATEGORIES } from "@/lib/constants";
 import {
@@ -5,7 +7,7 @@ import {
   isValidArticleTemplate,
 } from "@/lib/article-templates";
 import { getAdminContentRows } from "@/lib/content-store";
-import { notifyStoreChange } from "@/lib/store-bus";
+import { notifyStoreChange, useStoreVersion } from "@/lib/store-bus";
 
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
@@ -217,4 +219,51 @@ export function getCategoryArticleCounts() {
 export function resetCategoryStore() {
   if (storage) storage.removeItem(categoriesKey);
   notifyStoreChange();
+}
+
+// Maps a backend category (from `backendCategories.list()`) into the shape the
+// local store consumers expect: string subcategory labels and a `template`
+// key instead of `templateKey`.
+export function toAppCategory(category) {
+  return {
+    id: category.id,
+    label: category.label,
+    image: category.image,
+    subcategories: Array.isArray(category.subcategories)
+      ? category.subcategories
+          .map((sub) => (typeof sub === "string" ? sub : sub?.label))
+          .filter(Boolean)
+      : [],
+    template:
+      category.templateKey || DEFAULT_ARTICLE_TEMPLATE,
+  };
+}
+
+// Public category data source. Tries the Flask backend first; when it is
+// unreachable (or fails), keeps the localStorage mock as the fallback so the
+// site still renders. Re-fetches whenever the store version changes so admin
+// edits in the mock are picked up live.
+export function useSyncedCategories() {
+  const storeVersion = useStoreVersion();
+  const [categories, setCategories] = useState(() => getCategories());
+
+  useEffect(() => {
+    let active = true;
+    backendCategories
+      .list()
+      .then((list) => {
+        if (!active) return;
+        if (Array.isArray(list) && list.length) {
+          setCategories(list.map(toAppCategory));
+        }
+      })
+      .catch(() => {
+        if (active) setCategories(getCategories());
+      });
+    return () => {
+      active = false;
+    };
+  }, [storeVersion]);
+
+  return categories;
 }

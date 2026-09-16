@@ -1,8 +1,20 @@
 import { appParams } from "@/lib/app-params";
 import {
+  backendAuth,
+  backendCategories,
+  backendSubscriptions,
+  cacheBackendUser,
+  clearAccessToken,
+  getAccessToken,
+  getCachedBackendUser,
+  isNetworkError,
+  saveAccessToken,
+} from "@/api/backendClient";
+import {
   businessPricingFramework as defaultBusinessPricing,
   subscriptionPlans as defaultSubscriptionPlans,
 } from "@/lib/demoData";
+import { getCategories, toAppCategory } from "@/lib/category-store";
 import { notifyStoreChange } from "@/lib/store-bus";
 
 const isBrowser = typeof window !== "undefined";
@@ -13,6 +25,7 @@ const resetTokensKey = `${appParams.storagePrefix}_reset_tokens`;
 const governanceRequestsKey = `${appParams.storagePrefix}_governance_requests`;
 const subscriptionPlansKey = `${appParams.storagePrefix}_subscription_plans`;
 const businessPricingKey = `${appParams.storagePrefix}_business_pricing`;
+const categoriesSyncKey = `${appParams.storagePrefix}_categories_sync`;
 
 const defaultUsers = [
   {
@@ -155,6 +168,36 @@ const writeSubscriptionPlans = (plans) => {
   writeJson(subscriptionPlansKey, plans);
   if (isBrowser) {
     window.dispatchEvent(new CustomEvent("nekedem:subscription-plans-updated"));
+  }
+};
+
+// Refreshes the locally cached subscription plans from the Flask backend.
+// This is the "wired" read path: when the backend is reachable its plan rows
+// become the source of truth for every surface that consumes the plan catalog,
+// and it still falls back to the seeded mock cache when the backend is down.
+const refreshPlansFromBackend = async () => {
+  try {
+    const plans = await backendSubscriptions.list();
+    if (Array.isArray(plans) && plans.length) {
+      writeSubscriptionPlans(plans);
+    }
+  } catch {
+    // Backend unreachable or failing: keep the local mock cache untouched.
+  }
+};
+
+// Refreshes the locally cached category catalog from the Flask backend.
+// Same wired pattern as the plan catalog: the backend rows become the source
+// of truth when it is reachable, while `appClient.categories.list()` keeps
+// falling back to the `category-store.js` seed/mock otherwise.
+const refreshCategoriesFromBackend = async () => {
+  try {
+    const categories = await backendCategories.list();
+    if (Array.isArray(categories) && categories.length) {
+      writeJson(categoriesSyncKey, categories.map(toAppCategory));
+    }
+  } catch {
+    // Backend unreachable or failing: keep the local mock catalog untouched.
   }
 };
 
@@ -329,6 +372,8 @@ const buildLoginUrl = (fromUrl) => {
 };
 
 ensureSeedData();
+refreshPlansFromBackend();
+refreshCategoriesFromBackend();
 
 export const appClient = {
   businessPricing: {
@@ -428,8 +473,35 @@ export const appClient = {
       return defaultSubscriptionPlans;
     },
   },
+  categories: {
+    list() {
+      const synced = readJson(categoriesSyncKey, null);
+      if (Array.isArray(synced) && synced.length) {
+        return synced;
+      }
+      return getCategories();
+    },
+  },
   auth: {
     async me() {
+      const token = getAccessToken();
+
+      if (token) {
+        try {
+          const user = await backendAuth.me();
+          cacheBackendUser(user);
+          return user;
+        } catch (error) {
+          if (isNetworkError(error)) {
+            const cachedUser = getCachedBackendUser();
+            if (cachedUser) {
+              return cachedUser;
+            }
+          }
+          throw error;
+        }
+      }
+
       const user = getCurrentSessionUser("reader");
 
       if (!user) {
@@ -441,6 +513,22 @@ export const appClient = {
 
     async login({ email, password, rememberMe }) {
       void rememberMe;
+      try {
+        const { accessToken, user } = await backendAuth.login({
+          email,
+          password,
+        });
+        saveAccessToken(accessToken);
+        cacheBackendUser(user);
+        await refreshPlansFromBackend();
+        await refreshCategoriesFromBackend();
+        return user;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
       const user = getUserByEmail(email);
 
       if (!user || user.password !== password) {
@@ -461,6 +549,27 @@ export const appClient = {
       contactPhone = "",
       deliveryAddress = "",
     }) {
+      try {
+        const { accessToken, user } = await backendAuth.register({
+          name,
+          email,
+          password,
+          role,
+          accountType:
+            accountType || (role === "business" ? "business" : "individual"),
+          companyName,
+        });
+        saveAccessToken(accessToken);
+        cacheBackendUser(user);
+        await refreshPlansFromBackend();
+        await refreshCategoriesFromBackend();
+        return user;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
       const normalizedEmail = normalizeEmail(email);
       const users = readUsers();
       const resolvedAccountType =
@@ -548,6 +657,7 @@ export const appClient = {
     },
 
     logout(redirectTo) {
+      clearAccessToken();
       clearSession();
 
       if (redirectTo && isBrowser) {

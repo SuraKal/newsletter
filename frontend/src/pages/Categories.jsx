@@ -4,8 +4,7 @@ import Footer from "@/components/newspaper/Footer";
 import SectionHeader from "@/components/newspaper/SectionHeader";
 import NewsCard from "@/components/newspaper/NewsCard";
 import { getCategoryArticles, getLatestNews } from "@/lib/content-store";
-import { getCategories } from "@/lib/category-store";
-import { useStoreVersion } from "@/lib/store-bus";
+import { useSyncedCategories } from "@/lib/category-store";
 
 function slugify(value) {
   return value
@@ -16,8 +15,7 @@ function slugify(value) {
 }
 
 export default function CategoriesPage() {
-  useStoreVersion();
-  const categories = getCategories();
+  const categories = useSyncedCategories();
   const categoryLabels = categories.map((cat) => cat.label);
   const params = new URLSearchParams(window.location.search);
   const selectedCat = params.get("cat");
