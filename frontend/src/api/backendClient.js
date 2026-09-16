@@ -1,4 +1,9 @@
 import { appParams } from "@/lib/app-params";
+import { COMPANY_WORKFLOW_STATES } from "@/lib/company-store";
+
+// Re-exported so consumers can validate workflow states without importing the
+// mock store directly.
+export { COMPANY_WORKFLOW_STATES };
 
 // Backend API client for the wired frontend blocks.
 // Reaches the Flask API through the Vite `/api` proxy (see `frontend/vite.config.ts`).
@@ -269,5 +274,113 @@ export const backendArticles = {
       method: "POST",
     });
     return toAppArticle(payload.article);
+  },
+};
+
+// Maps a backend company account into the mock entity shape consumers expect.
+// The backend serializes the same camelCase fields, so this is mostly a shape
+// guarantee plus workflow-state validation (unknown states fall back to "Draft").
+export const toAppCompany = (company) => {
+  const status = COMPANY_WORKFLOW_STATES.includes(company.status)
+    ? company.status
+    : "Draft";
+  const quote =
+    company.quote && company.quote !== "" && Object.keys(company.quote || {}).length
+      ? company.quote
+      : null;
+  return {
+    id: company.id,
+    company: company.company || "Unnamed organization",
+    tier: company.tier ?? null,
+    volume: company.volume || "",
+    billing: company.billing || "",
+    status,
+    region: company.region || "",
+    ownerEmail: company.ownerEmail ?? null,
+    ownerUserId: company.ownerUserId ?? null,
+    workEmail: company.workEmail || "",
+    lead: company.lead && typeof company.lead === "object" ? company.lead : {},
+    quote,
+    reviewedAt: company.reviewedAt ?? null,
+    accountActivatedAt: company.accountActivatedAt ?? null,
+    createdAt: company.createdAt ?? null,
+  };
+};
+
+export const backendCompanies = {
+  async submitApplication(data) {
+    const payload = await request("/business/applications", {
+      method: "POST",
+      body: data,
+    });
+    return toAppCompany(payload.companyAccount);
+  },
+
+  async saveDraftApplication(data) {
+    const payload = await request("/business/applications/draft", {
+      method: "POST",
+      body: data,
+    });
+    return toAppCompany(payload.companyAccount);
+  },
+
+  async getBusinessCompany() {
+    const payload = await request("/business/company");
+    return payload.companyAccount ? toAppCompany(payload.companyAccount) : null;
+  },
+
+  async getMyApplication(id) {
+    const payload = await request(`/business/applications/${encodeURIComponent(id)}`);
+    return payload.companyAccount ? toAppCompany(payload.companyAccount) : null;
+  },
+
+  async adminListCompanies() {
+    const payload = await request("/admin/companies");
+    return (payload.companyAccounts || []).map(toAppCompany);
+  },
+
+  async adminGetCompany(id) {
+    const payload = await request(`/admin/companies/${encodeURIComponent(id)}`);
+    return toAppCompany(payload.companyAccount);
+  },
+
+  async adminReview(id) {
+    return toAppCompany(
+      (await request(`/admin/companies/${encodeURIComponent(id)}/review`, {
+        method: "POST",
+      })).companyAccount,
+    );
+  },
+
+  async adminPrepareQuote(id) {
+    return toAppCompany(
+      (await request(`/admin/companies/${encodeURIComponent(id)}/quote`, {
+        method: "POST",
+      })).companyAccount,
+    );
+  },
+
+  async adminApprove(id) {
+    return toAppCompany(
+      (await request(`/admin/companies/${encodeURIComponent(id)}/approve`, {
+        method: "POST",
+      })).companyAccount,
+    );
+  },
+
+  async adminConvert(id) {
+    return toAppCompany(
+      (await request(`/admin/companies/${encodeURIComponent(id)}/convert`, {
+        method: "POST",
+      })).companyAccount,
+    );
+  },
+
+  async adminDecline(id) {
+    return toAppCompany(
+      (await request(`/admin/companies/${encodeURIComponent(id)}/decline`, {
+        method: "POST",
+      })).companyAccount,
+    );
   },
 };

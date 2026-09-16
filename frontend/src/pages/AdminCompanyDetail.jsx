@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Check, X } from "lucide-react";
+import { appClient } from "@/api/appClient";
+import { backendCompanies, isNetworkError } from "@/api/backendClient";
 import {
   DashboardEmptyState,
   DashboardFactList,
@@ -34,8 +36,22 @@ const relatedLinks = [
 export default function AdminCompanyDetail() {
   useStoreVersion();
   const { companyId } = useParams();
-  const [, setRevision] = useState(0);
-  const entity = getCompanyEntityById(companyId);
+  const [entity, setEntity] = useState(null);
+
+  const loadEntity = () => {
+    return backendCompanies
+      .adminGetCompany(companyId)
+      .then((record) => setEntity(record))
+      .catch((error) => {
+        if (isNetworkError(error)) {
+          setEntity(getCompanyEntityById(companyId) || null);
+        }
+      });
+  };
+
+  useEffect(() => {
+    loadEntity();
+  }, [companyId]);
 
   if (!entity) {
     return (
@@ -109,20 +125,40 @@ export default function AdminCompanyDetail() {
       ]
     : [];
 
+  // Backend-first transitions with the mock store as the offline fallback.
+  const transitionActions = {
+    review: { backend: backendCompanies.adminReview, fallback: startCompanyReview },
+    quote: { backend: backendCompanies.adminPrepareQuote, fallback: prepareCompanyQuote },
+    approve: { backend: backendCompanies.adminApprove, fallback: approveCompanyLead },
+    convert: { backend: backendCompanies.adminConvert, fallback: convertCompanyLead },
+    decline: { backend: backendCompanies.adminDecline, fallback: declineCompanyLead },
+  };
+
+  const handleTransition = async (action) => {
+    const { backend, fallback } = transitionActions[action];
+    try {
+      await backend(companyId);
+      await Promise.all([loadEntity(), appClient.company.refresh()]);
+    } catch (error) {
+      if (isNetworkError(error)) {
+        fallback(companyId);
+        loadEntity();
+      }
+    }
+  };
+
   const handleApprove = () => {
-    const transition = {
-      Submitted: startCompanyReview,
-      "Under review": prepareCompanyQuote,
-      "Quote ready": approveCompanyLead,
-      Approved: convertCompanyLead,
+    const action = {
+      Submitted: "review",
+      "Under review": "quote",
+      "Quote ready": "approve",
+      Approved: "convert",
     }[workflowState];
-    transition?.(companyId);
-    setRevision((value) => value + 1);
+    if (action) handleTransition(action);
   };
 
   const handleDecline = () => {
-    if (canDecline) declineCompanyLead(companyId);
-    setRevision((value) => value + 1);
+    if (canDecline) handleTransition("decline");
   };
 
   return (
@@ -236,7 +272,7 @@ export default function AdminCompanyDetail() {
       {entity.quote ? (
         <DashboardPanel
           title="Prepared quote"
-          description="The mocked quote supporting the approval decision."
+          description="The prepared quote supporting the approval decision."
           className="p-5 sm:p-6"
         >
           <DashboardFactList

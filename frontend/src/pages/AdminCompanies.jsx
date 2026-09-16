@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, CreditCard, Truck, X } from "lucide-react";
+import { appClient } from "@/api/appClient";
+import { backendCompanies, isNetworkError } from "@/api/backendClient";
 import {
   DashboardDataTable,
   DashboardEmptyState,
@@ -92,11 +94,37 @@ const companyFilterGroups = [
 
 export default function AdminCompanies() {
   useStoreVersion();
-  const [, setRevision] = useState(0);
   const [query, setQuery] = useState("");
+  const [companies, setCompanies] = useState([]);
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
-  const leads = getCompanyLeads();
-  const accounts = getCompanyAccounts();
+
+  const loadCompanies = () => {
+    return backendCompanies
+      .adminListCompanies()
+      .then((list) => setCompanies(Array.isArray(list) ? list : []))
+      .catch((error) => {
+        if (isNetworkError(error)) {
+          setCompanies([...getCompanyLeads(), ...getCompanyAccounts()]);
+        }
+      });
+  };
+
+  useEffect(() => {
+    loadCompanies();
+  }, []);
+
+  // The mock-classification rule: only rows whose workflow state is
+  // "Converted to account" are accounts; everything else (Draft → Approved,
+  // Declined) is a workflow lead. `getCompanyWorkflowState` normalizes legacy
+  // mock statuses (Active/Onboarding/Invoice review) and passes canonical
+  // backend statuses through unchanged.
+  const leads = companies.filter(
+    (entity) => getCompanyWorkflowState(entity) !== "Converted to account",
+  );
+  const accounts = companies.filter(
+    (entity) => getCompanyWorkflowState(entity) === "Converted to account",
+  );
+
   const leadsTable = useTableQuery({
     rows: leads,
     query,
@@ -112,9 +140,26 @@ export default function AdminCompanies() {
     filterGroups: companyFilterGroups,
   });
 
-  const handleTransition = (id, transition) => {
-    transition(id);
-    setRevision((value) => value + 1);
+  // Backend-first transitions with the mock store as the offline fallback.
+  const transitionActions = {
+    review: { backend: backendCompanies.adminReview, fallback: startCompanyReview },
+    quote: { backend: backendCompanies.adminPrepareQuote, fallback: prepareCompanyQuote },
+    approve: { backend: backendCompanies.adminApprove, fallback: approveCompanyLead },
+    convert: { backend: backendCompanies.adminConvert, fallback: convertCompanyLead },
+    decline: { backend: backendCompanies.adminDecline, fallback: declineCompanyLead },
+  };
+
+  const handleTransition = async (id, action) => {
+    const { backend, fallback } = transitionActions[action];
+    try {
+      await backend(id);
+      await Promise.all([loadCompanies(), appClient.company.refresh()]);
+    } catch (error) {
+      if (isNetworkError(error)) {
+        fallback(id);
+        loadCompanies();
+      }
+    }
   };
 
   const leadColumns = [
@@ -197,27 +242,27 @@ export default function AdminCompanies() {
       render: (value, lead) => (
         <div className="flex items-center gap-2">
           {getCompanyWorkflowState(lead) === "Submitted" ? (
-            <button type="button" onClick={() => handleTransition(lead.id, startCompanyReview)} className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-stone-700">
+            <button type="button" onClick={() => handleTransition(lead.id, "review")} className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-stone-700">
               <Check className="h-3.5 w-3.5" /> Start review
             </button>
           ) : null}
           {getCompanyWorkflowState(lead) === "Under review" ? (
-            <button type="button" onClick={() => handleTransition(lead.id, prepareCompanyQuote)} className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-stone-700">
+            <button type="button" onClick={() => handleTransition(lead.id, "quote")} className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-stone-700">
               <Check className="h-3.5 w-3.5" /> Prepare quote
             </button>
           ) : null}
           {getCompanyWorkflowState(lead) === "Quote ready" ? (
-            <button type="button" onClick={() => handleTransition(lead.id, approveCompanyLead)} className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-emerald-700">
+            <button type="button" onClick={() => handleTransition(lead.id, "approve")} className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-emerald-700">
               <Check className="h-3.5 w-3.5" /> Approve quote
             </button>
           ) : null}
           {getCompanyWorkflowState(lead) === "Approved" ? (
-            <button type="button" onClick={() => handleTransition(lead.id, convertCompanyLead)} className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-emerald-700">
+            <button type="button" onClick={() => handleTransition(lead.id, "convert")} className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-emerald-700">
               <Check className="h-3.5 w-3.5" /> Convert account
             </button>
           ) : null}
           {["Submitted", "Under review", "Quote ready"].includes(getCompanyWorkflowState(lead)) ? (
-            <button type="button" onClick={() => handleTransition(lead.id, declineCompanyLead)} className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700">
+            <button type="button" onClick={() => handleTransition(lead.id, "decline")} className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-1.5 font-sans text-[0.66rem] font-bold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700">
               <X className="h-3.5 w-3.5" /> Decline
             </button>
           ) : null}

@@ -1,9 +1,6 @@
 import { getAdminContentRows, getAdminScheduleRows } from "@/lib/content-store";
-import {
-  getBusinessCompanySnapshot,
-  getCompanyLeads,
-} from "@/lib/company-store";
-import { getGovernanceActionCount } from "@/api/appClient";
+import { getCompanyWorkflowState } from "@/lib/company-store";
+import { appClient, getGovernanceActionCount } from "@/api/appClient";
 import { dashboardWorkspaces } from "@/lib/dashboard-config";
 import { getSubscriberRows } from "@/lib/subscriber-store";
 import {
@@ -39,7 +36,7 @@ const adminBadges = () => {
     subscribers: countWhere(getSubscriberRows(), (row) =>
       row.status !== "Active",
     ),
-    companies: getCompanyLeads().length,
+    companies: appClient.company.list().length,
     governance: getGovernanceActionCount(),
     shipments: countWhere(getAdminShipmentRows(), (row) =>
       ["Delay flagged", "Delayed", "Escalated", "Delay watch"].includes(
@@ -56,7 +53,7 @@ const adminBadges = () => {
 };
 
 const businessBadges = () => {
-  const entity = getBusinessCompanySnapshot();
+  const entity = appClient.company.snapshot();
   const counts = {
     overview: 0,
     team: countWhere(getBusinessTeamRows(), (row) => row.status === "Pending"),
@@ -73,7 +70,10 @@ const businessBadges = () => {
     shipments: countWhere(getBusinessShipmentRows(), (row) =>
       row.status !== "Delivered",
     ),
-    settings: !entity || entity.status !== "Active" ? 1 : 0,
+    settings:
+      !entity || getCompanyWorkflowState(entity) !== "Converted to account"
+        ? 1
+        : 0,
   };
   counts.overview = totalFor(counts);
   return counts;

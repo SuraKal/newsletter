@@ -189,3 +189,118 @@ Make the public site read published articles from the backend instead of `conten
 ---
 
 Once TASK-113 is done, the mock article store remains only as the offline fallback (same role `category-store.js` and `getCategories()` play after the Category phase).
+
+---
+
+# Company & Business Account Management Phase
+
+Backend-driven business accounts replacing the `company-store.js` localStorage mock. The business-apply submission flow, the admin lead/account workflow, and the business-dashboard company snapshot all wire to Flask. Mirrors the Category/Article phase structure (model → API → client helpers → admin wiring → business wiring → sync), and touches the non-admin surfaces (`BusinessApply`, `BusinessApplySuccess`, `BusinessOverviewPage`, notification badges) because they consume the same underlying company records.
+
+---
+
+## TASK-114 — Backend CompanyAccount model + migration
+
+Create `CompanyAccount` in `backend/models/company.py` adopting the entity shape already used by `company-store.js` records so the admin pages and apply form round-trip cleanly:
+- `id` (UUID), `company` (required), `tier` (nullable), `volume` (nullable), `billing` (nullable), `region` (nullable)
+- `status` — one of `COMPANY_WORKFLOW_STATES` (`Draft` / `Submitted` / `Under review` / `Quote ready` / `Approved` / `Declined` / `Converted to account`), exported as a module constant mirroring the mock's canonical list
+- `owner_user_id` (FK → `users.id`, nullable, index), `owner_email` (nullable), `work_email` (nullable)
+- `lead` (JSON) — raw BusinessApply form payload
+- `quote` (JSON) — populated when the workflow reaches "Quote ready"
+- `reviewed_at` (nullable), `account_activated_at` (nullable), `created_at`, `updated_at`
+- `to_dict()` → camelCase (`ownerUserId`, `workEmail`, `accountActivatedAt`, …) matching the mock record shape
+- `TONE_FOR_STATUS` mapping (same as `workflowTone` in the mock) so badges render without client-side inference
+
+Register in `backend/models/__init__.py`, generate Alembic migration. Seed with the 4 active `adminCompanyRows` accounts from `demoData.js` (`status: "Converted to account"`/"Invoice review"/"Onboarding" normalized to the canonical list) plus one "Submitted" lead mirroring `business-account-1`.
+
+**Verify:** `flask db migrate && flask db upgrade` succeeds; seed runs without error.
+
+---
+
+## TASK-115 — Backend business + admin company API routes
+
+Add `backend/routes/companies.py` blueprint (url_prefix `/api/v1`), register in `backend/app.py`, mirror `_parse_data`/`_find_*` helpers used by `articles.py`:
+- `POST /business/applications/draft` — any logged-in user, saves an application with `status: "Draft"`, sets `owner_user_id` from the JWT
+- `POST /business/applications` — any logged-in user, submits (`status: "Submitted"`), `headline`-style validation on `organizationName`
+- `GET /business/company` — authenticated, returns the caller's snapshot matched by `owner_user_id` (falls back to `owner_email`/`work_email` match), `{ entity | null }`
+- `GET /business/applications/<id>` — authenticated, the entity only if the caller owns it (404 for anyone else)
+- `GET /admin/companies` — admin JWT, all entities ordered newest-first (leads + accounts)
+- `GET /admin/companies/<id>` — admin JWT, single entity
+- `POST /admin/companies/<id>/review` / `quote` / `approve` / `convert` / `decline` — admin JWT, guarded transitions enforcing the mock's state machine (e.g. `quote` only from "Under review" or "Quote ready"; `decline` only from Submittable/Under review/Quote ready; `convert` only from "Approved"; sets `quote` on `quote`, `reviewedAt` on first transition, `ownerEmail` + `accountActivatedAt` on `convert`)
+
+All requests return `{ companyAccount: {...} }`; admin routes use `@jwt_required()` + `@role_required("admin")`.
+
+**Verify:** curl each endpoint; admin routes 401 without token; a business user cannot read another company's application (404).
+
+---
+
+## TASK-116 — Frontend `backendClient.js` company helpers
+
+Add `backendCompanies` to `frontend/src/api/backendClient.js`, mirroring the `backendArticles` pattern:
+- `submitApplication(data)` → `POST /business/applications`
+- `saveDraftApplication(data)` → `POST /business/applications/draft`
+- `getBusinessCompany()` → `GET /business/company`
+- `getMyApplication(id)` → `GET /business/applications/<id>`
+- `adminListCompanies()` → `GET /admin/companies`
+- `adminGetCompany(id)` → `GET /admin/companies/<id>`
+- `adminReview(id)` / `adminPrepareQuote(id)` / `adminApprove(id)` / `adminConvert(id)` / `adminDecline(id)` → the transition endpoints
+
+Map responses to the mock entity shape (`{ id, company, tier, volume, billing, status, region, ownerEmail, ownerUserId, workEmail, lead, quote, reviewedAt, accountActivatedAt, createdAt }`) and re-export/validate workflow states through the existing `COMPANY_WORKFLOW_STATES`. Reuse the same `isNetworkError` fallback semantics.
+
+**Verify:** `npm run lint && npm run typecheck` pass.
+
+---
+
+## TASK-117 — Wire `AdminCompanies` to backend
+
+Update `frontend/src/pages/AdminCompanies.jsx`:
+- On mount, fetch `backendCompanies.adminListCompanies()`; on network error fall back to `getCompanyLeads()`/`getCompanyAccounts()`
+- Classify each backend row into the leads vs accounts tables using the same rule as the mock (`status === "Converted to account"` → account table, else leads table) — the raw `status` badge comes straight from the row
+- Replace the `startCompanyReview` / `prepareCompanyQuote` / `approveCompanyLead` / `convertCompanyLead` / `declineCompanyLead` button actions with the matching `backendCompanies.admin*` calls, falling back to the `company-store.js` transition on network error
+- Refetch the admin list after each successful transition so the tables stay in sync with the backend
+
+**Verify:** With backend running, submitting through the apply flow then moving a lead through review → quote → approve → convert persists across reloads; with backend stopped, the localStorage mock renders and transitions.
+
+---
+
+## TASK-118 — Wire `AdminCompanyDetail` to backend
+
+Update `frontend/src/pages/AdminCompanyDetail.jsx`:
+- Fetch `backendCompanies.adminGetCompany(companyId)` on mount (network-error fallback to `getCompanyEntityById`); resolve the workflow presentation from the fetched `status`
+- Header actions (`Start review` / `Prepare quote` / `Approve quote` / `Convert account` / `Decline`) call the matching `backendCompanies.admin*` endpoints with the mock-store fallback + refetch after success
+- Panels (fact list, application details, operations note, prepared quote) read from the fetched `lead`/`quote` JSON when present
+
+**Verify:** Detail view reflects backend state after each transition; opening a URL like `/admin/companies/<seed-id>` renders seeded companies with backend up.
+
+---
+
+## TASK-119 — Wire `BusinessApply`, `BusinessApplySuccess` to backend
+
+Update `frontend/src/pages/BusinessApply.jsx`:
+- **Save draft** → `backendCompanies.saveDraftApplication(formData)` (network-error fallback: `saveCompanyLeadDraft`)
+- **Submit** → `backendCompanies.submitApplication(formData)` (network-error fallback: `submitCompanyLead`); redirect to `/business/apply/success?request=<id>`
+- Keep pre-fill from `useAuth().user` and the `?draft={id}` load (draft load stays client-side from `getCompanyEntityById` fallback, or the returned draft id)
+
+Update `frontend/src/pages/BusinessApplySuccess.jsx`:
+- On mount, fetch `backendCompanies.getMyApplication(requestId)` (network-error fallback to current `getCompanyEntityById`/localStorage lead)
+- Derive status badge + quote section from the fetched `status`/`quote` so a live request shows the true backend state
+
+**Verify:** Submitting an application against a running backend creates a row visible in `/admin/companies`; the success page tracks its live workflow state (Submitted → Under review → Quote ready → Approved) without a reload of the mock.
+
+---
+
+## TASK-120 — Business dashboard snapshot + `appClient.js` company sync + notification badge
+
+Update `frontend/src/pages/BusinessOverviewPage.jsx`:
+- Fetch `backendCompanies.getBusinessCompany()` on mount (network-error fallback to `getBusinessCompanySnapshot(user.email)`); feed the fetched/fallback entity into the existing workflow-presentation render so the overview banner reflects live state
+
+Update `frontend/src/api/appClient.js`:
+- Add startup + post-login sync like `refreshCategoriesFromBackend`: fetch `backendCompanies.getBusinessCompany()` for an authenticated business user and cache it under a `company_sync` key; expose `appClient.company.snapshot()` returning the synced snapshot (fallback to the mock store) so `BusinessOverviewPage`/`BusinessSettings` share one read path
+
+Update `frontend/src/lib/notifications.js`:
+- The admin "Companies" badge count and the business "Settings" badge gate should use the synced company list/snapshot instead of `getCompanyLeads()` alone; keep mock fallback on network error
+
+**Verify:** Business-dashboard overview reflects the live company entity with backend up; admin sidebar badge counts real submitted leads; mock shows when backend is down.
+
+---
+
+Once TASK-120 is done, the mock company store remains only as the offline fallback (same role `category-store.js`/`content-store.js` play after their phases). The business operations surfaces (team, orders, invoices, locations, shipments, governance requests) stay mocked pending their own future phases.

@@ -8,6 +8,7 @@ from .subscription import SubscriptionPlan, UserSubscription
 from .template import ArticleTemplate
 from .category import Category, Subcategory
 from .article import Article
+from .company import CompanyAccount
 
 __all__ = [
     "db",
@@ -18,4 +19,5 @@ __all__ = [
     "Category",
     "Subcategory",
     "Article",
+    "CompanyAccount",
 ]

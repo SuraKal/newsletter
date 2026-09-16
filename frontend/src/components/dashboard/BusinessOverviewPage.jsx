@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ArrowRight,
   FileText,
@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { appClient } from "@/api/appClient";
 import {
   DashboardPageHeader,
   DashboardPanel,
@@ -19,7 +20,6 @@ import {
 } from "@/components/dashboard/DashboardPrimitives";
 import { appParams } from "@/lib/app-params";
 import {
-  getBusinessCompanySnapshot,
   getCompanyWorkflowPresentation,
   getCompanyWorkflowState,
 } from "@/lib/company-store";
@@ -41,7 +41,18 @@ const sectionIconMap = {
 
 export default function BusinessOverviewPage() {
   useStoreVersion();
-  const entity = getBusinessCompanySnapshot();
+  const [entity, setEntity] = useState(() => appClient.company.snapshot());
+
+  useEffect(() => {
+    let cancelled = false;
+    appClient.company.refresh().then((nextEntity) => {
+      if (!cancelled && nextEntity) setEntity(nextEntity);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const workflow = getCompanyWorkflowPresentation(entity);
   const workflowState = getCompanyWorkflowState(entity);
   const statusInfo = entity

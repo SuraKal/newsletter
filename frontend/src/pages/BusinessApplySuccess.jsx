@@ -1,9 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight, Building2, CheckCircle2, MapPinned, ReceiptText } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import { appParams } from "@/lib/app-params";
+import { backendCompanies, isNetworkError } from "@/api/backendClient";
 import {
   getCompanyEntityById,
   getCompanyWorkflowPresentation,
@@ -34,6 +35,33 @@ export default function BusinessApplySuccess() {
   const [searchParams] = useSearchParams();
   const requestId = searchParams.get("request");
 
+  // The mock entity is the instant offline baseline; the backend entity — when
+  // reachable — replaces it so the page tracks the true live workflow state.
+  const mockEntity = useMemo(
+    () => (requestId ? getCompanyEntityById(requestId) : null),
+    [requestId],
+  );
+  const [fetchedEntity, setFetchedEntity] = useState(null);
+
+  useEffect(() => {
+    if (!requestId) return;
+    let cancelled = false;
+    setFetchedEntity(null);
+    backendCompanies
+      .getMyApplication(requestId)
+      .then((record) => {
+        if (!cancelled && record) setFetchedEntity(record);
+      })
+      .catch((error) => {
+        if (!isNetworkError(error)) {
+          // Keep the mock fallback; non-network errors (e.g. 404) fall through.
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [requestId]);
+
   const request = useMemo(() => {
     if (!requestId) {
       return null;
@@ -43,10 +71,7 @@ export default function BusinessApplySuccess() {
     return leads[requestId] || null;
   }, [requestId]);
 
-  const entity = useMemo(
-    () => (requestId ? getCompanyEntityById(requestId) : null),
-    [requestId],
-  );
+  const entity = fetchedEntity || mockEntity;
   const workflow = getCompanyWorkflowPresentation(entity);
   const requestDetails = entity?.lead || request;
 

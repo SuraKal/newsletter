@@ -2,6 +2,7 @@ import {
   backendArticles,
   backendAuth,
   backendCategories,
+  backendCompanies,
   backendSubscriptions,
   cacheBackendUser,
   clearAccessToken,
@@ -18,6 +19,11 @@ import {
 import { getCategories, syncCategoriesFromBackend } from "@/lib/category-store";
 import { notifyStoreChange } from "@/lib/store-bus";
 import { syncArticlesFromBackend, getAllArticles } from "@/lib/content-store";
+import {
+  getBusinessCompanySnapshot,
+  getCompanyLeads,
+  getCompanyWorkflowState,
+} from "@/lib/company-store";
 
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
@@ -28,6 +34,8 @@ const governanceRequestsKey = `${appParams.storagePrefix}_governance_requests`;
 const subscriptionPlansKey = `${appParams.storagePrefix}_subscription_plans`;
 const businessPricingKey = `${appParams.storagePrefix}_business_pricing`;
 const categoriesSyncKey = `${appParams.storagePrefix}_categories_sync`;
+const companySyncKey = `${appParams.storagePrefix}_company_sync`;
+const companyListSyncKey = `${appParams.storagePrefix}_company_list_sync`;
 
 const defaultUsers = [
   {
@@ -218,6 +226,64 @@ const refreshArticlesFromBackend = async () => {
   }
 };
 
+const resolveCompanyUserEmail = () => {
+  const cached = getCachedBackendUser();
+  if (cached?.email) return cached.email;
+  const sessionUser = getCurrentSessionUser("reader");
+  if (sessionUser?.email) return sessionUser.email;
+  return appParams.businessEmail;
+};
+
+const syncBusinessCompanySnapshot = async () => {
+  try {
+    const entity = await backendCompanies.getBusinessCompany();
+    // Preserve a successful `null` response too. It means the authenticated
+    // business user has no company application, which must not be replaced by
+    // an earlier cached company or the offline demo record.
+    writeJson(companySyncKey, { source: "backend", entity });
+    return entity;
+  } catch {
+    // Backend unreachable or failing: use the user-scoped mock snapshot.
+    return getBusinessCompanySnapshot(resolveCompanyUserEmail());
+  }
+};
+
+const syncAdminCompanyList = async () => {
+  try {
+    const companies = await backendCompanies.adminListCompanies();
+    if (Array.isArray(companies)) {
+      // An empty list is a successful, authoritative backend result. Caching
+      // it prevents mock leads from inflating the admin Companies badge.
+      writeJson(companyListSyncKey, companies);
+    }
+  } catch {
+    // Backend unreachable or failing: keep the mock lead list.
+  }
+};
+
+// Syncs the company snapshot (business users) or the full company list
+// (admins) from the Flask backend, mirroring the plan/category/article
+// refresh pattern. Server failures keep the local mock caches untouched so
+// every accessor still falls back to the company-store offline.
+const refreshCompanyFromBackend = async () => {
+  if (!getAccessToken()) {
+    return getBusinessCompanySnapshot(resolveCompanyUserEmail());
+  }
+
+  const cachedRole = getCachedBackendUser()?.role;
+
+  if (cachedRole === "reader") {
+    return getBusinessCompanySnapshot(resolveCompanyUserEmail());
+  }
+
+  if (cachedRole === "admin") {
+    await syncAdminCompanyList();
+    return getBusinessCompanySnapshot(resolveCompanyUserEmail());
+  }
+
+  return syncBusinessCompanySnapshot();
+};
+
 const normalizeBusinessPricing = (tier) => ({
   ...tier,
   id: tier.id || `business-tier-${String(tier.tier || "tier").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
@@ -392,6 +458,7 @@ ensureSeedData();
 refreshPlansFromBackend();
 refreshCategoriesFromBackend();
 refreshArticlesFromBackend();
+refreshCompanyFromBackend();
 
 export const appClient = {
   businessPricing: {
@@ -552,6 +619,7 @@ export const appClient = {
         await refreshPlansFromBackend();
         await refreshCategoriesFromBackend();
         await refreshArticlesFromBackend();
+        await refreshCompanyFromBackend();
         return user;
       } catch (error) {
         if (!isNetworkError(error)) {
@@ -594,6 +662,7 @@ export const appClient = {
         await refreshPlansFromBackend();
         await refreshCategoriesFromBackend();
         await refreshArticlesFromBackend();
+        await refreshCompanyFromBackend();
         return user;
       } catch (error) {
         if (!isNetworkError(error)) {
@@ -690,6 +759,10 @@ export const appClient = {
     logout(redirectTo) {
       clearAccessToken();
       clearSession();
+      if (storage) {
+        storage.removeItem(companySyncKey);
+        storage.removeItem(companyListSyncKey);
+      }
 
       if (redirectTo && isBrowser) {
         window.location.assign(buildLoginUrl(redirectTo));
@@ -809,6 +882,35 @@ export const appClient = {
     },
   },
   company: {
+    snapshot() {
+      const synced = readJson(companySyncKey, null);
+      if (
+        synced &&
+        typeof synced === "object" &&
+        Object.prototype.hasOwnProperty.call(synced, "source") &&
+        Object.prototype.hasOwnProperty.call(synced, "entity")
+      ) {
+        return synced.entity;
+      }
+      // Accept pre-TASK-120 cache entries during the one-time cache migration.
+      if (synced) return synced;
+      return getBusinessCompanySnapshot(resolveCompanyUserEmail());
+    },
+
+    list() {
+      const synced = readJson(companyListSyncKey, null);
+      if (Array.isArray(synced)) {
+        return synced.filter(
+          (entity) => getCompanyWorkflowState(entity) !== "Converted to account",
+        );
+      }
+      return getCompanyLeads();
+    },
+
+    async refresh() {
+      return refreshCompanyFromBackend();
+    },
+
     async getPrivacySettings() {
       const currentUser = getCurrentSessionUser("business");
 

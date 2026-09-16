@@ -7,6 +7,7 @@ from models import (
     Article,
     ArticleTemplate,
     Category,
+    CompanyAccount,
     SubscriptionPlan,
     Subcategory,
     User,
@@ -438,6 +439,75 @@ SEEDED_ARTICLES = [
     },
 ]
 
+# --------------------------------------------------------------------------- #
+# Seed company accounts — mirrors adminCompanyRows from demoData.js plus one
+# business-application lead that maps to the first seeded business user.
+# --------------------------------------------------------------------------- #
+
+SEED_COMPANY_BASE_CREATED = datetime(2026, 1, 12, 9, 0, 0)
+SEED_COMPANY_REVIEWED_AT = datetime(2026, 1, 14, 14, 30, 0)
+
+# Legacy mock statuses ("Active", "Invoice review", "Onboarding") are
+# normalised to canonical COMPANY_WORKFLOW_STATES on the backend so admin
+# pages can classify by status alone (accounts table = "Converted to account").
+SEEDED_COMPANY_ACCOUNTS = [
+    {
+        "company": "Atlas Hotels Belgium",
+        "tier": "Regional Team",
+        "volume": "180 copies / cycle",
+        "billing": "Monthly invoice",
+        "status": "Converted to account",
+        "region": "Belgium",
+    },
+    {
+        "company": "Meridian Trade Offices",
+        "tier": "Single Office",
+        "volume": "95 copies / cycle",
+        "billing": "Monthly invoice",
+        "status": "Converted to account",
+        "region": "Belgium",
+    },
+    {
+        "company": "Rhine Partner Lounges",
+        "tier": "Regional Team",
+        "volume": "140 copies / cycle",
+        "billing": "Contract billing",
+        "status": "Converted to account",
+        "region": "Germany",
+    },
+    {
+        "company": "Embassy reception network",
+        "tier": "Enterprise Route",
+        "volume": "60 copies / cycle",
+        "billing": "Contract billing",
+        "status": "Converted to account",
+        "region": "Belgium + Germany",
+    },
+]
+
+SEEDED_COMPANY_LEAD = {
+    "company": "Nekedem Distribution Group",
+    "status": "Submitted",
+    "billing": "Monthly invoice",
+    "region": "Belgium and Germany",
+    "lead": {
+        "primaryContact": "Operations and finance lead",
+        "workPhone": "+000000000000",
+        "organizationName": "Nekedem Distribution Group",
+        "requestType": "Business Subscription",
+        "companySize": "51-200",
+        "countryScope": "Belgium and Germany",
+        "expectedCopies": "475 copies across HQ and partner desks",
+        "deliveryLocations": "Brussels, Antwerp, Cologne, and Berlin",
+        "billingPreference": "Monthly invoice",
+        "launchTimeline": "Within 1 month",
+        "operationalNotes": (
+            "Consolidated HQ plus regional branch and partner desk "
+            "distribution under one account."
+        ),
+    },
+}
+
 
 def _upsert_articles():
     for article_seed in SEEDED_ARTICLES:
@@ -460,12 +530,70 @@ def _upsert_articles():
                 setattr(article, key, value)
 
 
+def _upsert_companies():
+    """Seed the four active admin-company accounts plus one submitted lead.
+
+    The four accounts mirror ``adminCompanyRows`` from ``demoData.js``.  Legacy
+    mock statuses ("Active", "Invoice review", "Onboarding") are normalised to
+    the canonical ``COMPANY_WORKFLOW_STATES`` so the admin pages can classify
+    rows purely by the canonical status (accounts table = "Converted to
+    account").  The single lead is linked to the first seeded business user so
+    the business dashboard works out of the box after login.
+    """
+    business_user = User.query.filter_by(role="business").first()
+
+    for seed in SEEDED_COMPANY_ACCOUNTS:
+        existing = CompanyAccount.query.filter_by(company=seed["company"]).first()
+        if existing is None:
+            db.session.add(
+                CompanyAccount(
+                    company=seed["company"],
+                    tier=seed["tier"],
+                    volume=seed["volume"],
+                    billing=seed["billing"],
+                    status=seed["status"],
+                    region=seed["region"],
+                    created_at=SEED_COMPANY_BASE_CREATED,
+                    reviewed_at=SEED_COMPANY_REVIEWED_AT,
+                )
+            )
+        else:
+            for key, value in seed.items():
+                setattr(existing, key, value)
+
+    # Lead — linked to the first business user so the business dashboard
+    # snapshot (/business/company) resolves immediately.
+    lead_org = SEEDED_COMPANY_LEAD["company"]
+    existing_lead = CompanyAccount.query.filter_by(company=lead_org).first()
+    lead_data = dict(SEEDED_COMPANY_LEAD)
+    lead_data["owner_user_id"] = business_user.id if business_user else None
+    lead_data["owner_email"] = business_user.email if business_user else None
+    lead_data["work_email"] = business_user.email if business_user else None
+    if existing_lead is None:
+        db.session.add(
+            CompanyAccount(
+                company=lead_data["company"],
+                status=lead_data["status"],
+                billing=lead_data["billing"],
+                region=lead_data["region"],
+                owner_user_id=lead_data["owner_user_id"],
+                owner_email=lead_data["owner_email"],
+                work_email=lead_data["work_email"],
+                lead=lead_data["lead"],
+            )
+        )
+    else:
+        for key, value in lead_data.items():
+            setattr(existing_lead, key, value)
+
+
 def seed_data():
     _upsert_plans()
     _upsert_users()
     _upsert_templates()
     _upsert_categories()
     _upsert_articles()
+    _upsert_companies()
     db.session.commit()
 
 
@@ -500,3 +628,13 @@ def seed_command():
             f"  - {article_data['status']:<10} {article_data['source']:<9} "
             f"{article_data['headline']}"
         )
+    print("Seeded company accounts:")
+    for company_data in SEEDED_COMPANY_ACCOUNTS:
+        print(
+            f"  - {company_data['status']:<24} {company_data['tier']:<18} "
+            f"{company_data['company']}"
+        )
+    print(
+        f"  - {'Submitted':<24} {'--':<18} "
+        f"{SEEDED_COMPANY_LEAD['company']} (lead)"
+    )

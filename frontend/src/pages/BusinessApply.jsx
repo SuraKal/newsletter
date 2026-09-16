@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/AuthContext";
 import { appParams } from "@/lib/app-params";
+import { backendCompanies, isNetworkError } from "@/api/backendClient";
 import {
   getCompanyEntityById,
   saveCompanyLeadDraft,
@@ -136,25 +137,41 @@ export default function BusinessApply() {
       });
 
       const requestId = draftId || `business-lead-${Date.now()}`;
-      const leads = readBusinessLeads();
-      leads[requestId] = {
+      const record = {
         id: requestId,
         createdAt: new Date().toISOString(),
         ...form,
       };
-      writeBusinessLeads(leads);
-      submitCompanyLead(leads[requestId]);
 
-      navigate(`/business/apply/success?request=${requestId}`, {
-        replace: true,
-      });
+      // Backend-first submit; fall back to the localStorage mock on network error.
+      try {
+        const saved = await backendCompanies.submitApplication(form);
+        const savedId = saved?.id || requestId;
+        const leads = readBusinessLeads();
+        leads[savedId] = { ...record, id: savedId, status: "Submitted" };
+        writeBusinessLeads(leads);
+        navigate(`/business/apply/success?request=${savedId}`, {
+          replace: true,
+        });
+      } catch (submitError) {
+        if (!isNetworkError(submitError)) {
+          throw submitError;
+        }
+        const leads = readBusinessLeads();
+        leads[requestId] = record;
+        writeBusinessLeads(leads);
+        submitCompanyLead(record);
+        navigate(`/business/apply/success?request=${requestId}`, {
+          replace: true,
+        });
+      }
     } catch {
       setError("The business request could not be saved. Please try again.");
       setIsSubmitting(false);
     }
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     setError("");
     const requestId = draftId || `business-draft-${Date.now()}`;
     const record = {
@@ -162,11 +179,26 @@ export default function BusinessApply() {
       createdAt: new Date().toISOString(),
       ...form,
     };
-    const leads = readBusinessLeads();
-    leads[requestId] = record;
-    writeBusinessLeads(leads);
-    saveCompanyLeadDraft(record);
-    navigate(`/business/apply/success?request=${requestId}`, { replace: true });
+
+    // Backend-first draft; fall back to the localStorage mock on network error.
+    try {
+      const saved = await backendCompanies.saveDraftApplication(form);
+      const savedId = saved?.id || requestId;
+      const leads = readBusinessLeads();
+      leads[savedId] = { ...record, id: savedId, status: "Draft" };
+      writeBusinessLeads(leads);
+      navigate(`/business/apply/success?request=${savedId}`, { replace: true });
+    } catch (draftError) {
+      if (!isNetworkError(draftError)) {
+        setError("The draft could not be saved. Please try again.");
+        return;
+      }
+      const leads = readBusinessLeads();
+      leads[requestId] = record;
+      writeBusinessLeads(leads);
+      saveCompanyLeadDraft(record);
+      navigate(`/business/apply/success?request=${requestId}`, { replace: true });
+    }
   };
 
   return (
