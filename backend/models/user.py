@@ -15,6 +15,9 @@ class User(db.Model):
     role = db.Column(db.String(30), nullable=False, default="reader")  # reader | business | admin
     account_type = db.Column(db.String(30), default="individual")  # individual | business | admin
     company_name = db.Column(db.String(255))
+    # Business users cannot receive a session until an administrator has
+    # verified the company licence submitted with their registration.
+    business_access_approved = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     subscriptions = db.relationship(
@@ -35,6 +38,7 @@ class User(db.Model):
             "role": self.role,
             "accountType": self.account_type,
             "companyName": self.company_name,
+            "businessAccessApproved": self.business_access_approved,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
         }
         if include_subscriptions:

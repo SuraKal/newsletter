@@ -1,29 +1,21 @@
 import React, { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { MapPin, Package, Search, Truck } from "lucide-react";
+import { Package, Search, Truck } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import DeliveryStatusHero from "@/components/delivery/DeliveryStatusHero";
 import DeliveryTimelinePanel from "@/components/delivery/DeliveryTimelinePanel";
-import DeliveryHistoryTable from "@/components/delivery/DeliveryHistoryTable";
-import DeliveryMapPanel from "@/components/delivery/DeliveryMapPanel";
-import ShipmentIssuePanel from "@/components/delivery/ShipmentIssuePanel";
-import ShipmentKpiSummary from "@/components/delivery/ShipmentKpiSummary";
 import {
   DashboardEmptyState,
   DashboardPageHeader,
   DashboardPanel,
 } from "@/components/dashboard/DashboardPrimitives";
-import { IMAGES } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
 import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
 import {
   DELIVERY_SAMPLE_CODES,
   getCurrentDelivery,
   getDeliveryByTrackingCode,
-  getDeliveryIssueStates,
-  getDeliveryKpis,
-  getRecentDeliveries,
   isValidTrackingCode,
   normalizeTrackingCode,
 } from "@/lib/delivery-store";
@@ -32,7 +24,6 @@ const deliveryIconMap = {
   Clock: Package,
   Package,
   Truck,
-  MapPin,
 };
 
 export default function Delivery() {
@@ -115,16 +106,16 @@ export default function Delivery() {
   return (
     <div className="min-h-screen bg-paper">
       <Masthead />
-      <main className="mx-auto max-w-7xl px-4 py-12">
+      <main className="mx-auto max-w-4xl px-4 py-12">
         <DashboardPageHeader
-          eyebrow="Public delivery view"
-          title="Follow the newspaper delivery cycle"
+          eyebrow="Delivery tracking"
+          title="Track your delivery"
           action={
             <Link
               to="/dashboard/deliveries"
               className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-stone-700"
             >
-              Open reader delivery workspace
+              My deliveries
               <Truck className="h-4 w-4" />
             </Link>
           }
@@ -133,7 +124,7 @@ export default function Delivery() {
         <section className="mt-6">
           <DashboardPanel
             title="Track a delivery"
-            description="Enter a Nekedem tracking ID to follow a specific print edition."
+            description="Enter your tracking ID."
           >
             <form
               onSubmit={handleSubmit}
@@ -163,18 +154,11 @@ export default function Delivery() {
                 {error}
               </p>
             ) : null}
-            <p className="mt-3 font-sans text-xs text-stone-500">
-              Try {DELIVERY_SAMPLE_CODES.join(" or ")} to see the tracking flow.
-            </p>
           </DashboardPanel>
         </section>
 
         {delivery && hero ? (
           <>
-            <section className="mt-6">
-              <ShipmentKpiSummary items={getDeliveryKpis()} />
-            </section>
-
             <section className="mt-6">
               <DeliveryStatusHero
                 edition={hero.edition}
@@ -187,26 +171,10 @@ export default function Delivery() {
               />
             </section>
 
-            <section className="mt-6 grid gap-4 xl:grid-cols-[1fr_0.95fr]">
+            <section className="mt-6">
               <DeliveryTimelinePanel
                 title="Route progress"
                 items={timelineItems}
-              />
-              <DeliveryMapPanel
-                title="Coverage visual"
-                imageSrc={IMAGES.delivery}
-                imageAlt="Delivery route illustration"
-              />
-            </section>
-
-            <section className="mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-              <DeliveryHistoryTable
-                title="Recent delivery history"
-                rows={getRecentDeliveries()}
-              />
-              <ShipmentIssuePanel
-                title="Route health and issue states"
-                items={getDeliveryIssueStates()}
               />
             </section>
           </>

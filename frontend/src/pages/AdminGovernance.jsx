@@ -64,7 +64,7 @@ const relatedLinks = [
   { label: "Companies", to: "/admin/companies" },
   { label: "Subscribers", to: "/admin/subscribers" },
   { label: "Shipments", to: "/admin/shipments" },
-  { label: "Pricing", to: "/admin/pricing" },
+  { label: "Order requests", to: "/admin/order-requests" },
 ];
 
 export default function AdminGovernance() {

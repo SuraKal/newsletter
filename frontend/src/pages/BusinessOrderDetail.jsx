@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Check } from "lucide-react";
 import {
@@ -9,10 +9,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import {
-  getBusinessOrderById,
-  updateBusinessOrder,
-} from "@/lib/business-ops-store";
+import { appClient } from "@/api/appClient";
 
 const relatedLinks = [
   { label: "Team", to: "/business-dashboard/team" },
@@ -24,19 +21,33 @@ const relatedLinks = [
 
 export default function BusinessOrderDetail() {
   const { orderId } = useParams();
-  const [, setRevision] = useState(0);
-  const order = getBusinessOrderById(orderId);
+  const [order, setOrder] = useState(() => appClient.orderPlans.getLocal(orderId));
+  const [busy, setBusy] = useState(false);
+
+  const loadOrder = async () => {
+    const result = await appClient.orderPlans.get(orderId);
+    setOrder(result);
+  };
+
+  useEffect(() => {
+    loadOrder();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
 
   const needsConfirmation = order && order.status === "Review";
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!order) return;
-    updateBusinessOrder(order.id, {
-      status: "Active",
-      tone: "success",
-      nextWindow: order.nextWindow,
-    });
-    setRevision((value) => value + 1);
+    setBusy(true);
+    try {
+      const row = await appClient.orderPlans.confirm(order.id);
+      if (row) setOrder(row);
+      await loadOrder();
+    } catch {
+      // Leave the record in place; the next refresh reconciles the state.
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!order) {
@@ -91,7 +102,8 @@ export default function BusinessOrderDetail() {
               <button
                 type="button"
                 onClick={handleConfirm}
-                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 dark:bg-stone-100 dark:text-stone-900"
+                disabled={busy}
+                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900"
               >
                 <Check className="h-4 w-4" />
                 Confirm order plan

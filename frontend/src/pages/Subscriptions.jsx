@@ -95,10 +95,10 @@ export default function Subscriptions() {
               Reader catalog
             </p>
             <p className="mt-1 font-body text-sm leading-6 text-redacted">
-              These plans are for individual reader access. Companies use separate volume pricing and quote-led billing on the business page.
+              These plans are for individual reader access. Companies request bulk orders at their own negotiated volumes and confirmed prices on the business page.
             </p>
             <Link to="/business" className="mt-2 inline-flex font-sans text-xs font-bold uppercase tracking-[0.14em] text-heritage hover:text-ink">
-              View company pricing <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              Explore bulk ordering <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </Link>
           </div>
         </section>

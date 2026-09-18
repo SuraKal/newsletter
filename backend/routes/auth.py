@@ -7,7 +7,7 @@ from flask_jwt_extended import (
 )
 from sqlalchemy.exc import IntegrityError
 
-from models import db, User
+from models import CompanyAccount, db, User
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
 
@@ -23,7 +23,8 @@ def register():
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     role = data.get("role") or "reader"
-    company_name = data.get("companyName")
+    company_name = (data.get("companyName") or "").strip()
+    license_document = data.get("licenseDocument") or ""
 
     if role not in ("reader", "business"):
         return jsonify({"error": "Invalid role"}), 400
@@ -31,6 +32,13 @@ def register():
         return jsonify({"error": "Name, email, and password are required"}), 400
     if len(password) < 8:
         return jsonify({"error": "Password must be at least 8 characters"}), 400
+    if role == "business":
+        if not company_name:
+            return jsonify({"error": "Company name is required"}), 400
+        if not isinstance(license_document, str) or not license_document.startswith("data:"):
+            return jsonify({"error": "A business licence upload is required"}), 400
+        if len(license_document) > 7_000_000:
+            return jsonify({"error": "Business licence must be 5 MB or smaller"}), 400
 
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "Email already registered"}), 409
@@ -41,6 +49,7 @@ def register():
         role=role,
         account_type="business" if role == "business" else "individual",
         company_name=company_name,
+        business_access_approved=role != "business",
     )
     user.set_password(password)
     db.session.add(user)
@@ -49,6 +58,21 @@ def register():
     except IntegrityError:
         db.session.rollback()
         return jsonify({"error": "Email already registered"}), 409
+
+    if role == "business":
+        db.session.add(
+            CompanyAccount(
+                company=company_name,
+                status="License submitted",
+                owner_user_id=user.id,
+                owner_email=user.email,
+                work_email=user.email,
+                license_document=license_document,
+                lead={"primaryContact": name, "workEmail": email},
+            )
+        )
+        db.session.commit()
+        return jsonify({"user": _public_user(user), "pendingApproval": True}), 201
 
     access_token = create_access_token(
         identity=str(user.id),
@@ -69,6 +93,8 @@ def login():
     user = User.query.filter_by(email=email).first()
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid email or password"}), 401
+    if user.role == "business" and not user.business_access_approved:
+        return jsonify({"error": "Your business licence is awaiting admin approval"}), 403
 
     access_token = create_access_token(
         identity=str(user.id),

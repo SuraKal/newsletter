@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Check } from "lucide-react";
 import {
@@ -9,10 +9,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import {
-  getBusinessLocationById,
-  updateBusinessLocation,
-} from "@/lib/business-ops-store";
+import { appClient } from "@/api/appClient";
 
 const relatedLinks = [
   { label: "Team", to: "/business-dashboard/team" },
@@ -24,20 +21,36 @@ const relatedLinks = [
 
 export default function BusinessLocationDetail() {
   const { locationId } = useParams();
-  const [, setRevision] = useState(0);
-  const location = getBusinessLocationById(locationId);
+  const [location, setLocation] = useState(() =>
+    appClient.locations.getLocal(locationId),
+  );
+  const [busy, setBusy] = useState(false);
+
+  const loadLocation = async () => {
+    const row = await appClient.locations.get(locationId);
+    setLocation(row);
+  };
+
+  useEffect(() => {
+    loadLocation();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationId]);
 
   const needsConfirmation =
     location &&
     (location.status === "Review" || location.status === "Confirm contact");
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!location) return;
-    updateBusinessLocation(location.id, {
-      status: "Ready",
-      tone: "success",
-    });
-    setRevision((value) => value + 1);
+    setBusy(true);
+    try {
+      const row = await appClient.locations.confirm(location.id);
+      if (row) setLocation(row);
+    } catch {
+      // Leave the record in place; the next refresh reconciles the state.
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!location) {
@@ -92,7 +105,8 @@ export default function BusinessLocationDetail() {
               <button
                 type="button"
                 onClick={handleConfirm}
-                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 dark:bg-stone-100 dark:text-stone-900"
+                disabled={busy}
+                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900"
               >
                 <Check className="h-4 w-4" />
                 Confirm receiving contact

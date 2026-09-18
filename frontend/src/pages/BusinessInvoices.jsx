@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ReceiptText, ShieldCheck } from "lucide-react";
 import {
@@ -12,7 +12,7 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import { getBusinessInvoiceRows } from "@/lib/business-ops-store";
+import { appClient } from "@/api/appClient";
 
 const invoiceColumns = [
   {
@@ -62,9 +62,21 @@ const snapshotRows = [
 
 export default function BusinessInvoices() {
   const [query, setQuery] = useState("");
+  const [invoices, setInvoices] = useState(() => appClient.invoices.list());
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
+
+  const reloadInvoices = async () => {
+    const rows = await appClient.invoices.refresh();
+    if (Array.isArray(rows)) setInvoices(rows);
+  };
+
+  useEffect(() => {
+    reloadInvoices();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const table = useTableQuery({
-    rows: getBusinessInvoiceRows(),
+    rows: invoices,
     query,
     predicate: matchesSearch,
     activeFilters,

@@ -116,7 +116,7 @@ const relatedLinks = [
   { label: "Companies", to: "/admin/companies" },
   { label: "Shipments", to: "/admin/shipments" },
   { label: "Governance", to: "/admin/governance" },
-  { label: "Pricing", to: "/admin/pricing" },
+  { label: "Order requests", to: "/admin/order-requests" },
 ];
 
 export default function AdminSchedule() {

@@ -6,8 +6,14 @@ from flask.cli import with_appcontext
 from models import (
     Article,
     ArticleTemplate,
+    BusinessInvoice,
+    BusinessLocation,
+    BusinessOrder,
     Category,
     CompanyAccount,
+    CompanyOrder,
+    Shipment,
+    ShipmentActivity,
     SubscriptionPlan,
     Subcategory,
     User,
@@ -15,6 +21,7 @@ from models import (
     db,
 )
 from models.category import slugify
+from models.company_order import estimate_order_price
 
 SEEDED_PLANS = [
     {
@@ -447,47 +454,41 @@ SEEDED_ARTICLES = [
 SEED_COMPANY_BASE_CREATED = datetime(2026, 1, 12, 9, 0, 0)
 SEED_COMPANY_REVIEWED_AT = datetime(2026, 1, 14, 14, 30, 0)
 
-# Legacy mock statuses ("Active", "Invoice review", "Onboarding") are
-# normalised to canonical COMPANY_WORKFLOW_STATES on the backend so admin
-# pages can classify by status alone (accounts table = "Converted to account").
+# Seeded organisations represent already-approved company accounts.
 SEEDED_COMPANY_ACCOUNTS = [
     {
         "company": "Atlas Hotels Belgium",
-        "tier": "Regional Team",
         "volume": "180 copies / cycle",
         "billing": "Monthly invoice",
-        "status": "Converted to account",
+        "status": "License approved",
         "region": "Belgium",
     },
     {
         "company": "Meridian Trade Offices",
-        "tier": "Single Office",
         "volume": "95 copies / cycle",
         "billing": "Monthly invoice",
-        "status": "Converted to account",
+        "status": "License approved",
         "region": "Belgium",
     },
     {
         "company": "Rhine Partner Lounges",
-        "tier": "Regional Team",
         "volume": "140 copies / cycle",
         "billing": "Contract billing",
-        "status": "Converted to account",
+        "status": "License approved",
         "region": "Germany",
     },
     {
         "company": "Embassy reception network",
-        "tier": "Enterprise Route",
         "volume": "60 copies / cycle",
         "billing": "Contract billing",
-        "status": "Converted to account",
+        "status": "License approved",
         "region": "Belgium + Germany",
     },
 ]
 
 SEEDED_COMPANY_LEAD = {
     "company": "Nekedem Distribution Group",
-    "status": "Submitted",
+    "status": "License approved",
     "billing": "Monthly invoice",
     "region": "Belgium and Germany",
     "lead": {
@@ -531,13 +532,13 @@ def _upsert_articles():
 
 
 def _upsert_companies():
-    """Seed the four active admin-company accounts plus one submitted lead.
+    """Seed active company accounts linked to demo business users.
 
     The four accounts mirror ``adminCompanyRows`` from ``demoData.js``.  Legacy
     mock statuses ("Active", "Invoice review", "Onboarding") are normalised to
     the canonical ``COMPANY_WORKFLOW_STATES`` so the admin pages can classify
-    rows purely by the canonical status (accounts table = "Converted to
-    account").  The single lead is linked to the first seeded business user so
+    rows purely by the canonical status. The account linked to the first
+    seeded business user so
     the business dashboard works out of the box after login.
     """
     business_user = User.query.filter_by(role="business").first()
@@ -548,7 +549,6 @@ def _upsert_companies():
             db.session.add(
                 CompanyAccount(
                     company=seed["company"],
-                    tier=seed["tier"],
                     volume=seed["volume"],
                     billing=seed["billing"],
                     status=seed["status"],
@@ -561,7 +561,7 @@ def _upsert_companies():
             for key, value in seed.items():
                 setattr(existing, key, value)
 
-    # Lead — linked to the first business user so the business dashboard
+    # Account — linked to the first business user so the business dashboard
     # snapshot (/business/company) resolves immediately.
     lead_org = SEEDED_COMPANY_LEAD["company"]
     existing_lead = CompanyAccount.query.filter_by(company=lead_org).first()
@@ -587,6 +587,412 @@ def _upsert_companies():
             setattr(existing_lead, key, value)
 
 
+def _upsert_company_orders():
+    """Seed bulk order requests for the demo accounts.
+
+    One approved request keeps the business overview populated with a live
+    volume, and two pending requests give the admin approval queue something
+    to review.
+    """
+    admin = User.query.filter_by(role="admin").first()
+
+    seeded_orders = [
+        {
+            "company": "Nekedem Distribution Group",
+            "copies": 475,
+            "needed_by": "2026-09-25",
+            "locations": ["Brussels HQ", "Antwerp (HQ)", "Cologne", "Berlin"],
+            "article": "City council approves the new harbour market plan",
+            "status": "Approved",
+            "final_price": 498.75,
+            "reviewed_at": SEED_COMPANY_REVIEWED_AT,
+        },
+        {
+            "company": "Nekedem Distribution Group",
+            "copies": 380,
+            "needed_by": "2026-10-02",
+            "locations": ["Brussels HQ", "Antwerp", "Cologne"],
+            "article": "Small businesses see a recovery quarter in the region",
+            "status": "Pending approval",
+        },
+        {
+            "company": "Atlas Hotels Belgium",
+            "copies": 240,
+            "needed_by": "2026-10-09",
+            "locations": ["Atlas Brussels", "Atlas Antwerp"],
+            "article": "A weekend guide to the autumn festival opening",
+            "status": "Pending approval",
+        },
+    ]
+
+    for order_seed in seeded_orders:
+        account = CompanyAccount.query.filter_by(
+            company=order_seed["company"]
+        ).first()
+        if account is None:
+            continue
+        article = Article.query.filter_by(headline=order_seed["article"]).first()
+        created_at = order_seed.get("created_at") or SEED_COMPANY_BASE_CREATED
+        existing = CompanyOrder.query.filter_by(
+            company_account_id=account.id,
+            copies=order_seed["copies"],
+            status=order_seed["status"],
+        ).first()
+        if existing is not None:
+            if article is not None:
+                existing.article_id = article.id
+                existing.article_title = article.headline
+            existing.needed_by = order_seed["needed_by"]
+            continue
+
+        estimated_price, rate = estimate_order_price(order_seed["copies"])
+        db.session.add(
+            CompanyOrder(
+                company_account_id=account.id,
+                requested_by_user_id=account.owner_user_id,
+                copies=order_seed["copies"],
+                needed_by=order_seed["needed_by"],
+                delivery_locations=order_seed["locations"],
+                article_id=article.id if article else None,
+                article_title=article.headline if article else "",
+                estimated_price=estimated_price,
+                rate=rate,
+                status=order_seed["status"],
+                final_price=order_seed.get("final_price"),
+                reviewed_by_user_id=(
+                    admin.id if admin and order_seed["status"] == "Approved" else None
+                ),
+                reviewed_at=order_seed.get("reviewed_at"),
+                created_at=created_at,
+            )
+        )
+
+
+def _upsert_locations():
+    """Seed delivery destinations for the demo lead org account.
+
+    Mirrors ``businessLocationRows`` from ``demoData.js`` so the business
+    locations surface matches the mock. Idempotent per (account, location).
+    """
+    account = CompanyAccount.query.filter_by(
+        company=SEEDED_COMPANY_LEAD["company"]
+    ).first()
+    if account is None:
+        return
+
+    seeded = [
+        ("Brussels head office", "Belgium", "70 copies", "Facilities desk", "Ready"),
+        ("Antwerp hotel lobby", "Belgium", "55 copies", "Morning concierge", "Ready"),
+        ("Cologne branch office", "Germany", "80 copies", "Operations lead", "Updated"),
+        ("Berlin partner lounge", "Germany", "45 copies", "Site host", "Ready"),
+        ("Embassy reception desk", "Belgium", "30 copies", "Reception review", "Review"),
+    ]
+    for location, region, copies, contact, status in seeded:
+        existing = BusinessLocation.query.filter_by(
+            company_account_id=account.id, location=location
+        ).first()
+        if existing is None:
+            db.session.add(
+                BusinessLocation(
+                    company_account_id=account.id,
+                    location=location,
+                    region=region,
+                    copies=copies,
+                    contact=contact,
+                    status=status,
+                    created_at=SEED_COMPANY_BASE_CREATED,
+                )
+            )
+        else:
+            existing.region = region
+            existing.copies = copies
+            existing.contact = contact
+            existing.status = status
+
+
+SEEDED_ADMIN_SHIPMENTS = [
+    {
+        "shipment_id": "OPS-20260811-01",
+        "label": "Reader and hotel mix · Belgium North",
+        "route": "Belgium North cluster",
+        "scope": "8 stops / 320 copies",
+        "status": "In dispatch",
+        "eta": "August 11, 2026 · 8:15 AM",
+    },
+    {
+        "shipment_id": "OPS-20260811-02",
+        "label": "Business branch run · Germany West",
+        "route": "Germany West corridor",
+        "scope": "6 stops / 420 copies",
+        "status": "Delay flagged",
+        "eta": "August 11, 2026 · 9:05 AM",
+    },
+    {
+        "shipment_id": "OPS-20260811-03",
+        "label": "Subscriber route · Brussels central",
+        "route": "Brussels central corridor",
+        "scope": "5 stops / 110 copies",
+        "status": "Delivered",
+        "eta": "August 11, 2026 · 7:58 AM",
+    },
+    {
+        "shipment_id": "OPS-20260825-04",
+        "label": "Cross-border prep · Berlin and Cologne",
+        "route": "Germany East prep",
+        "scope": "5 stops / 260 copies",
+        "status": "Preparing",
+        "eta": "August 25, 2026 · Pre-release",
+    },
+]
+
+SEEDED_BUSINESS_SHIPMENTS = [
+    {
+        "shipment_id": "BIZ-20260811-A",
+        "label": "Atlas Hotels Belgium",
+        "route": "Belgium North cluster",
+        "scope": "3 sites / 180 copies",
+        "status": "In dispatch",
+        "eta": "August 11, 2026 · 8:10 AM",
+    },
+    {
+        "shipment_id": "BIZ-20260811-B",
+        "label": "Meridian Trade Offices",
+        "route": "Brussels central corridor",
+        "scope": "2 sites / 95 copies",
+        "status": "Delivered",
+        "eta": "August 11, 2026 · 8:02 AM",
+    },
+    {
+        "shipment_id": "BIZ-20260825-A",
+        "label": "Rhine Partner Lounges",
+        "route": "Germany West corridor",
+        "scope": "2 sites / 140 copies",
+        "status": "Preparing",
+        "eta": "August 25, 2026 · 7:45 AM",
+    },
+    {
+        "shipment_id": "BIZ-20260825-B",
+        "label": "Embassy reception network",
+        "route": "Belgium embassy route",
+        "scope": "2 sites / 60 copies",
+        "status": "Address review",
+        "eta": "August 25, 2026 · Pending confirmation",
+    },
+]
+
+SEEDED_SHIPMENT_ACTIVITY = [
+    {
+        "shipment_id": "BIZ-20260811-A",
+        "event": "Antwerp hotel receiving confirmed",
+        "status": "Confirmed",
+        "tone": "success",
+        "date": "August 11, 2026 · 8:18 AM",
+    },
+    {
+        "shipment_id": "BIZ-20260825-B",
+        "event": "Embassy reception contact check requested",
+        "status": "Review",
+        "tone": "warning",
+        "date": "August 10, 2026 · 4:20 PM",
+    },
+    {
+        "shipment_id": "BIZ-20260825-A",
+        "event": "Cologne branch manifest updated",
+        "status": "Updated",
+        "tone": "info",
+        "date": "August 9, 2026 · 2:05 PM",
+    },
+    {
+        "shipment_id": "BIZ-20260825-A",
+        "event": "Next business route grouped for regional release",
+        "status": "Queued",
+        "tone": "neutral",
+        "date": "August 8, 2026 · 10:40 AM",
+    },
+    {
+        "shipment_id": "OPS-20260811-02",
+        "event": "Germany West delay escalation assigned to fleet desk",
+        "status": "Escalated",
+        "tone": "warning",
+        "date": "August 11, 2026 · 8:10 AM",
+    },
+    {
+        "shipment_id": "OPS-20260811-03",
+        "event": "Brussels central subscriber route confirmed",
+        "status": "Confirmed",
+        "tone": "success",
+        "date": "August 11, 2026 · 7:58 AM",
+    },
+    {
+        "shipment_id": "OPS-20260825-04",
+        "event": "Berlin prep manifest synced for next release window",
+        "status": "Updated",
+        "tone": "info",
+        "date": "August 10, 2026 · 5:15 PM",
+    },
+    {
+        "shipment_id": "OPS-20260811-01",
+        "event": "Hospitality route stop count adjusted after receiving update",
+        "status": "Queued",
+        "tone": "neutral",
+        "date": "August 10, 2026 · 4:05 PM",
+    },
+]
+
+
+def _upsert_shipments():
+    """Seed shipment runs and their activity events.
+
+    Admin shipments have no company owner (platform-wide runs); business
+    shipments belong to the demo lead org. Idempotent per (owner, shipment_id).
+    """
+    account = CompanyAccount.query.filter_by(
+        company=SEEDED_COMPANY_LEAD["company"]
+    ).first()
+
+    def upsert_run(seed, company_account_id):
+        existing = Shipment.query.filter_by(
+            shipment_id=seed["shipment_id"]
+        ).first()
+        if existing is None:
+            run = Shipment(
+                company_account_id=company_account_id,
+                shipment_id=seed["shipment_id"],
+                label=seed["label"],
+                route=seed["route"],
+                scope=seed["scope"],
+                status=seed["status"],
+                eta=seed["eta"],
+                created_at=SEED_COMPANY_BASE_CREATED,
+            )
+            db.session.add(run)
+            db.session.flush()
+            return run
+        existing.company_account_id = company_account_id
+        existing.label = seed["label"]
+        existing.route = seed["route"]
+        existing.scope = seed["scope"]
+        existing.status = seed["status"]
+        existing.eta = seed["eta"]
+        return existing
+
+    for seed in SEEDED_ADMIN_SHIPMENTS:
+        upsert_run(seed, None)
+
+    if account is not None:
+        for seed in SEEDED_BUSINESS_SHIPMENTS:
+            upsert_run(seed, account.id)
+
+    for activity_seed in SEEDED_SHIPMENT_ACTIVITY:
+        run = Shipment.query.filter_by(
+            shipment_id=activity_seed["shipment_id"]
+        ).first()
+        if run is None:
+            continue
+        existing = ShipmentActivity.query.filter_by(
+            shipment_id=run.id, event=activity_seed["event"]
+        ).first()
+        if existing is None:
+            db.session.add(
+                ShipmentActivity(
+                    shipment_id=run.id,
+                    event=activity_seed["event"],
+                    status=activity_seed["status"],
+                    tone=activity_seed["tone"],
+                    date=activity_seed["date"],
+                    created_at=SEED_COMPANY_BASE_CREATED,
+                )
+            )
+        else:
+            existing.status = activity_seed["status"]
+            existing.tone = activity_seed["tone"]
+            existing.date = activity_seed["date"]
+
+
+def _upsert_business_orders():
+    """Seed recurring order plans for the demo lead org account.
+
+    Mirrors ``businessOrderRows`` from ``demoData.js``. Idempotent per
+    (account, order name).
+    """
+    account = CompanyAccount.query.filter_by(
+        company=SEEDED_COMPANY_LEAD["company"]
+    ).first()
+    if account is None:
+        return
+
+    seeded = [
+        ("Belgium headquarters pack", "140 copies", "Biweekly", "2 sites", "Active", "August 25, 2026"),
+        ("Germany branch circulation", "190 copies", "Biweekly", "3 sites", "Adjusted", "August 25, 2026"),
+        ("Hospitality reception bundle", "95 copies", "Biweekly", "2 sites", "Review", "Awaiting contact confirmation"),
+        ("Embassy partner drop", "50 copies", "Biweekly", "2 sites", "Queued", "Next cycle after review"),
+    ]
+    for order, copies, cadence, sites, status, next_window in seeded:
+        existing = BusinessOrder.query.filter_by(
+            company_account_id=account.id, order=order
+        ).first()
+        if existing is None:
+            db.session.add(
+                BusinessOrder(
+                    company_account_id=account.id,
+                    order=order,
+                    copies=copies,
+                    cadence=cadence,
+                    sites=sites,
+                    status=status,
+                    next_window=next_window,
+                    created_at=SEED_COMPANY_BASE_CREATED,
+                )
+            )
+        else:
+            existing.copies = copies
+            existing.cadence = cadence
+            existing.sites = sites
+            existing.status = status
+            existing.next_window = next_window
+
+
+def _upsert_business_invoices():
+    """Seed consolidated invoice records for the demo lead org account.
+
+    Mirrors ``businessInvoiceRows`` from ``demoData.js``. Idempotent per
+    (account, invoice code).
+    """
+    account = CompanyAccount.query.filter_by(
+        company=SEEDED_COMPANY_LEAD["company"]
+    ).first()
+    if account is None:
+        return
+
+    seeded = [
+        ("INV-BIZ-2026-08", "August business circulation", "EUR 8,950", "Paid", "August 11, 2026"),
+        ("INV-BIZ-2026-07", "July business circulation", "EUR 8,630", "Paid", "July 11, 2026"),
+        ("VAT note review", "Germany branch allocation", "Pending", "Review", "August 8, 2026"),
+        ("INV-BIZ-2026-09", "Projected September cycle", "EUR 9,120", "Upcoming", "September 1, 2026"),
+    ]
+    for invoice, scope, amount, status, date in seeded:
+        existing = BusinessInvoice.query.filter_by(
+            company_account_id=account.id, invoice=invoice
+        ).first()
+        if existing is None:
+            db.session.add(
+                BusinessInvoice(
+                    company_account_id=account.id,
+                    invoice=invoice,
+                    scope=scope,
+                    amount=amount,
+                    status=status,
+                    date=date,
+                    created_at=SEED_COMPANY_BASE_CREATED,
+                )
+            )
+        else:
+            existing.scope = scope
+            existing.amount = amount
+            existing.status = status
+            existing.date = date
+
+
 def seed_data():
     _upsert_plans()
     _upsert_users()
@@ -594,6 +1000,11 @@ def seed_data():
     _upsert_categories()
     _upsert_articles()
     _upsert_companies()
+    _upsert_company_orders()
+    _upsert_locations()
+    _upsert_shipments()
+    _upsert_business_orders()
+    _upsert_business_invoices()
     db.session.commit()
 
 
@@ -631,10 +1042,18 @@ def seed_command():
     print("Seeded company accounts:")
     for company_data in SEEDED_COMPANY_ACCOUNTS:
         print(
-            f"  - {company_data['status']:<24} {company_data['tier']:<18} "
+            f"  - {company_data['status']:<24} {company_data['volume']:<22} "
             f"{company_data['company']}"
         )
     print(
-        f"  - {'Submitted':<24} {'--':<18} "
+        f"  - {'License approved':<24} {'--':<22} "
         f"{SEEDED_COMPANY_LEAD['company']} (lead)"
     )
+    print("Seeded shipment runs and activity:")
+    print(
+        f"  - {len(SEEDED_ADMIN_SHIPMENTS)} admin runs, "
+        f"{len(SEEDED_BUSINESS_SHIPMENTS)} business runs, "
+        f"{len(SEEDED_SHIPMENT_ACTIVITY)} activity events"
+    )
+    print("Seeded business order plans and invoices:")
+    print("  - 4 order plans, 4 invoices (lead org account)")

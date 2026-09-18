@@ -12,6 +12,11 @@ from routes.categories import categories_bp
 from routes.companies import companies_bp
 from routes.subscriptions import subscriptions_bp
 from routes.templates import templates_bp
+from routes.orders import orders_bp
+from routes.locations import locations_bp
+from routes.shipments import shipments_bp
+from routes.business_orders import order_plans_bp
+from routes.business_invoices import invoices_bp
 from seed import seed_command
 
 
@@ -33,6 +38,11 @@ def create_app(config_name=None):
     app.register_blueprint(categories_bp)
     app.register_blueprint(articles_bp)
     app.register_blueprint(companies_bp)
+    app.register_blueprint(orders_bp)
+    app.register_blueprint(locations_bp)
+    app.register_blueprint(shipments_bp)
+    app.register_blueprint(order_plans_bp)
+    app.register_blueprint(invoices_bp)
     app.cli.add_command(seed_command)
 
     @app.route("/api/v1/health")

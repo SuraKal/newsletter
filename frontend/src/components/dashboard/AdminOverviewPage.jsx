@@ -6,6 +6,7 @@ import {
   CreditCard,
   LayoutDashboard,
   PenSquare,
+  ReceiptText,
   ShieldCheck,
   Truck,
   Users,
@@ -28,7 +29,7 @@ const sectionIconMap = {
   companies: Building2,
   governance: ShieldCheck,
   shipments: Truck,
-  pricing: CreditCard,
+  "order-requests": ReceiptText,
   subscriptions: CreditCard,
 };
 
@@ -42,7 +43,7 @@ export default function AdminOverviewPage() {
     { id: "governance", label: "Governance", to: "/admin/governance" },
     { id: "shipments", label: "Shipments", to: "/admin/shipments" },
     { id: "subscriptions", label: "Subscriptions", to: "/admin/subscriptions" },
-    { id: "pricing", label: "Bulk pricing", to: "/admin/pricing" },
+    { id: "order-requests", label: "Order requests", to: "/admin/order-requests" },
   ].map((tool) => ({
     ...tool,
     icon: sectionIconMap[tool.id],

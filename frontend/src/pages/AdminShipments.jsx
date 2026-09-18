@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Users } from "lucide-react";
 import {
@@ -12,7 +12,7 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import { getAdminShipmentRows } from "@/lib/shipment-store";
+import { appClient } from "@/api/appClient";
 
 const shipmentColumns = [
   {
@@ -62,14 +62,28 @@ const relatedLinks = [
   { label: "Companies", to: "/admin/companies" },
   { label: "Subscribers", to: "/admin/subscribers" },
   { label: "Governance", to: "/admin/governance" },
-  { label: "Pricing", to: "/admin/pricing" },
+  { label: "Order requests", to: "/admin/order-requests" },
 ];
 
 export default function AdminShipments() {
   const [query, setQuery] = useState("");
+  const [shipments, setShipments] = useState(() =>
+    appClient.shipments.listAdmin(),
+  );
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
+
+  const reloadShipments = async () => {
+    const rows = await appClient.shipments.refreshAdmin();
+    if (Array.isArray(rows)) setShipments(rows);
+  };
+
+  useEffect(() => {
+    reloadShipments();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const table = useTableQuery({
-    rows: getAdminShipmentRows(),
+    rows: shipments,
     query,
     predicate: matchesSearch,
     activeFilters,

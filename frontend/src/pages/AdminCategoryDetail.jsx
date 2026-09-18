@@ -25,7 +25,7 @@ const relatedLinks = [
   { label: "Content", to: "/admin/content" },
   { label: "Schedule", to: "/admin/schedule" },
   { label: "Governance", to: "/admin/governance" },
-  { label: "Pricing", to: "/admin/pricing" },
+  { label: "Order requests", to: "/admin/order-requests" },
 ];
 
 function slugify(value) {

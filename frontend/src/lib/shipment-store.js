@@ -45,6 +45,28 @@ export function getBusinessShipmentRows() {
   return readAll().filter((row) => row.owner === "business");
 }
 
+export function setBusinessShipmentRows(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  const all = readAll().filter((row) => row.owner !== "business");
+  const next = [
+    ...all,
+    ...list.map((row) => ({ ...row, owner: "business" })),
+  ];
+  writeAll(next);
+  return list;
+}
+
+export function setAdminShipmentRows(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  const all = readAll().filter((row) => row.owner !== "admin");
+  const next = [
+    ...list.map((row) => ({ ...row, owner: "admin" })),
+    ...all,
+  ];
+  writeAll(next);
+  return list;
+}
+
 export function getShipmentById(id) {
   if (!id) return null;
   return readAll().find((row) => row.id === id) || null;

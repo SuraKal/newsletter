@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Check } from "lucide-react";
 import {
@@ -9,11 +9,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { adminShipmentActivityRows } from "@/lib/demoData";
-import {
-  getShipmentById,
-  updateShipment,
-} from "@/lib/shipment-store";
+import { appClient } from "@/api/appClient";
 
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
@@ -21,7 +17,7 @@ const relatedLinks = [
   { label: "Companies", to: "/admin/companies" },
   { label: "Subscribers", to: "/admin/subscribers" },
   { label: "Governance", to: "/admin/governance" },
-  { label: "Pricing", to: "/admin/pricing" },
+  { label: "Order requests", to: "/admin/order-requests" },
 ];
 
 const actionForStatus = (status) => {
@@ -42,15 +38,42 @@ const actionForStatus = (status) => {
 
 export default function AdminShipmentDetail() {
   const { shipmentId } = useParams();
-  const [, setRevision] = useState(0);
-  const shipment = getShipmentById(shipmentId);
+  const [shipment, setShipment] = useState(() =>
+    appClient.shipments.getLocal(shipmentId),
+  );
+  const [activity, setActivity] = useState([]);
+  const [busy, setBusy] = useState(false);
+
+  const loadShipment = async () => {
+    const result = await appClient.shipments.getAdmin(shipmentId);
+    if (result) {
+      setShipment(result.shipment);
+      setActivity(result.activity);
+    } else {
+      setShipment(null);
+      setActivity([]);
+    }
+  };
+
+  useEffect(() => {
+    loadShipment();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shipmentId]);
 
   const action = shipment ? actionForStatus(shipment.status) : null;
 
-  const handleAction = () => {
+  const handleAction = async () => {
     if (!shipment || !action) return;
-    updateShipment(shipment.id, action.next);
-    setRevision((value) => value + 1);
+    setBusy(true);
+    try {
+      const row = await appClient.shipments.advanceAdmin(shipment.id);
+      if (row) setShipment(row);
+      await loadShipment();
+    } catch {
+      // Leave the record in place; the next refresh reconciles the state.
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!shipment) {
@@ -81,10 +104,6 @@ export default function AdminShipmentDetail() {
     );
   }
 
-  const activity = adminShipmentActivityRows.filter(
-    (row) => row.shipment === shipment.shipmentId,
-  );
-
   return (
     <div className="space-y-6">
       <DashboardPageHeader
@@ -109,7 +128,8 @@ export default function AdminShipmentDetail() {
               <button
                 type="button"
                 onClick={handleAction}
-                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 dark:bg-stone-100 dark:text-stone-900"
+                disabled={busy}
+                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900"
               >
                 <Check className="h-4 w-4" />
                 {action.label}

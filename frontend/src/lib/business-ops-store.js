@@ -65,6 +65,11 @@ export function getBusinessLocationRows() {
   return readAll("locations");
 }
 
+export function setBusinessLocationRows(rows) {
+  writeAll("locations", Array.isArray(rows) ? rows : []);
+  return rows;
+}
+
 export function getBusinessLocationById(id) {
   if (!id) return null;
   return readAll("locations").find((row) => row.id === id) || null;
@@ -78,6 +83,11 @@ export function getBusinessOrderRows() {
   return readAll("orders");
 }
 
+export function setBusinessOrderRows(rows) {
+  writeAll("orders", Array.isArray(rows) ? rows : []);
+  return rows;
+}
+
 export function getBusinessOrderById(id) {
   if (!id) return null;
   return readAll("orders").find((row) => row.id === id) || null;
@@ -89,6 +99,11 @@ export function updateBusinessOrder(id, patch) {
 
 export function getBusinessInvoiceRows() {
   return readAll("invoices");
+}
+
+export function setBusinessInvoiceRows(rows) {
+  writeAll("invoices", Array.isArray(rows) ? rows : []);
+  return rows;
 }
 
 export function getBusinessInvoiceById(id) {

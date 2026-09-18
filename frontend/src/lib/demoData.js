@@ -1,4 +1,5 @@
 import { IMAGES } from "@/lib/constants";
+import { appParams } from "@/lib/app-params";
 
 export const heroArticle = {
   id: "hero-1",
@@ -431,7 +432,7 @@ export const subscriptionPlans = [
       "Consolidated invoicing and contract billing",
       "Company dashboard with shipment visibility",
       "Multi-location delivery coordination",
-      "Volume pricing tiers",
+      "Volume-sensitive pricing",
       "Dedicated onboarding and account support",
     ],
     highlighted: false,
@@ -1175,10 +1176,10 @@ export const businessOrderMetrics = [
     detail: "The next business print cycle is already grouped and ready for final volume review.",
     accent: true,
   },
-  {
-    label: "Pricing tier",
-    value: "Regional Team",
-    detail: "Volume and site count still sit inside the discounted multi-location band.",
+{
+    label: "Order pricing",
+    value: "€1.05 / copy",
+    detail: "The per-copy estimate drops as requested volume grows, and an account manager confirms the final rate.",
   },
 ];
 
@@ -1405,12 +1406,13 @@ export const adminOverviewAccountHealth = [
   {
     label: "Business contracts",
     value: "46",
-    detail: "Company accounts span one-site, regional-team, and enterprise-route pricing structures.",
+detail: "Company accounts price their bulk orders at a per-copy rate that depends on their requested copy volume.",
   },
   {
-    label: "Renewal risk",
-    value: "14 due today",
-    detail: "A compact renewal and support watchlist keeps front-desk and billing work visible before it grows noisy.",
+    label: "Order volume",
+    value: "21 accounts",
+    detail: "Most company accounts run recurring copy volumes within the mid-volume estimate band.",
+    accent: true,
   },
 ];
 
@@ -1484,11 +1486,11 @@ export const adminOverviewQuickActions = [
     detail: "Monitor outbound route health, escalations, and fulfillment readiness.",
     route: "/admin/shipments",
   },
-  {
-    id: "pricing",
-    label: "Pricing",
-    detail: "Open business pricing tiers and contract-band management when needed.",
-    route: "/admin/pricing",
+{
+    id: "order-requests",
+    label: "Order requests",
+    detail: "Review pending bulk-order requests and confirm final prices.",
+    route: "/admin/order-requests",
   },
 ];
 
@@ -1819,12 +1821,12 @@ export const adminCompanyMetrics = [
   {
     label: "Active companies",
     value: "46",
-    detail: "Company accounts span one-site, regional-team, and enterprise-route contract structures.",
+detail: "Company accounts price their bulk orders at a per-copy rate set by requested volume.",
   },
   {
-    label: "Regional Team tier",
+    label: "Recurring volumes",
     value: "21 accounts",
-    detail: "The discounted multi-location tier is currently the most common business contract shape.",
+    detail: "Most company accounts run confirmed recurring copy volumes once their order requests are approved.",
     accent: true,
   },
   {
@@ -1842,8 +1844,7 @@ export const adminCompanyMetrics = [
 export const adminCompanyRows = [
   {
     id: "admin-company-1",
-    company: "Atlas Hotels Belgium",
-    tier: "Regional Team",
+company: "Atlas Hotels Belgium",
     volume: "180 copies / cycle",
     billing: "Monthly invoice",
     status: "Active",
@@ -1852,8 +1853,7 @@ export const adminCompanyRows = [
   },
   {
     id: "admin-company-2",
-    company: "Meridian Trade Offices",
-    tier: "Single Office",
+company: "Meridian Trade Offices",
     volume: "95 copies / cycle",
     billing: "Monthly invoice",
     status: "Active",
@@ -1862,8 +1862,7 @@ export const adminCompanyRows = [
   },
   {
     id: "admin-company-3",
-    company: "Rhine Partner Lounges",
-    tier: "Regional Team",
+company: "Rhine Partner Lounges",
     volume: "140 copies / cycle",
     billing: "Contract billing",
     status: "Invoice review",
@@ -1872,13 +1871,69 @@ export const adminCompanyRows = [
   },
   {
     id: "admin-company-4",
-    company: "Embassy reception network",
-    tier: "Enterprise Route",
+company: "Embassy reception network",
     volume: "60 copies / cycle",
     billing: "Contract billing",
     status: "Onboarding",
     tone: "neutral",
     region: "Belgium + Germany",
+  },
+];
+
+export const companyOrderRequests = [
+  {
+    id: "order-request-seed-1",
+    companyAccountId: "business-account-1",
+    company: `${appParams.appName} Distribution Group`,
+    copies: 475,
+    neededBy: "2026-09-25",
+    deliveryLocations: ["Brussels HQ", "Antwerp (HQ)", "Cologne", "Berlin"],
+    estimatedPrice: 498.75,
+    rate: 1.05,
+    status: "Approved",
+    tone: "success",
+    finalPrice: 498.75,
+    requestedBy: null,
+    reviewedBy: null,
+    reviewedAt: "2026-01-14T14:30:00Z",
+    createdAt: "2026-01-12T09:00:00Z",
+    updatedAt: "2026-01-14T14:30:00Z",
+  },
+  {
+    id: "order-request-seed-2",
+    companyAccountId: "business-account-1",
+    company: `${appParams.appName} Distribution Group`,
+    copies: 380,
+    neededBy: "2026-10-02",
+    deliveryLocations: ["Brussels HQ", "Antwerp", "Cologne"],
+    estimatedPrice: 399.0,
+    rate: 1.05,
+    status: "Pending approval",
+    tone: "warning",
+    finalPrice: null,
+    requestedBy: null,
+    reviewedBy: null,
+    reviewedAt: "",
+    createdAt: "2026-01-18T08:00:00Z",
+    updatedAt: "",
+  },
+  {
+    id: "order-request-seed-3",
+    companyAccountId: "admin-company-1",
+    company: "Atlas Hotels Belgium",
+    copies: 240,
+    neededBy: "2026-10-09",
+    deliveryLocations: ["Atlas Brussels", "Atlas Antwerp"],
+    estimatedPrice: 252.0,
+    rate: 1.05,
+    status: "Pending approval",
+    tone: "warning",
+    finalPrice: null,
+    requestedBy: null,
+    reviewedBy: null,
+    reviewedAt: "",
+    createdAt: "2026-01-20T10:00:00Z",
+    updatedAt: "",
   },
 ];
 
@@ -2084,60 +2139,6 @@ export const adminShipmentIssueStates = [
     icon: "LifeBuoy",
     detail:
       "Future integrations can connect support tickets, reroute notes, and callback outcomes into this same issue-state pattern.",
-  },
-];
-
-export const adminPricingMetrics = [
-  {
-    label: "Pricing tiers",
-    value: "3 active bands",
-    detail: "Single Office, Regional Team, and Enterprise Route are currently the live business pricing models.",
-  },
-  {
-    label: "Accounts under review",
-    value: "6",
-    detail: "A small set of company accounts still needs tier or billing clarification before the next invoice cycle.",
-    accent: true,
-  },
-  {
-    label: "Cross-border contracts",
-    value: "12",
-    detail: "Several business accounts now require pricing decisions that account for Belgium and Germany coverage together.",
-  },
-  {
-    label: "Custom contracts",
-    value: "11",
-    detail: "Enterprise-route accounts depend on manual pricing guidance rather than a simple self-serve plan.",
-  },
-];
-
-export const adminPricingRows = [
-  {
-    id: "admin-pricing-1",
-    tier: "Single Office",
-    volume: "25-100 copies / cycle",
-    billing: "One invoice contact",
-    status: "Live",
-    tone: "success",
-    coverage: "Single-location Belgium or Germany",
-  },
-  {
-    id: "admin-pricing-2",
-    tier: "Regional Team",
-    volume: "101-500 copies / cycle",
-    billing: "Consolidated invoicing",
-    status: "Most used",
-    tone: "info",
-    coverage: "Multi-location, often cross-city",
-  },
-  {
-    id: "admin-pricing-3",
-    tier: "Enterprise Route",
-    volume: "500+ copies or special routing",
-    billing: "Contract billing",
-    status: "Manual review",
-    tone: "warning",
-    coverage: "Complex or cross-border account groups",
   },
 ];
 
@@ -2352,30 +2353,6 @@ export const businessLandingFeatures = [
   },
 ];
 
-export const businessPricingFramework = [
-  {
-    tier: "Single Office",
-    volume: "25-100 copies per delivery",
-    pricing: "Entry volume tier",
-    billing: "One invoice contact, one main delivery location",
-    note: "Best for one headquarters, embassy, showroom, or hospitality site.",
-  },
-  {
-    tier: "Regional Team",
-    volume: "101-500 copies per delivery",
-    pricing: "Discounted volume band",
-    billing: "Consolidated invoicing across several delivery points",
-    note: "Designed for organizations operating across several city or country locations.",
-  },
-  {
-    tier: "Enterprise Route",
-    volume: "500+ copies or special routing",
-    pricing: "Custom contract pricing",
-    billing: "Contract-based billing and rollout planning",
-    note: "For large employer, campus, hotel, or partner-distribution networks.",
-  },
-];
-
 export const businessDeliveryLocations = [
   {
     title: "Head office delivery",
@@ -2387,57 +2364,9 @@ export const businessDeliveryLocations = [
   },
   {
     title: "Hospitality and partner sites",
-    detail: "Hotels, lounges, retail counters, and client-facing locations can receive their own copy allocations per cycle.",
+detail: "Hotels, lounges, retail counters, and client-facing locations can receive their own copy allocations per cycle.",
   },
 ];
-
-export const businessApplySteps = [
-  {
-    id: "profile",
-    label: "Organization",
-    detail: "Capture the buyer, company profile, and country scope first.",
-  },
-  {
-    id: "operations",
-    label: "Fulfillment",
-    detail: "Document expected copies, delivery locations, and launch timing.",
-  },
-  {
-    id: "billing",
-    label: "Billing",
-    detail: "Set invoice expectations, decision context, and quote readiness.",
-  },
-  {
-    id: "submit",
-    label: "Submit",
-    detail: "Review the request and route it into the mocked business intake pipeline.",
-  },
-];
-
-export const businessIntakeOptions = {
-  requestTypes: [
-    "Bulk Newspaper Order",
-    "Business Subscription",
-    "Hospitality Distribution",
-    "Partnership or Sponsorship",
-    "Enterprise Support",
-    "Other",
-  ],
-  companySizes: ["1-10", "11-50", "51-200", "200-1000", "1000+"],
-  billingPreferences: [
-    "Monthly invoice",
-    "Quarterly invoice",
-    "Contract billing",
-    "Need guidance",
-  ],
-  launchTimelines: [
-    "Within 2 weeks",
-    "Within 1 month",
-    "This quarter",
-    "Exploring options",
-  ],
-  countryScopes: ["Belgium", "Germany", "Belgium and Germany"],
-};
 
 export const businessContactCards = [
   {

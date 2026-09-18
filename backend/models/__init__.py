@@ -9,6 +9,11 @@ from .template import ArticleTemplate
 from .category import Category, Subcategory
 from .article import Article
 from .company import CompanyAccount
+from .company_order import CompanyOrder
+from .location import BusinessLocation
+from .shipment import Shipment, ShipmentActivity
+from .business_order import BusinessOrder
+from .business_invoice import BusinessInvoice
 
 __all__ = [
     "db",
@@ -20,4 +25,10 @@ __all__ = [
     "Subcategory",
     "Article",
     "CompanyAccount",
+    "CompanyOrder",
+    "BusinessLocation",
+    "Shipment",
+    "ShipmentActivity",
+    "BusinessOrder",
+    "BusinessInvoice",
 ]

@@ -1,8 +1,11 @@
 import React, { useState } from "react";
-import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Building2,
+  CheckCircle2,
+  FileBadge,
+  Lock,
   Mail,
   MapPin,
   Newspaper,
@@ -10,64 +13,125 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-import {
-  authJourneyContent,
-  getRoleFromJourney,
-  useAuth,
-} from "@/lib/AuthContext";
+import { authJourneyContent, useAuth } from "@/lib/AuthContext";
 import { appClient } from "@/api/appClient";
 import { getDefaultDashboardRoute } from "@/lib/dashboard-config";
-import Masthead from "@/components/newspaper/Masthead";
-import Footer from "@/components/newspaper/Footer";
 
 const journeyOptions = [
   { key: "individual", icon: Newspaper, title: "Individual reader" },
   { key: "business", icon: Building2, title: "Company account" },
 ];
 
+const roleForJourney = {
+  individual: "reader",
+  business: "business",
+};
+
+const normalizeJourney = (value) =>
+  value === "business" ? "business" : "individual";
+
 export default function Register() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { checkUserAuth } = useAuth();
+
+  const query = new URLSearchParams(location.search);
+  const [journeyKey, setJourneyKey] = useState(
+    normalizeJourney(query.get("journey")),
+  );
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
     confirm: "",
     companyName: "",
+    licenseDocument: "",
+    licenseFileName: "",
     contactPhone: "",
     deliveryAddress: "",
     consent: false,
   });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { checkUserAuth } = useAuth();
-  const journeyKey =
-    searchParams.get("journey") === "business" ? "business" : "individual";
-  const isBusinessJourney = journeyKey === "business";
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (searchParams.get("journey") === "admin") {
+  if (query.get("journey") === "admin") {
     return <Navigate to="/login?journey=admin" replace />;
   }
 
-  const updateField = (field, value) => {
-    setForm((current) => ({ ...current, [field]: value }));
+  const isBusinessJourney = journeyKey === "business";
+  const journey = authJourneyContent[journeyKey] || authJourneyContent.individual;
+  const activeOption =
+    journeyOptions.find((option) => option.key === journeyKey) ||
+    journeyOptions[0];
+
+  const updateField = (field) => (event) => {
+    const nextValue = event.currentTarget.value;
+    setForm((current) => ({ ...current, [field]: nextValue }));
+    if (error) setError("");
+  };
+
+  const updateConsent = (event) => {
+    const checked = event.currentTarget.checked;
+    setForm((current) => ({
+      ...current,
+      consent: checked,
+    }));
+    if (error) setError("");
   };
 
   const selectJourney = (nextJourney) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("journey", nextJourney);
-    setSearchParams(nextParams, { replace: true });
+    setJourneyKey(normalizeJourney(nextJourney));
+    setError("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  const handleLicenseUpload = (event) => {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
 
-    if (form.password !== form.confirm) {
-      setError("Passwords do not match");
+    const isAllowed =
+      /^(application\/pdf|image\/(png|jpeg|webp))$/.test(file.type) &&
+      file.size <= 5 * 1024 * 1024;
+    if (!isAllowed) {
+      setError(
+        "Upload a PDF, PNG, JPG, or WebP business licence smaller than 5 MB.",
+      );
+      event.currentTarget.value = "";
       return;
     }
 
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((current) => ({
+        ...current,
+        licenseDocument: String(reader.result || ""),
+        licenseFileName: file.name,
+      }));
+      if (error) setError("");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+
+    const email = form.email.trim().toLowerCase();
+    if (!form.name.trim() || !email || !form.password || !form.confirm) {
+      setError("Fill in every required field to create your account.");
+      return;
+    }
+    if (form.password.length < 8) {
+      setError("Use at least 8 characters for your password.");
+      return;
+    }
+    if (form.password !== form.confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (isBusinessJourney && !form.licenseDocument) {
+      setError("Attach your business licence to continue.");
+      return;
+    }
     if (!form.consent) {
       setError(
         "Please confirm how we can use your account and delivery information before continuing.",
@@ -75,252 +139,313 @@ export default function Register() {
       return;
     }
 
-    setLoading(true);
+    setError("");
+    setIsSubmitting(true);
 
     try {
       const registeredUser = await appClient.auth.register({
-        name: form.name,
-        email: form.email,
+        name: form.name.trim(),
+        email,
         password: form.password,
-        role: getRoleFromJourney(journeyKey),
+        role: roleForJourney[journeyKey],
         accountType: journeyKey,
-        companyName: isBusinessJourney ? form.companyName : "",
-        contactPhone: form.contactPhone,
-        deliveryAddress: form.deliveryAddress,
+        companyName: isBusinessJourney ? form.companyName.trim() : "",
+        licenseDocument: isBusinessJourney ? form.licenseDocument : "",
+        contactPhone: form.contactPhone.trim(),
+        deliveryAddress: form.deliveryAddress.trim(),
       });
+
+      if ("pendingApproval" in registeredUser && registeredUser.pendingApproval) {
+        navigate("/login?journey=business&pending=license", { replace: true });
+        return;
+      }
+
       await checkUserAuth();
       navigate(getDefaultDashboardRoute(registeredUser.role), {
         replace: true,
       });
     } catch (registrationError) {
-      setError(registrationError.message || "Unable to create account");
+      setError(registrationError.message || "Unable to create your account.");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  const renderField = ({
+    id,
+    name,
+    type = "text",
+    value,
+    onChange,
+    label,
+    placeholder,
+    icon: Icon,
+    autoComplete,
+    inputMode = undefined,
+    autoCapitalize = "none",
+    spellCheck = false,
+  }) => (
+    <div>
+      <label
+        htmlFor={id}
+        className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.18em] text-[#4c392b]"
+      >
+        {label}
+      </label>
+      <div className="flex w-full items-center rounded-xl border border-[#cfc0af] bg-white transition-colors focus-within:border-[#4A2A08] focus-within:ring-2 focus-within:ring-[#4A2A08]/15">
+        <Icon className="ml-4 h-4 w-4 shrink-0 text-[#8b5f32]" />
+        <input
+          id={id}
+          name={name}
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          inputMode={inputMode}
+          autoCapitalize={autoCapitalize}
+          spellCheck={spellCheck}
+          className="min-h-14 w-full rounded-xl bg-transparent px-3 text-base text-[#2a1b12] outline-none placeholder:text-[#9b8c7d]"
+        />
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-paper">
-      <Masthead />
-      <main className="relative overflow-hidden">
-        <div className="absolute inset-x-0 top-0 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(72,60,50,0.1),_transparent_62%)]" />
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 lg:grid-cols-[1.02fr_0.98fr] lg:items-start lg:py-20">
-          <section className="relative overflow-hidden rounded-[2rem] border border-stone-300/50 bg-vellum/70 p-8 shadow-[0_25px_80px_rgba(40,30,20,0.08)] lg:p-10">
-            <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-heritage/10 blur-3xl" />
-            <div className="relative">
-              <p className="category-label">Account setup</p>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                {journeyOptions.map((option) => {
-                  const OptionIcon = option.icon;
-                  const isActive = option.key === journeyKey;
-
-                  return (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={() => selectJourney(option.key)}
-                      className={`rounded-[1.5rem] border p-5 text-left transition ${
-                        isActive
-                          ? "border-heritage bg-paper shadow-[0_18px_38px_rgba(76,43,8,0.08)]"
-                          : "border-stone-300/50 bg-paper/80 hover:border-stone-400"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300/60 bg-vellum">
-                          <OptionIcon className="h-5 w-5 text-heritage" />
-                        </div>
-                        <div>
-                          <p className="font-sans text-[0.64rem] font-bold uppercase tracking-[0.24em] text-heritage">
-                            {authJourneyContent[option.key].eyebrow}
-                          </p>
-                          <p className="mt-1 font-display text-xl font-bold text-ink">
-                            {option.title}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+    <main className="min-h-screen bg-[#f4efe6] px-4 py-8 text-[#2a1b12] sm:py-12">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center justify-center">
+        <div className="grid w-full overflow-hidden rounded-[2rem] border border-[#d5c8b8] bg-[#fffdf8] shadow-[0_24px_80px_rgba(42,27,18,0.12)] lg:grid-cols-[0.9fr_1.1fr]">
+          <section className="hidden bg-[#4A2A08] p-10 text-[#fffdf8] lg:flex lg:flex-col lg:justify-between">
+            <div>
+              <Link to="/" className="inline-flex items-center gap-3">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[#d9b77c]/60 font-display text-2xl font-black text-[#f1d6a5]">
+                  ን
+                </span>
+                <span>
+                  <span className="block font-display text-2xl font-black tracking-tight">
+                    ንቐደም
+                  </span>
+                  <span className="block font-sans text-[0.6rem] font-bold uppercase tracking-[0.24em] text-[#e7d5bd]">
+                    Independent journalism
+                  </span>
+                </span>
+              </Link>
+              <div className="mt-24 max-w-md">
+                <p className="font-sans text-xs font-bold uppercase tracking-[0.28em] text-[#e0bb7f]">
+                  Account setup
+                </p>
+                <h1 className="mt-4 font-display text-5xl font-black leading-[0.98]">
+                  Start your newsroom journey.
+                </h1>
+                <p className="mt-6 max-w-sm font-body text-base leading-7 text-[#eadfce]">
+                  Create a reader account for your personal copy or a company
+                  account for bulk deliveries, invoicing, and licence-based
+                  access.
+                </p>
               </div>
+            </div>
+            <div className="border-t border-[#d9b77c]/30 pt-6 font-sans text-xs uppercase tracking-[0.18em] text-[#e7d5bd]">
+              Independent Journalism Since 2024
             </div>
           </section>
 
-          <section className="rounded-[2rem] border border-stone-300/50 bg-paper p-6 shadow-[0_20px_70px_rgba(30,20,10,0.08)] sm:p-8">
-            <div className="flex items-center justify-between gap-4">
+          <section className="p-6 sm:p-10 lg:p-12">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.28em] text-heritage">
-                  {isBusinessJourney
-                    ? "Business registration"
-                    : "Reader registration"}
+                <Link
+                  to="/"
+                  className="font-display text-2xl font-black text-[#4A2A08] lg:hidden"
+                >
+                  ንቐደም
+                </Link>
+                <p className="mt-6 font-sans text-[0.65rem] font-bold uppercase tracking-[0.28em] text-[#8b5f32] lg:mt-0">
+                  {journey.eyebrow}
                 </p>
-                <h2 className="mt-2 font-display text-3xl font-black text-ink">
+                <h2 className="mt-2 font-display text-3xl font-black tracking-tight sm:text-4xl">
                   Create account
                 </h2>
               </div>
-              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-stone-300/60 bg-vellum">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#d5c8b8] bg-[#f4efe6] text-[#4A2A08]">
                 {isBusinessJourney ? (
-                  <Building2 className="h-6 w-6 text-heritage" />
+                  <Building2 className="h-5 w-5" />
                 ) : (
-                  <Newspaper className="h-6 w-6 text-heritage" />
+                  <Newspaper className="h-5 w-5" />
                 )}
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <div className="mt-8 grid gap-2 sm:grid-cols-2">
+              {journeyOptions.map((option) => {
+                const Icon = option.icon;
+                const isActive = option.key === activeOption.key;
+                return (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => selectJourney(option.key)}
+                    className={`flex min-h-16 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
+                      isActive
+                        ? "border-[#4A2A08] bg-[#4A2A08] text-white"
+                        : "border-[#d5c8b8] bg-white text-[#5f4c3d] hover:border-[#8b5f32]"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="font-sans text-[0.68rem] font-bold uppercase leading-4 tracking-[0.08em]">
+                      {option.title}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="mt-4 font-body text-sm leading-6 text-[#756253]">
+              {journey.description}
+            </p>
+
+            <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
               {error ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sans text-xs text-red-700">
+                <div
+                  role="alert"
+                  className="rounded-xl border border-[#c98d86] bg-[#fff3f1] px-4 py-3 text-sm leading-5 text-[#8b3027]"
+                >
                   {error}
                 </div>
               ) : null}
 
-              <label className="block">
-                <span className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.22em] text-ink">
-                  {isBusinessJourney ? "Primary contact" : "Full name"}
-                </span>
-                <div className="flex items-center gap-3 rounded-2xl border border-stone-300/70 bg-vellum/35 px-4 py-3 focus-within:border-heritage">
-                  <UserRound className="h-4 w-4 text-redacted" />
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => updateField("name", e.target.value)}
-                    required
-                    placeholder={
-                      isBusinessJourney
-                        ? "Operations lead name"
-                        : "Your full name"
-                    }
-                    className="w-full bg-transparent font-body text-sm text-ink outline-none placeholder:text-redacted/60"
-                  />
-                </div>
-              </label>
+              {renderField({
+                id: "register-name",
+                name: "name",
+                value: form.name,
+                onChange: updateField("name"),
+                label: isBusinessJourney ? "Primary contact" : "Full name",
+                placeholder: isBusinessJourney
+                  ? "Operations lead name"
+                  : "Your full name",
+                icon: UserRound,
+                autoComplete: "name",
+              })}
 
               {isBusinessJourney ? (
-                <label className="block">
-                  <span className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.22em] text-ink">
-                    Company name
-                  </span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-stone-300/70 bg-vellum/35 px-4 py-3 focus-within:border-heritage">
-                    <Building2 className="h-4 w-4 text-redacted" />
-                    <input
-                      type="text"
-                      value={form.companyName}
-                      onChange={(e) =>
-                        updateField("companyName", e.target.value)
-                      }
-                      required
-                      placeholder="Company or organization"
-                      className="w-full bg-transparent font-body text-sm text-ink outline-none placeholder:text-redacted/60"
-                    />
+                <>
+                  {renderField({
+                    id: "register-company",
+                    name: "companyName",
+                    value: form.companyName,
+                    onChange: updateField("companyName"),
+                    label: "Company name",
+                    placeholder: "Company or organization",
+                    icon: Building2,
+                    autoComplete: "organization",
+                  })}
+
+                  <div>
+                    <label
+                      htmlFor="register-license"
+                      className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.18em] text-[#4c392b]"
+                    >
+                      Business licence
+                    </label>
+                    <div className="flex w-full items-center rounded-xl border border-[#cfc0af] bg-white px-4 py-3 transition-colors focus-within:border-[#4A2A08] focus-within:ring-2 focus-within:ring-[#4A2A08]/15">
+                      <FileBadge className="h-4 w-4 shrink-0 text-[#8b5f32]" />
+                      <input
+                        id="register-license"
+                        name="licenseDocument"
+                        type="file"
+                        accept="application/pdf,image/png,image/jpeg,image/webp"
+                        onChange={handleLicenseUpload}
+                        className="w-full min-h-14 bg-transparent text-sm text-[#2a1b12] file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#f4efe6] file:px-3 file:py-2 file:text-xs file:font-bold file:uppercase file:tracking-[0.14em] file:text-[#4A2A08] hover:file:bg-[#e9e0d3]"
+                      />
+                    </div>
+                    <p className="mt-2 font-body text-xs text-[#756253]">
+                      PDF, PNG, JPG, or WebP · up to 5 MB. An administrator
+                      approves your licence before you can sign in.
+                    </p>
+                    {form.licenseFileName ? (
+                      <p className="mt-2 flex items-center gap-2 font-sans text-xs font-semibold text-[#2f6b3c]">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Ready: {form.licenseFileName}
+                      </p>
+                    ) : null}
                   </div>
-                </label>
+                </>
               ) : null}
 
-              <label className="block">
-                <span className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.22em] text-ink">
-                  Email
-                </span>
-                <div className="flex items-center gap-3 rounded-2xl border border-stone-300/70 bg-vellum/35 px-4 py-3 focus-within:border-heritage">
-                  <Mail className="h-4 w-4 text-redacted" />
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => updateField("email", e.target.value)}
-                    required
-                    placeholder={
-                      isBusinessJourney
-                        ? "operations@company.com"
-                        : "reader@example.com"
-                    }
-                    className="w-full bg-transparent font-body text-sm text-ink outline-none placeholder:text-redacted/60"
-                  />
-                </div>
-              </label>
+              {renderField({
+                id: "register-email",
+                name: "email",
+                type: "email",
+                value: form.email,
+                onChange: updateField("email"),
+                label: "Email address",
+                placeholder: isBusinessJourney
+                  ? "operations@company.com"
+                  : "reader@example.com",
+                icon: Mail,
+                autoComplete: "username",
+                inputMode: "email",
+                autoCapitalize: "none",
+                spellCheck: false,
+              })}
 
               <div className="grid gap-5 sm:grid-cols-2">
-                <label className="block">
-                  <span className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.22em] text-ink">
-                    Contact phone
-                  </span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-stone-300/70 bg-vellum/35 px-4 py-3 focus-within:border-heritage">
-                    <Phone className="h-4 w-4 text-redacted" />
-                    <input
-                      type="tel"
-                      value={form.contactPhone}
-                      onChange={(e) =>
-                        updateField("contactPhone", e.target.value)
-                      }
-                      placeholder="+32 ..."
-                      className="w-full bg-transparent font-body text-sm text-ink outline-none placeholder:text-redacted/60"
-                    />
-                  </div>
-                </label>
-
-                <label className="block">
-                  <span className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.22em] text-ink">
-                    Delivery context
-                  </span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-stone-300/70 bg-vellum/35 px-4 py-3 focus-within:border-heritage">
-                    <MapPin className="h-4 w-4 text-redacted" />
-                    <input
-                      type="text"
-                      value={form.deliveryAddress}
-                      onChange={(e) =>
-                        updateField("deliveryAddress", e.target.value)
-                      }
-                      placeholder={
-                        isBusinessJourney
-                          ? "Primary office or first delivery site"
-                          : "Home or delivery address"
-                      }
-                      className="w-full bg-transparent font-body text-sm text-ink outline-none placeholder:text-redacted/60"
-                    />
-                  </div>
-                </label>
+                {renderField({
+                  id: "register-phone",
+                  name: "contactPhone",
+                  type: "tel",
+                  value: form.contactPhone,
+                  onChange: updateField("contactPhone"),
+                  label: "Contact phone",
+                  placeholder: "+32 ...",
+                  icon: Phone,
+                  autoComplete: "tel",
+                })}
+                {renderField({
+                  id: "register-address",
+                  name: "deliveryAddress",
+                  value: form.deliveryAddress,
+                  onChange: updateField("deliveryAddress"),
+                  label: "Delivery context",
+                  placeholder: isBusinessJourney
+                    ? "Primary office or first delivery site"
+                    : "Home or delivery address",
+                  icon: MapPin,
+                  autoComplete: "street-address",
+                })}
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
-                <label className="block">
-                  <span className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.22em] text-ink">
-                    Password
-                  </span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-stone-300/70 bg-vellum/35 px-4 py-3 focus-within:border-heritage">
-                    <ShieldCheck className="h-4 w-4 text-redacted" />
-                    <input
-                      type="password"
-                      value={form.password}
-                      onChange={(e) => updateField("password", e.target.value)}
-                      required
-                      className="w-full bg-transparent font-body text-sm text-ink outline-none"
-                    />
-                  </div>
-                </label>
-
-                <label className="block">
-                  <span className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.22em] text-ink">
-                    Confirm password
-                  </span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-stone-300/70 bg-vellum/35 px-4 py-3 focus-within:border-heritage">
-                    <ShieldCheck className="h-4 w-4 text-redacted" />
-                    <input
-                      type="password"
-                      value={form.confirm}
-                      onChange={(e) => updateField("confirm", e.target.value)}
-                      required
-                      className="w-full bg-transparent font-body text-sm text-ink outline-none"
-                    />
-                  </div>
-                </label>
+                {renderField({
+                  id: "register-password",
+                  name: "password",
+                  type: "password",
+                  value: form.password,
+                  onChange: updateField("password"),
+                  label: "Password",
+                  placeholder: "8 or more characters",
+                  icon: Lock,
+                  autoComplete: "new-password",
+                })}
+                {renderField({
+                  id: "register-confirm",
+                  name: "confirm",
+                  type: "password",
+                  value: form.confirm,
+                  onChange: updateField("confirm"),
+                  label: "Confirm password",
+                  placeholder: "Re-enter your password",
+                  icon: ShieldCheck,
+                  autoComplete: "new-password",
+                })}
               </div>
 
-              <label className="flex items-start gap-3 rounded-[1.25rem] border border-stone-300/50 bg-vellum/35 px-4 py-4">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#e2d7ca] bg-[#faf6ef] p-4">
                 <input
                   type="checkbox"
                   checked={form.consent}
-                  onChange={(e) => updateField("consent", e.target.checked)}
-                  className="mt-1 accent-heritage"
+                  onChange={updateConsent}
+                  className="mt-1 h-4 w-4 accent-[#4A2A08]"
                 />
-                <span className="font-body text-sm leading-6 text-ink">
+                <span className="font-body text-sm leading-5 text-[#3a2b1f]">
                   I agree that my contact and delivery information can be used
                   for account setup, shipment routing, and account support, as
                   described in the privacy policy.
@@ -329,31 +454,38 @@ export default function Register() {
 
               <button
                 type="submit"
-                disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-heritage px-6 py-4 font-sans text-xs font-bold uppercase tracking-[0.24em] text-paper transition-colors hover:bg-ink disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={isSubmitting}
+                className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#4A2A08] px-6 font-sans text-sm font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#2a1b12] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <span>{loading ? "Creating Account..." : "Create Account"}</span>
-                {!loading ? <ArrowRight className="h-4 w-4" /> : null}
+                {isSubmitting ? "Creating account..." : "Create account"}
+                {!isSubmitting ? <ArrowRight className="h-4 w-4" /> : null}
               </button>
             </form>
 
-            <div className="newspaper-rule my-8" />
-
-            <div className="text-center">
-              <p className="font-sans text-xs text-redacted">
-                Already have an account?{" "}
-                <Link
-                  to={`/login?journey=${journeyKey}`}
-                  className="font-semibold uppercase tracking-[0.16em] text-heritage hover:underline"
-                >
-                  Sign in
-                </Link>
+            <div className="mt-8 grid gap-2 rounded-xl border border-[#e2d7ca] bg-[#faf6ef] p-4 text-sm text-[#756253]">
+              <p className="flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-[0.16em] text-[#4A2A08]">
+                <CheckCircle2 className="h-4 w-4" />
+                Why register
+              </p>
+              <p>
+                Reader accounts get a personal workspace; company accounts
+                order in bulk once an administrator approves the business
+                licence.
               </p>
             </div>
+
+            <p className="mt-6 text-center text-sm text-[#756253]">
+              Already have an account?{" "}
+              <Link
+                to={`/login?journey=${journeyKey}`}
+                className="font-bold text-[#4A2A08] hover:underline"
+              >
+                Sign in
+              </Link>
+            </p>
           </section>
         </div>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </main>
   );
 }

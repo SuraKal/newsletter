@@ -54,9 +54,6 @@ export default function DeliveryStatusHero({
           <p className="mt-3 font-sans text-lg font-semibold text-stone-900 dark:text-stone-100">
             {destination}
           </p>
-          <p className="mt-2 font-sans text-xs leading-5 text-stone-500">
-            Address and route grouping stay visible here before the deeper location tools arrive.
-          </p>
         </div>
         <div className="dashboard-panel-soft p-4">
           <div className="flex items-center gap-2 text-stone-900 dark:text-stone-100">
@@ -67,9 +64,6 @@ export default function DeliveryStatusHero({
           </div>
           <p className="mt-3 font-sans text-lg font-semibold text-stone-900 dark:text-stone-100">
             {eta}
-          </p>
-          <p className="mt-2 font-sans text-xs leading-5 text-stone-500">
-            Timing stays tied to the fixed two-week print cadence, not the billing cycle.
           </p>
         </div>
       </div>

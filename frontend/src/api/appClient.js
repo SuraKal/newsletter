@@ -3,6 +3,11 @@ import {
   backendAuth,
   backendCategories,
   backendCompanies,
+  backendInvoices,
+  backendLocations,
+  backendOrderPlans,
+  backendOrders,
+  backendShipments,
   backendSubscriptions,
   cacheBackendUser,
   clearAccessToken,
@@ -13,7 +18,9 @@ import {
 } from "@/api/backendClient";
 import { appParams } from "@/lib/app-params";
 import {
-  businessPricingFramework as defaultBusinessPricing,
+  adminShipmentActivityRows,
+  businessShipmentActivityRows,
+  companyOrderRequests as defaultCompanyOrders,
   subscriptionPlans as defaultSubscriptionPlans,
 } from "@/lib/demoData";
 import { getCategories, syncCategoriesFromBackend } from "@/lib/category-store";
@@ -24,6 +31,24 @@ import {
   getCompanyLeads,
   getCompanyWorkflowState,
 } from "@/lib/company-store";
+import {
+  getBusinessInvoiceById,
+  getBusinessInvoiceRows,
+  getBusinessLocationById,
+  getBusinessLocationRows,
+  getBusinessOrderById,
+  getBusinessOrderRows,
+  setBusinessInvoiceRows,
+  setBusinessLocationRows,
+  setBusinessOrderRows,
+} from "@/lib/business-ops-store";
+import {
+  getAdminShipmentRows,
+  getBusinessShipmentRows,
+  getShipmentById,
+  setAdminShipmentRows,
+  setBusinessShipmentRows,
+} from "@/lib/shipment-store";
 
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
@@ -32,7 +57,7 @@ const sessionKey = `${appParams.storagePrefix}_session`;
 const resetTokensKey = `${appParams.storagePrefix}_reset_tokens`;
 const governanceRequestsKey = `${appParams.storagePrefix}_governance_requests`;
 const subscriptionPlansKey = `${appParams.storagePrefix}_subscription_plans`;
-const businessPricingKey = `${appParams.storagePrefix}_business_pricing`;
+const companyOrdersKey = `${appParams.storagePrefix}_company_orders`;
 const categoriesSyncKey = `${appParams.storagePrefix}_categories_sync`;
 const companySyncKey = `${appParams.storagePrefix}_company_sync`;
 const companyListSyncKey = `${appParams.storagePrefix}_company_list_sync`;
@@ -156,9 +181,9 @@ const ensureSeedData = () => {
     writeJson(subscriptionPlansKey, defaultSubscriptionPlans);
   }
 
-  const storedBusinessPricing = readJson(businessPricingKey, null);
-  if (!Array.isArray(storedBusinessPricing) || !storedBusinessPricing.length) {
-    writeJson(businessPricingKey, defaultBusinessPricing);
+  const storedOrders = readJson(companyOrdersKey, null);
+  if (!Array.isArray(storedOrders) || !storedOrders.length) {
+    writeJson(companyOrdersKey, defaultCompanyOrders);
   }
 };
 
@@ -178,6 +203,52 @@ const writeSubscriptionPlans = (plans) => {
   writeJson(subscriptionPlansKey, plans);
   if (isBrowser) {
     window.dispatchEvent(new CustomEvent("nekedem:subscription-plans-updated"));
+  }
+};
+
+const normalizeCompanyOrder = (order) => ({
+  id: order.id,
+  companyAccountId: order.companyAccountId ?? null,
+  company: order.company || "",
+  copies: Number(order.copies) || 0,
+  neededBy: order.neededBy || "",
+  deliveryLocations: Array.isArray(order.deliveryLocations)
+    ? order.deliveryLocations
+    : [],
+  articleId: order.articleId ?? null,
+  articleTitle: order.articleTitle || "",
+  estimatedPrice: Number(order.estimatedPrice) || 0,
+  rate: Number(order.rate) || 0,
+  status: order.status || "Pending approval",
+  tone: order.tone || "warning",
+  finalPrice: order.finalPrice == null ? null : Number(order.finalPrice),
+  requestedBy: order.requestedBy ?? null,
+  reviewedBy: order.reviewedBy ?? null,
+  reviewedAt: order.reviewedAt || "",
+  createdAt: order.createdAt || "",
+  updatedAt: order.updatedAt || "",
+});
+
+export const estimateOrderPrice = (copies) => {
+  const count = Math.max(1, Math.floor(Number(copies) || 0));
+  const rate = count <= 100 ? 1.2 : count <= 500 ? 1.05 : 0.9;
+  const total = Math.round(count * rate * 100) / 100;
+  return { total, rate };
+};
+
+const readCompanyOrders = () => {
+  ensureSeedData();
+  const orders = readJson(companyOrdersKey, defaultCompanyOrders);
+  if (!Array.isArray(orders)) {
+    return defaultCompanyOrders.map(normalizeCompanyOrder);
+  }
+  return orders.map(normalizeCompanyOrder);
+};
+
+const writeCompanyOrders = (orders) => {
+  writeJson(companyOrdersKey, orders);
+  if (isBrowser) {
+    window.dispatchEvent(new CustomEvent("nekedem:company-orders-updated"));
   }
 };
 
@@ -282,37 +353,6 @@ const refreshCompanyFromBackend = async () => {
   }
 
   return syncBusinessCompanySnapshot();
-};
-
-const normalizeBusinessPricing = (tier) => ({
-  ...tier,
-  id: tier.id || `business-tier-${String(tier.tier || "tier").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-  tier: String(tier.tier || "").trim(),
-  volume: String(tier.volume || "").trim(),
-  pricing: String(tier.pricing || "").trim(),
-  billing: String(tier.billing || "").trim(),
-  note: String(tier.note || "").trim(),
-  status: String(tier.status || "Published").trim(),
-  tone: tier.tone || "success",
-});
-
-const readBusinessPricing = () => {
-  ensureSeedData();
-  const pricing = readJson(businessPricingKey, defaultBusinessPricing);
-  if (!Array.isArray(pricing) || !pricing.length) {
-    writeJson(businessPricingKey, defaultBusinessPricing);
-    return defaultBusinessPricing.map(normalizeBusinessPricing);
-  }
-  return pricing.map(
-    normalizeBusinessPricing,
-  );
-};
-
-const writeBusinessPricing = (tiers) => {
-  writeJson(businessPricingKey, tiers);
-  if (isBrowser) {
-    window.dispatchEvent(new CustomEvent("nekedem:business-pricing-updated"));
-  }
 };
 
 const requireAdmin = () => {
@@ -460,40 +500,204 @@ refreshCategoriesFromBackend();
 refreshArticlesFromBackend();
 refreshCompanyFromBackend();
 
+// Business shipment milestone transitions. Mirror the action maps in the
+// business and admin shipment detail pages so the offline fallback behaves
+// exactly like the live backend transition.
+const BUSINESS_SHIPMENT_ADVANCES = {
+  "Address review": { status: "Preparing", tone: "neutral" },
+  Preparing: { status: "In dispatch", tone: "info" },
+  "In dispatch": { status: "Delivered", tone: "success" },
+};
+
+const ADMIN_SHIPMENT_ADVANCES = {
+  "Delay flagged": { status: "In dispatch", tone: "info" },
+  Preparing: { status: "In dispatch", tone: "info" },
+  "In dispatch": { status: "Delivered", tone: "success" },
+};
+
+const cacheLocation = (row) => {
+  if (!row) return null;
+  const current = getBusinessLocationRows();
+  const next = current.some((item) => item.id === row.id)
+    ? current.map((item) => (item.id === row.id ? { ...item, ...row } : item))
+    : [...current, row];
+  setBusinessLocationRows(next);
+  return row;
+};
+
+const cacheBusinessShipment = (row) => {
+  if (!row) return null;
+  const current = getBusinessShipmentRows();
+  const next = current.some((item) => item.id === row.id)
+    ? current.map((item) => (item.id === row.id ? { ...item, ...row } : item))
+    : [...current, row];
+  setBusinessShipmentRows(next);
+  return row;
+};
+
+const cacheAdminShipment = (row) => {
+  if (!row) return null;
+  const current = getAdminShipmentRows();
+  const next = current.some((item) => item.id === row.id)
+    ? current.map((item) => (item.id === row.id ? { ...item, ...row } : item))
+    : [...current, row];
+  setAdminShipmentRows(next);
+  return row;
+};
+
+const cacheOrderPlan = (row) => {
+  if (!row) return null;
+  const current = getBusinessOrderRows();
+  const next = current.some((item) => item.id === row.id)
+    ? current.map((item) => (item.id === row.id ? { ...item, ...row } : item))
+    : [...current, row];
+  setBusinessOrderRows(next);
+  return row;
+};
+
+const cacheInvoice = (row) => {
+  if (!row) return null;
+  const current = getBusinessInvoiceRows();
+  const next = current.some((item) => item.id === row.id)
+    ? current.map((item) => (item.id === row.id ? { ...item, ...row } : item))
+    : [...current, row];
+  setBusinessInvoiceRows(next);
+  return row;
+};
+
+const fallbackShipmentActivity = (shipmentId, owner) => {
+  if (!shipmentId) return [];
+  const source =
+    owner === "admin" ? adminShipmentActivityRows : businessShipmentActivityRows;
+  return source.filter((row) => row.shipment === shipmentId);
+};
+
 export const appClient = {
-  businessPricing: {
+  companyOrders: {
+    estimateOrderPrice,
+
     list() {
-      return readBusinessPricing();
+      return readCompanyOrders();
     },
 
-    async update(tierId, updates) {
-      requireAdmin();
-      const tiers = readBusinessPricing();
-      const existingTier = tiers.find((tier) => tier.id === tierId);
-      if (!existingTier) {
-        throw createAuthError("Business pricing tier not found", 404);
+    async businessList() {
+      try {
+        const orders = await backendOrders.businessList();
+        writeCompanyOrders(orders);
+        return orders;
+      } catch (error) {
+        return readCompanyOrders();
       }
-
-      const nextTier = normalizeBusinessPricing({
-        ...existingTier,
-        ...updates,
-        id: existingTier.id,
-      });
-      if (!nextTier.tier || !nextTier.volume || !nextTier.pricing) {
-        throw createAuthError("Tier, volume, and pricing are required", 400);
-      }
-
-      const nextTiers = tiers.map((tier) =>
-        tier.id === tierId ? nextTier : tier,
-      );
-      writeBusinessPricing(nextTiers);
-      return nextTier;
     },
 
-    async reset() {
-      requireAdmin();
-      writeBusinessPricing(defaultBusinessPricing);
-      return defaultBusinessPricing;
+    async businessCreate(data) {
+      try {
+        const order = await backendOrders.businessCreate(data);
+        writeCompanyOrders([order, ...readCompanyOrders()]);
+        return order;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+        const snapshot = getBusinessCompanySnapshot(resolveCompanyUserEmail());
+        const { total, rate } = estimateOrderPrice(data.copies);
+        const order = normalizeCompanyOrder({
+          id: `order-${Date.now()}`,
+          companyAccountId: snapshot?.id || null,
+          company: snapshot?.company || "",
+          copies: Number(data.copies) || 0,
+          neededBy: data.neededBy || "",
+          deliveryLocations: data.deliveryLocations || [],
+          articleId: data.articleId || null,
+          articleTitle: data.articleTitle || "",
+          estimatedPrice: total,
+          rate,
+          status: "Pending approval",
+          tone: "warning",
+          createdAt: new Date().toISOString(),
+        });
+        writeCompanyOrders([order, ...readCompanyOrders()]);
+        return order;
+      }
+    },
+
+    async adminList() {
+      try {
+        const orders = await backendOrders.adminList();
+        writeCompanyOrders(orders);
+        return orders;
+      } catch (error) {
+        return readCompanyOrders();
+      }
+    },
+
+    async adminApprove(id, finalPrice) {
+      try {
+        const order = await backendOrders.adminApprove(id, finalPrice);
+        writeCompanyOrders(
+          readCompanyOrders().map((current) =>
+            current.id === order.id ? order : current,
+          ),
+        );
+        return order;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+        const existing = readCompanyOrders().find(
+          (current) => current.id === id,
+        );
+        if (!existing) {
+          throw error;
+        }
+        const order = normalizeCompanyOrder({
+          ...existing,
+          status: "Approved",
+          tone: "success",
+          finalPrice: Number(finalPrice),
+          reviewedAt: new Date().toISOString(),
+        });
+        writeCompanyOrders(
+          readCompanyOrders().map((current) =>
+            current.id === id ? order : current,
+          ),
+        );
+        return order;
+      }
+    },
+
+    async adminDecline(id) {
+      try {
+        const order = await backendOrders.adminDecline(id);
+        writeCompanyOrders(
+          readCompanyOrders().map((current) =>
+            current.id === order.id ? order : current,
+          ),
+        );
+        return order;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+        const existing = readCompanyOrders().find(
+          (current) => current.id === id,
+        );
+        if (!existing) {
+          throw error;
+        }
+        const order = normalizeCompanyOrder({
+          ...existing,
+          status: "Declined",
+          tone: "neutral",
+          reviewedAt: new Date().toISOString(),
+        });
+        writeCompanyOrders(
+          readCompanyOrders().map((current) =>
+            current.id === id ? order : current,
+          ),
+        );
+        return order;
+      }
     },
   },
   subscriptions: {
@@ -578,6 +782,293 @@ export const appClient = {
       return refreshArticlesFromBackend();
     },
   },
+  locations: {
+    list() {
+      return getBusinessLocationRows();
+    },
+
+    getLocal(id) {
+      return getBusinessLocationById(id);
+    },
+
+    async refresh() {
+      try {
+        const rows = await backendLocations.businessList();
+        setBusinessLocationRows(rows);
+        return rows;
+      } catch (error) {
+        return getBusinessLocationRows();
+      }
+    },
+
+    async get(id) {
+      try {
+        const row = await backendLocations.businessGet(id);
+        return cacheLocation(row);
+      } catch (error) {
+        if (isNetworkError(error)) {
+          return getBusinessLocationById(id);
+        }
+        return null;
+      }
+    },
+
+    async confirm(id) {
+      try {
+        const row = await backendLocations.businessConfirm(id);
+        return cacheLocation(row);
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+        const existing = getBusinessLocationById(id);
+        if (!existing) {
+          throw error;
+        }
+        return cacheLocation({ ...existing, status: "Ready", tone: "success" });
+      }
+    },
+
+    async create(data) {
+      try {
+        const row = await backendLocations.businessCreate(data);
+        return cacheLocation(row);
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+        // Offline fallback: create a local record
+        const snapshot = getBusinessCompanySnapshot(resolveCompanyUserEmail());
+        const location = {
+          id: `loc-${Date.now()}`,
+          companyAccountId: snapshot?.id || null,
+          location: data.location || "",
+          region: data.region || "",
+          copies: data.copies || "",
+          contact: data.contact || "",
+          status: "Review",
+          tone: "warning",
+          createdAt: new Date().toISOString(),
+        };
+        const current = getBusinessLocationRows();
+        setBusinessLocationRows([location, ...current]);
+        return location;
+      }
+    },
+  },
+  shipments: {
+    list() {
+      return getBusinessShipmentRows();
+    },
+
+    getLocal(id) {
+      return getShipmentById(id);
+    },
+
+    async refresh() {
+      try {
+        const rows = await backendShipments.businessList();
+        setBusinessShipmentRows(rows);
+        return rows;
+      } catch (error) {
+        return getBusinessShipmentRows();
+      }
+    },
+
+    async get(id) {
+      try {
+        const result = await backendShipments.businessGet(id);
+        if (!result?.shipment) {
+          return null;
+        }
+        cacheBusinessShipment(result.shipment);
+        return result;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          return null;
+        }
+        const shipment = getShipmentById(id);
+        return shipment
+          ? {
+              shipment,
+              activity: fallbackShipmentActivity(shipment.shipmentId, "business"),
+            }
+          : null;
+      }
+    },
+
+    async advance(id) {
+      try {
+        const row = await backendShipments.businessAdvance(id);
+        return cacheBusinessShipment(row);
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+        const existing = getShipmentById(id);
+        const next = existing ? BUSINESS_SHIPMENT_ADVANCES[existing.status] : null;
+        if (!existing || !next) {
+          throw error;
+        }
+        return cacheBusinessShipment({ ...existing, ...next });
+      }
+    },
+
+    listAdmin() {
+      return getAdminShipmentRows();
+    },
+
+    async refreshAdmin() {
+      try {
+        const rows = await backendShipments.adminList();
+        setAdminShipmentRows(rows);
+        return rows;
+      } catch (error) {
+        return getAdminShipmentRows();
+      }
+    },
+
+    async getAdmin(id) {
+      try {
+        const result = await backendShipments.adminGet(id);
+        if (!result?.shipment) {
+          return null;
+        }
+        cacheAdminShipment(result.shipment);
+        return result;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          return null;
+        }
+        const shipment = getShipmentById(id);
+        return shipment
+          ? {
+              shipment,
+              activity: fallbackShipmentActivity(shipment.shipmentId, "admin"),
+            }
+          : null;
+      }
+    },
+
+    async advanceAdmin(id) {
+      try {
+        const row = await backendShipments.adminAdvance(id);
+        return cacheAdminShipment(row);
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+        const existing = getShipmentById(id);
+        const next = existing ? ADMIN_SHIPMENT_ADVANCES[existing.status] : null;
+        if (!existing || !next) {
+          throw error;
+        }
+        return cacheAdminShipment({ ...existing, ...next });
+      }
+    },
+  },
+  orderPlans: {
+    list() {
+      return getBusinessOrderRows();
+    },
+
+    getLocal(id) {
+      return getBusinessOrderById(id);
+    },
+
+    async refresh() {
+      try {
+        const rows = await backendOrderPlans.businessList();
+        setBusinessOrderRows(rows);
+        return rows;
+      } catch (error) {
+        return getBusinessOrderRows();
+      }
+    },
+
+    async get(id) {
+      try {
+        const plan = await backendOrderPlans.businessGet(id);
+        if (!plan) {
+          return null;
+        }
+        cacheOrderPlan(plan);
+        return plan;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          return null;
+        }
+        return getBusinessOrderById(id);
+      }
+    },
+
+    async confirm(id) {
+      try {
+        const row = await backendOrderPlans.businessConfirm(id);
+        return cacheOrderPlan(row);
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+        const existing = getBusinessOrderById(id);
+        if (!existing || existing.status !== "Review") {
+          throw error;
+        }
+        return cacheOrderPlan({ ...existing, status: "Active", tone: "success" });
+      }
+    },
+  },
+  invoices: {
+    list() {
+      return getBusinessInvoiceRows();
+    },
+
+    getLocal(id) {
+      return getBusinessInvoiceById(id);
+    },
+
+    async refresh() {
+      try {
+        const rows = await backendInvoices.businessList();
+        setBusinessInvoiceRows(rows);
+        return rows;
+      } catch (error) {
+        return getBusinessInvoiceRows();
+      }
+    },
+
+    async get(id) {
+      try {
+        const invoice = await backendInvoices.businessGet(id);
+        if (!invoice) {
+          return null;
+        }
+        cacheInvoice(invoice);
+        return invoice;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          return null;
+        }
+        return getBusinessInvoiceById(id);
+      }
+    },
+
+    async confirm(id) {
+      try {
+        const row = await backendInvoices.businessConfirm(id);
+        return cacheInvoice(row);
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+        const existing = getBusinessInvoiceById(id);
+        if (!existing || existing.status !== "Review") {
+          throw error;
+        }
+        return cacheInvoice({ ...existing, status: "Reviewed", tone: "info" });
+      }
+    },
+  },
   auth: {
     async me() {
       const token = getAccessToken();
@@ -644,11 +1135,12 @@ export const appClient = {
       role = "reader",
       accountType,
       companyName = "",
+      licenseDocument = "",
       contactPhone = "",
       deliveryAddress = "",
     }) {
       try {
-        const { accessToken, user } = await backendAuth.register({
+        const { accessToken, user, pendingApproval } = await backendAuth.register({
           name,
           email,
           password,
@@ -656,7 +1148,11 @@ export const appClient = {
           accountType:
             accountType || (role === "business" ? "business" : "individual"),
           companyName,
+          licenseDocument,
         });
+        if (pendingApproval) {
+          return { ...user, pendingApproval: true };
+        }
         saveAccessToken(accessToken);
         cacheBackendUser(user);
         await refreshPlansFromBackend();
@@ -901,7 +1397,7 @@ export const appClient = {
       const synced = readJson(companyListSyncKey, null);
       if (Array.isArray(synced)) {
         return synced.filter(
-          (entity) => getCompanyWorkflowState(entity) !== "Converted to account",
+          (entity) => getCompanyWorkflowState(entity) === "License submitted",
         );
       }
       return getCompanyLeads();

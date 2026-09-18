@@ -47,7 +47,7 @@ const relatedLinks = [
   { label: "Schedule", to: "/admin/schedule" },
   { label: "Subscribers", to: "/admin/subscribers" },
   { label: "Governance", to: "/admin/governance" },
-  { label: "Pricing", to: "/admin/pricing" },
+  { label: "Order requests", to: "/admin/order-requests" },
 ];
 
 function CategoryThumb({ src, alt }) {

@@ -1,0 +1,152 @@
+from flask import Blueprint, jsonify
+from flask_jwt_extended import get_jwt_identity, jwt_required
+
+from middleware.auth import role_required
+from models import CompanyAccount, Shipment, User, db
+
+shipments_bp = Blueprint("shipments", __name__, url_prefix="/api/v1")
+
+# Milestone transitions the business user can trigger. Mirrors the
+# `actionForStatus` map in the business shipment detail page.
+BUSINESS_ADVANCES = {
+    "Address review": "Preparing",
+    "Preparing": "In dispatch",
+    "In dispatch": "Delivered",
+}
+
+# Milestone transitions the admin can trigger. Mirrors the admin detail page.
+ADMIN_ADVANCES = {
+    "Delay flagged": "In dispatch",
+    "Preparing": "In dispatch",
+    "In dispatch": "Delivered",
+}
+
+
+def _current_user_id():
+    return int(get_jwt_identity())
+
+
+def _account_for_user(user):
+    if user is None:
+        return None
+    entity = CompanyAccount.query.filter_by(owner_user_id=user.id).first()
+    if entity is None:
+        entity = (
+            CompanyAccount.query.filter(
+                db.or_(
+                    db.func.lower(CompanyAccount.owner_email) == user.email.lower(),
+                    db.func.lower(CompanyAccount.work_email) == user.email.lower(),
+                )
+            )
+            .order_by(CompanyAccount.created_at.desc())
+            .first()
+        )
+    return entity
+
+
+def _activity_payload(shipment):
+    return [
+        activity.to_dict() for activity in shipment.activities
+    ]
+
+
+@shipments_bp.get("/business/shipments")
+@jwt_required()
+def business_list_shipments():
+    user = db.session.get(User, _current_user_id())
+    entity = _account_for_user(user)
+    if user is None or entity is None:
+        return jsonify({"shipments": []}), 200
+
+    shipments = (
+        Shipment.query.filter_by(company_account_id=entity.id)
+        .order_by(Shipment.created_at)
+        .all()
+    )
+    return jsonify({"shipments": [row.to_dict() for row in shipments]}), 200
+
+
+@shipments_bp.get("/business/shipments/<string:key>")
+@jwt_required()
+def business_get_shipment(key):
+    user = db.session.get(User, _current_user_id())
+    shipment = db.session.get(Shipment, key)
+    entity = _account_for_user(user) if user else None
+    if shipment is None or entity is None or shipment.company_account_id != entity.id:
+        return jsonify({"error": "Shipment run not found"}), 404
+    return (
+        jsonify(
+            {
+                "shipment": shipment.to_dict(),
+                "activity": _activity_payload(shipment),
+            }
+        ),
+        200,
+    )
+
+
+@shipments_bp.post("/business/shipments/<string:key>/advance")
+@jwt_required()
+def business_advance_shipment(key):
+    user = db.session.get(User, _current_user_id())
+    shipment = db.session.get(Shipment, key)
+    entity = _account_for_user(user) if user else None
+    if shipment is None or entity is None or shipment.company_account_id != entity.id:
+        return jsonify({"error": "Shipment run not found"}), 404
+
+    next_status = BUSINESS_ADVANCES.get(shipment.status)
+    if next_status is None:
+        return (
+            jsonify({"error": "This shipment run cannot be advanced"}),
+            409,
+        )
+
+    shipment.status = next_status
+    db.session.commit()
+    return jsonify({"shipment": shipment.to_dict()}), 200
+
+
+@shipments_bp.get("/admin/shipments")
+@jwt_required()
+@role_required("admin")
+def admin_list_shipments():
+    shipments = Shipment.query.order_by(Shipment.created_at).all()
+    return jsonify({"shipments": [row.to_dict() for row in shipments]}), 200
+
+
+@shipments_bp.get("/admin/shipments/<string:key>")
+@jwt_required()
+@role_required("admin")
+def admin_get_shipment(key):
+    shipment = db.session.get(Shipment, key)
+    if shipment is None:
+        return jsonify({"error": "Shipment run not found"}), 404
+    return (
+        jsonify(
+            {
+                "shipment": shipment.to_dict(),
+                "activity": _activity_payload(shipment),
+            }
+        ),
+        200,
+    )
+
+
+@shipments_bp.post("/admin/shipments/<string:key>/advance")
+@jwt_required()
+@role_required("admin")
+def admin_advance_shipment(key):
+    shipment = db.session.get(Shipment, key)
+    if shipment is None:
+        return jsonify({"error": "Shipment run not found"}), 404
+
+    next_status = ADMIN_ADVANCES.get(shipment.status)
+    if next_status is None:
+        return (
+            jsonify({"error": "This shipment run cannot be advanced"}),
+            409,
+        )
+
+    shipment.status = next_status
+    db.session.commit()
+    return jsonify({"shipment": shipment.to_dict()}), 200

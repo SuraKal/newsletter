@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, MapPin } from "lucide-react";
 import {
@@ -12,7 +12,7 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import { getBusinessShipmentRows } from "@/lib/shipment-store";
+import { appClient } from "@/api/appClient";
 
 const shipmentColumns = [
   {
@@ -66,9 +66,21 @@ const relatedLinks = [
 
 export default function BusinessShipments() {
   const [query, setQuery] = useState("");
+  const [shipments, setShipments] = useState(() => appClient.shipments.list());
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
+
+  const reloadShipments = async () => {
+    const rows = await appClient.shipments.refresh();
+    if (Array.isArray(rows)) setShipments(rows);
+  };
+
+  useEffect(() => {
+    reloadShipments();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const table = useTableQuery({
-    rows: getBusinessShipmentRows(),
+    rows: shipments,
     query,
     predicate: matchesSearch,
     activeFilters,

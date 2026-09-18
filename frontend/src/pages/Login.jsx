@@ -59,6 +59,7 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const searchParams = new URLSearchParams(location.search);
+  const pendingApproval = searchParams.get("pending") === "license";
   const journey = authJourneyContent[journeyKey] || authJourneyContent.individual;
   const expectedRole = roleForJourney[journeyKey];
   const activeOption =
@@ -149,6 +150,7 @@ export default function Login() {
               </div>
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#d5c8b8] bg-[#f4efe6] text-[#4A2A08]"><KeyRound className="h-5 w-5" /></div>
             </div>
+            {pendingApproval ? <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 font-body text-sm text-amber-900">Your business licence was submitted. An administrator must approve it before you can sign in and place bulk orders.</div> : null}
 
             <div className="mt-8 grid gap-2 sm:grid-cols-3">
               {journeyOptions.map((option) => {

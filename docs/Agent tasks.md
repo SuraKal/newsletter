@@ -304,3 +304,105 @@ Update `frontend/src/lib/notifications.js`:
 ---
 
 Once TASK-120 is done, the mock company store remains only as the offline fallback (same role `category-store.js`/`content-store.js` play after their phases). The business operations surfaces (team, orders, invoices, locations, shipments, governance requests) stay mocked pending their own future phases.
+
+---
+
+# Business Locations & Shipments Phase
+
+Backend-driven delivery destinations and shipment runs for approved company accounts. This phase replaces the `business-ops-store.js` locations mock and the `shipment-store.js` business shipment mock while preserving them as offline fallbacks. It deliberately excludes orders, order requests, and invoices, which will be handled in the next phase.
+
+---
+
+## TASK-121 — Backend business location and shipment models + migration
+
+Create SQLAlchemy models in `backend/models/`:
+
+- `BusinessLocation` — `id` (UUID), `company_account_id` (FK → `company_accounts.id`, indexed), `location` (required display name), `region`, `address`, `contact`, `copies` (string or integer), `status` (`Ready` / `Review` / `Confirm contact`), `created_at`, `updated_at`.
+- `ShipmentRun` — `id` (UUID), `company_account_id` (FK → `company_accounts.id`, indexed), `shipment_id` (unique human-readable run ID), `route`, `scope`, `status` (`Address review` / `Preparing` / `In dispatch` / `Delivered` / `Delayed`), `eta`, `created_at`, `updated_at`.
+- `ShipmentEvent` — `id`, `shipment_run_id` (FK → `shipment_runs.id`, indexed), `event`, `status`, `occurred_at`, `note` (nullable). Events are returned oldest-first and replace `businessShipmentActivityRows` for the shipment detail page.
+
+Add model exports and an Alembic migration. Seed approved company accounts with the existing location/shipment mock equivalents, attaching every row to a real `CompanyAccount`; do not create orphan rows.
+
+**Verify:** `flask db upgrade && flask seed` succeeds; each seeded shipment and location has a valid company-account foreign key.
+
+---
+
+## TASK-122 — Backend location and shipment API routes with ownership rules
+
+Add `backend/routes/business_operations.py` under `/api/v1`, register it in `backend/app.py`:
+
+- `GET /business/locations` — authenticated business user; returns only locations for their approved company account.
+- `GET /business/locations/<id>` — same ownership restriction; return 404 for another company’s location.
+- `PUT /business/locations/<id>` — business user may update receiving-contact fields (`contact`, `address`) and may acknowledge `Review`/`Confirm contact` as `Ready`; reject edits to another company or unsupported status changes.
+- `GET /business/shipments` — authenticated business user; returns only their company shipment runs, newest first.
+- `GET /business/shipments/<id>` — return a shipment plus nested event timeline only when it belongs to the caller’s company.
+- `POST /business/shipments/<id>/confirm-address` — allowed only while the run is `Address review`; records an event and advances to `Preparing`.
+- `GET /admin/shipments` / `GET /admin/shipments/<id>` — admin-only operational view across companies.
+- `PUT /admin/shipments/<id>` — admin-only updates to operational fields/status; append a `ShipmentEvent` whenever status changes.
+
+Return camelCase JSON matching the existing row shapes, including `tone` derived on the server. Enforce JWT authentication and company ownership from the caller’s `CompanyAccount`, not a client-supplied company id.
+
+**Verify:** A business user sees only their locations and runs; cross-company IDs return 404; admin endpoints return 401 without a token and can update a seeded shipment with an event recorded.
+
+---
+
+## TASK-123 — Frontend backend client helpers for locations and shipments
+
+Add `backendBusinessOperations` to `frontend/src/api/backendClient.js`:
+
+- `listLocations()` / `getLocation(id)` / `updateLocation(id, patch)`
+- `listShipments()` / `getShipment(id)` / `confirmShipmentAddress(id)`
+- `adminListShipments()` / `adminGetShipment(id)` / `adminUpdateShipment(id, patch)`
+
+Normalize responses to the current frontend contracts:
+
+- locations: `{ id, location, region, address, contact, copies, status, tone }`
+- shipments: `{ id, shipmentId, label, route, scope, status, tone, eta, events: [{ id, event, status, tone, occurredAt, note }] }`
+
+Use the existing `isNetworkError` convention so only an unreachable backend triggers the mock fallback; do not hide authorization or validation errors behind mock data.
+
+**Verify:** `npm run lint && npm run typecheck` pass.
+
+---
+
+## TASK-124 — Wire `/business-dashboard/locations` and location detail to backend
+
+Update `frontend/src/pages/BusinessLocations.jsx` and `frontend/src/pages/BusinessLocationDetail.jsx`:
+
+- On mount, use `backendBusinessOperations.listLocations()`; fall back to `getBusinessLocationRows()` only on network error.
+- Build filters, counts, and search options from the loaded list instead of static copy such as “9 active locations”.
+- Detail route uses `getLocation(locationId)` with the same fallback.
+- “Confirm receiving contact” uses `updateLocation(id, { status: "Ready" })` (or the dedicated backend acknowledgement route if implemented), refetches the detail/list state, and keeps `updateBusinessLocation` only for network fallback.
+- Keep company ownership implicit; no company ID appears in URLs or request payloads.
+
+**Verify:** Updating a company location’s contact/readiness survives refresh with the backend running; a different business account cannot open the detail URL; mock locations render with the backend offline.
+
+---
+
+## TASK-125 — Wire `/business-dashboard/shipments` and shipment detail to backend
+
+Update `frontend/src/pages/BusinessShipments.jsx` and `frontend/src/pages/BusinessShipmentDetail.jsx`:
+
+- Fetch shipment runs through `backendBusinessOperations.listShipments()` on mount, with `getBusinessShipmentRows()` as the network-only fallback.
+- Derive route/status filters and summary labels from backend rows.
+- Fetch a live shipment plus its `events` timeline in the detail route; fall back to `getShipmentById()` and `businessShipmentActivityRows` only when offline.
+- Replace the business-side address confirmation action with `confirmShipmentAddress(id)` and refetch after success. Business users must not be able to mark a shipment dispatched or delivered.
+- Keep the existing delivery/dispatch status actions for a later admin-shipment wiring task unless `AdminShipments` is explicitly included in this implementation.
+
+**Verify:** A business user sees live shipment status and event history for their company, can confirm an address-review run once, and cannot change dispatch/delivery status. Offline fallback still renders the mock run list and detail page.
+
+---
+
+## TASK-126 — Shared business-operation sync and notification badges
+
+Update the shared read paths after locations and shipments are wired:
+
+- Add app-client startup/post-login refresh functions (or a small business-operations cache module) that cache the authenticated company’s location and shipment lists without mixing records across users.
+- Update `frontend/src/lib/notifications.js` so business `locations` and `shipments` badges read these synced backend lists, with mock-store fallback only on network error.
+- Ensure successful empty lists clear old cached rows and that logout clears the business-operation cache keys.
+
+**Verify:** The business sidebar badges match real backend location/shipment states after refresh and after a confirmed-address mutation; they do not show another company’s data; backend-down mode retains mock badges.
+
+---
+
+After TASK-126, only `team`, `orders`, `order requests`, and `invoices` remain mocked within the business workspace. Start the next phase with orders and invoices; do not add order or invoice tables/routes as part of this locations-and-shipments phase.

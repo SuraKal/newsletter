@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CirclePlus, Truck } from "lucide-react";
 import {
@@ -12,7 +12,7 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import { getBusinessOrderRows } from "@/lib/business-ops-store";
+import { appClient } from "@/api/appClient";
 
 const orderColumns = [
   {
@@ -59,9 +59,21 @@ const relatedLinks = [
 
 export default function BusinessOrders() {
   const [query, setQuery] = useState("");
+  const [plans, setPlans] = useState(() => appClient.orderPlans.list());
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
+
+  const reloadPlans = async () => {
+    const rows = await appClient.orderPlans.refresh();
+    if (Array.isArray(rows)) setPlans(rows);
+  };
+
+  useEffect(() => {
+    reloadPlans();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const table = useTableQuery({
-    rows: getBusinessOrderRows(),
+    rows: plans,
     query,
     predicate: matchesSearch,
     activeFilters,
@@ -99,15 +111,15 @@ export default function BusinessOrders() {
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         filterOptions={table.filterOptions}
-        filters={["475 copies recurring", "Biweekly print cycle", "Regional Team pricing"]}
+        filters={["475 copies recurring", "Biweekly print cycle", "Admin-confirmed price"]}
         action={
-          <button
-            type="button"
+          <Link
+            to="/business-dashboard/order-requests"
             className="inline-flex items-center gap-2 rounded-full border border-stone-200/80 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition-colors hover:bg-stone-50"
           >
             <CirclePlus className="h-4 w-4" />
-            New order plan
-          </button>
+            Request bulk order
+          </Link>
         }
       />
 

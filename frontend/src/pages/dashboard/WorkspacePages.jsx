@@ -122,7 +122,7 @@ const overviewContent = {
       },
     ],
     focus: [
-      "Break the monolithic admin page into overview, content, schedule, subscriber, company, shipment, and pricing workspaces.",
+      "Break the monolithic admin page into overview, content, schedule, subscriber, company, shipment, order-request, and governance workspaces.",
       "Keep the overview focused on operational summaries and quick entry points, not full CRUD detail.",
       "Use the same shell language as reader and business while allowing higher information density.",
     ],
@@ -203,7 +203,7 @@ const sectionContent = {
       "Business order volume, cadence, and copy allocations should be managed in a dedicated section.",
     bullets: [
       "Order summaries can stay high-level on the overview while details live here.",
-      "This route will later support pricing-tier and delivery-cadence logic.",
+      "This route will later support order-request review and delivery-cadence logic.",
       "Operational order changes can be added without redesigning the shell.",
     ],
   },
@@ -295,14 +295,14 @@ const sectionContent = {
       "It will also keep company management separate from subscriber and content workflows.",
     ],
   },
-  pricing: {
+  "order-requests": {
     icon: ReceiptText,
-    title: "Pricing route reserved",
+    title: "Order requests route reserved",
     description:
-      "Admin pricing-tier management belongs in a focused workspace with room for summary and drill-in views.",
+      "Pending bulk-order requests need a focused workspace for confirmation and final-price review.",
     bullets: [
-      "Business pricing and tier rules will later be surfaced here.",
-      "This route gives pricing changes a stable operational home.",
+      "Pending company copy requests will be reviewed and confirmed here.",
+      "This route gives bulk-order approvals a stable operational home.",
       "It also supports summary-first admin views without inflating the overview page.",
     ],
   },

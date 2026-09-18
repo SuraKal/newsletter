@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   MapPinned,
   Package,
+  ReceiptText,
   ShieldCheck,
   Truck,
   Users,
@@ -33,6 +34,7 @@ const sectionIconMap = {
   overview: LayoutDashboard,
   team: Users,
   orders: Package,
+  "order-requests": ReceiptText,
   invoices: FileText,
   locations: MapPinned,
   shipments: Truck,
@@ -61,41 +63,16 @@ export default function BusinessOverviewPage() {
   const sectionBadges = useWorkspaceSectionBadges("business");
 
   const contractStateDetail =
-    entity ? workflow.detail : "Start the business application to open a company quote and account review.";
+    entity ? workflow.detail : "Start a business registration to have your company licence reviewed for access.";
 
-  const metrics =
-    entity && workflowState === "Converted to account"
-      ? businessOverviewMetrics
-      : entity && workflowState === "Approved"
-        ? [
-            {
-              label: "Contract state",
-              value: "Approved",
-              detail: contractStateDetail,
-            },
-            ...businessOverviewMetrics.slice(1),
-          ]
-        : entity && workflowState === "Quote ready"
-          ? [
-              {
-                label: "Contract state",
-                value: "Quote ready",
-                detail: contractStateDetail,
-              },
-              ...businessOverviewMetrics.slice(1),
-            ]
-          : [
-              {
-                label: "Contract state",
-                value: statusInfo.label,
-                detail: contractStateDetail,
-              },
-              ...businessOverviewMetrics.slice(1),
-            ];
+  const metrics = entity && workflowState === "License approved"
+    ? businessOverviewMetrics
+    : [{ label: "Account access", value: statusInfo.label, detail: contractStateDetail }, ...businessOverviewMetrics.slice(1)];
 
   const shortcuts = [
     { id: "team", label: "Team", to: "/business-dashboard/team" },
     { id: "orders", label: "Orders", to: "/business-dashboard/orders" },
+    { id: "order-requests", label: "Order requests", to: "/business-dashboard/order-requests" },
     { id: "invoices", label: "Invoices", to: "/business-dashboard/invoices" },
     { id: "locations", label: "Locations", to: "/business-dashboard/locations" },
     { id: "shipments", label: "Shipments", to: "/business-dashboard/shipments" },
@@ -114,10 +91,10 @@ export default function BusinessOverviewPage() {
         breadcrumbs={[{ label: "Business workspace" }, { label: "Overview" }]}
         action={
           <Link
-            to={workflowState === "Converted to account" ? "/business-dashboard/shipments" : workflow.actionPath}
+            to={workflowState === "License approved" ? "/business-dashboard/order-requests" : workflow.actionPath}
             className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-stone-700"
           >
-            {workflowState === "Converted to account" ? "Open shipment workspace" : workflow.action}
+            {workflowState === "License approved" ? "Place bulk order" : workflow.action}
             <ArrowRight className="h-4 w-4" />
           </Link>
         }
@@ -171,7 +148,7 @@ export default function BusinessOverviewPage() {
         title="Related links"
         items={[
           { label: "Public business page", to: "/business" },
-          { label: "Business partner application", to: "/business/apply" },
+          { label: "How bulk ordering works", to: "/business" },
         ]}
       />
     </div>

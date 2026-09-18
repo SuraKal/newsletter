@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Check } from "lucide-react";
 import {
@@ -9,10 +9,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import {
-  getBusinessInvoiceById,
-  updateBusinessInvoice,
-} from "@/lib/business-ops-store";
+import { appClient } from "@/api/appClient";
 
 const relatedLinks = [
   { label: "Team", to: "/business-dashboard/team" },
@@ -24,18 +21,35 @@ const relatedLinks = [
 
 export default function BusinessInvoiceDetail() {
   const { invoiceId } = useParams();
-  const [, setRevision] = useState(0);
-  const invoice = getBusinessInvoiceById(invoiceId);
+  const [invoice, setInvoice] = useState(() =>
+    appClient.invoices.getLocal(invoiceId),
+  );
+  const [busy, setBusy] = useState(false);
+
+  const loadInvoice = async () => {
+    const result = await appClient.invoices.get(invoiceId);
+    setInvoice(result);
+  };
+
+  useEffect(() => {
+    loadInvoice();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoiceId]);
 
   const needsConfirmation = invoice && invoice.status === "Review";
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!invoice) return;
-    updateBusinessInvoice(invoice.id, {
-      status: "Reviewed",
-      tone: "info",
-    });
-    setRevision((value) => value + 1);
+    setBusy(true);
+    try {
+      const row = await appClient.invoices.confirm(invoice.id);
+      if (row) setInvoice(row);
+      await loadInvoice();
+    } catch {
+      // Leave the record in place; the next refresh reconciles the state.
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!invoice) {
@@ -90,7 +104,8 @@ export default function BusinessInvoiceDetail() {
               <button
                 type="button"
                 onClick={handleConfirm}
-                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 dark:bg-stone-100 dark:text-stone-900"
+                disabled={busy}
+                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900"
               >
                 <Check className="h-4 w-4" />
                 Confirm VAT note

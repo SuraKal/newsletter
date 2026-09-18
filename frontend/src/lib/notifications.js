@@ -13,11 +13,7 @@ import {
   getBusinessOrderRows,
   getBusinessTeamRows,
 } from "@/lib/business-ops-store";
-import {
-  adminPricingRows,
-  readerBillingRows,
-  readerDeliveryCurrent,
-} from "@/lib/demoData";
+import { readerBillingRows, readerDeliveryCurrent } from "@/lib/demoData";
 import { useStoreVersion } from "@/lib/store-bus";
 
 const countWhere = (rows, predicate) =>
@@ -38,14 +34,14 @@ const adminBadges = () => {
     ),
     companies: appClient.company.list().length,
     governance: getGovernanceActionCount(),
+    "order-requests": countWhere(
+      appClient.companyOrders.list(),
+      (row) => row.status === "Pending approval",
+    ),
     shipments: countWhere(getAdminShipmentRows(), (row) =>
       ["Delay flagged", "Delayed", "Escalated", "Delay watch"].includes(
         row.status,
       ),
-    ),
-    pricing: countWhere(
-      adminPricingRows,
-      (row) => row.status === "Manual review",
     ),
   };
   counts.overview = totalFor(counts);
@@ -60,6 +56,10 @@ const businessBadges = () => {
     orders: countWhere(getBusinessOrderRows(), (row) =>
       ["Review", "Queued"].includes(row.status),
     ),
+    "order-requests": countWhere(
+      appClient.companyOrders.list(),
+      (row) => row.status === "Pending approval",
+    ),
     invoices: countWhere(getBusinessInvoiceRows(), (row) =>
       ["Review", "Overdue", "Upcoming"].includes(row.status),
     ),
@@ -71,7 +71,7 @@ const businessBadges = () => {
       row.status !== "Delivered",
     ),
     settings:
-      !entity || getCompanyWorkflowState(entity) !== "Converted to account"
+      !entity || getCompanyWorkflowState(entity) !== "License approved"
         ? 1
         : 0,
   };

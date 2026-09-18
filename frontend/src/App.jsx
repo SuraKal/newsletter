@@ -11,6 +11,7 @@ import {
 } from "react-router-dom";
 import PageNotFound from "./lib/PageNotFound";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 import ScrollToTop from "./components/ScrollToTop";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
@@ -32,13 +33,12 @@ const ForgotPassword = lazy(() => import("@/pages/ForgetPassword"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const SubscribeCheckout = lazy(() => import("@/pages/SubscribeCheckout"));
 const SubscribeSuccess = lazy(() => import("@/pages/SubscribeSuccess"));
-const BusinessApply = lazy(() => import("@/pages/BusinessApply"));
-const BusinessApplySuccess = lazy(() => import("@/pages/BusinessApplySuccess"));
 const ReaderDashboard = lazy(() => import("@/pages/ReaderDashboard"));
 const BusinessDashboard = lazy(() => import("@/pages/BusinessDashboard"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const BusinessShipments = lazy(() => import("@/pages/BusinessShipments"));
 const AdminShipments = lazy(() => import("@/pages/AdminShipments"));
+const AdminShipmentDetail = lazy(() => import("@/pages/AdminShipmentDetail"));
 const BusinessTeam = lazy(() => import("@/pages/BusinessTeam"));
 const BusinessOrders = lazy(() => import("@/pages/BusinessOrders"));
 const BusinessInvoices = lazy(() => import("@/pages/BusinessInvoices"));
@@ -54,9 +54,8 @@ const AdminCategories = lazy(() => import("@/pages/AdminCategories"));
 const AdminCategoryDetail = lazy(
   () => import("@/pages/AdminCategoryDetail"),
 );
-const AdminPricing = lazy(() => import("@/pages/AdminPricing"));
+const AdminOrderRequests = lazy(() => import("@/pages/AdminOrderRequests"));
 const AdminSubscriptions = lazy(() => import("@/pages/AdminSubscriptions"));
-const AdminShipmentDetail = lazy(() => import("@/pages/AdminShipmentDetail"));
 const AdminCompanyDetail = lazy(() => import("@/pages/AdminCompanyDetail"));
 const AdminSubscriberDetail = lazy(
   () => import("@/pages/AdminSubscriberDetail"),
@@ -68,6 +67,9 @@ const BusinessLocationDetail = lazy(
   () => import("@/pages/BusinessLocationDetail"),
 );
 const BusinessOrderDetail = lazy(() => import("@/pages/BusinessOrderDetail"));
+const BusinessOrderRequests = lazy(
+  () => import("@/pages/BusinessOrderRequests"),
+);
 const BusinessInvoiceDetail = lazy(
   () => import("@/pages/BusinessInvoiceDetail"),
 );
@@ -192,7 +194,8 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <Suspense fallback={<BrandLoader label="Opening your next page" />}>
+    <ErrorBoundary>
+      <Suspense fallback={<BrandLoader label="Opening your next page" />}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/news" element={<News />} />
@@ -202,8 +205,6 @@ const AuthenticatedApp = () => {
         <Route path="/subscribe/checkout" element={<SubscribeCheckout />} />
         <Route path="/subscribe/success" element={<SubscribeSuccess />} />
         <Route path="/business" element={<BusinessPage />} />
-        <Route path="/business/apply" element={<BusinessApply />} />
-        <Route path="/business/apply/success" element={<BusinessApplySuccess />} />
         <Route path="/delivery" element={<Delivery />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
@@ -247,6 +248,7 @@ const AuthenticatedApp = () => {
             path="orders/:orderId"
             element={<BusinessOrderDetail />}
           />
+          <Route path="order-requests" element={<BusinessOrderRequests />} />
           <Route path="invoices" element={<BusinessInvoices />} />
           <Route
             path="invoices/:invoiceId"
@@ -299,7 +301,7 @@ const AuthenticatedApp = () => {
             path="shipments/:shipmentId"
             element={<AdminShipmentDetail />}
           />
-          <Route path="pricing" element={<AdminPricing />} />
+          <Route path="order-requests" element={<AdminOrderRequests />} />
           <Route path="subscriptions" element={<AdminSubscriptions />} />
         </Route>
         <Route path="/privacy" element={<Privacy />} />
@@ -308,6 +310,7 @@ const AuthenticatedApp = () => {
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </Suspense>
+    </ErrorBoundary>
   );
 };
 

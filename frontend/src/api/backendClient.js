@@ -103,6 +103,7 @@ export const toAppUser = (serverUser) => {
     role: serverUser.role,
     accountType: serverUser.accountType,
     companyName: serverUser.companyName || null,
+    businessAccessApproved: serverUser.businessAccessApproved !== false,
     createdAt: serverUser.createdAt ?? null,
     subscriptions,
     subscription: subscriptions[0] || null,
@@ -137,16 +138,16 @@ export const backendAuth = {
       body: { email, password },
       auth: false,
     });
-    return { accessToken: payload.accessToken, user: toAppUser(payload.user) };
+    return { accessToken: payload.accessToken, user: toAppUser(payload.user), pendingApproval: Boolean(payload.pendingApproval) };
   },
 
-  async register({ name, email, password, role, companyName, accountType }) {
+  async register({ name, email, password, role, companyName, accountType, licenseDocument }) {
     const payload = await request("/auth/register", {
       method: "POST",
-      body: { name, email, password, role, companyName, accountType },
+      body: { name, email, password, role, companyName, accountType, licenseDocument },
       auth: false,
     });
-    return { accessToken: payload.accessToken, user: toAppUser(payload.user) };
+    return { accessToken: payload.accessToken, user: toAppUser(payload.user), pendingApproval: Boolean(payload.pendingApproval) };
   },
 
   async me() {
@@ -159,6 +160,71 @@ export const backendSubscriptions = {
   async list() {
     const payload = await request("/subscriptions/plans", { auth: false });
     return (payload.plans || []).map(toAppPlan);
+  },
+};
+
+const ORDER_TONES = {
+  "Pending approval": "warning",
+  Approved: "success",
+  Declined: "neutral",
+};
+
+export const toAppOrder = (order) => ({
+  id: order.id,
+  companyAccountId: order.companyAccountId ?? null,
+  company: order.company || "",
+  copies: Number(order.copies) || 0,
+  neededBy: order.neededBy || "",
+  deliveryLocations: Array.isArray(order.deliveryLocations)
+    ? order.deliveryLocations
+    : [],
+  articleId: order.articleId ?? null,
+  articleTitle: order.articleTitle || "",
+  estimatedPrice: Number(order.estimatedPrice) || 0,
+  rate: Number(order.rate) || 0,
+  status: order.status || "Pending approval",
+  tone: ORDER_TONES[order.status] || "neutral",
+  finalPrice: order.finalPrice == null ? null : Number(order.finalPrice),
+  requestedBy: order.requestedBy ?? null,
+  reviewedBy: order.reviewedBy ?? null,
+  reviewedAt: order.reviewedAt || "",
+  createdAt: order.createdAt || "",
+  updatedAt: order.updatedAt || "",
+});
+
+export const backendOrders = {
+  async businessList() {
+    const payload = await request("/business/orders");
+    return (payload.orders || []).map(toAppOrder);
+  },
+
+  async businessCreate(data) {
+    const payload = await request("/business/orders", {
+      method: "POST",
+      body: data,
+    });
+    return toAppOrder(payload.order);
+  },
+
+  async adminList() {
+    const payload = await request("/admin/orders");
+    return (payload.orders || []).map(toAppOrder);
+  },
+
+  async adminApprove(id, finalPrice) {
+    const payload = await request(`/admin/orders/${encodeURIComponent(id)}/approve`, {
+      method: "POST",
+      body: { finalPrice },
+    });
+    return toAppOrder(payload.order);
+  },
+
+  async adminDecline(id) {
+    const payload = await request(`/admin/orders/${encodeURIComponent(id)}/decline`, {
+      method: "POST",
+      body: {},
+    });
+    return toAppOrder(payload.order);
   },
 };
 
@@ -291,7 +357,6 @@ export const toAppCompany = (company) => {
   return {
     id: company.id,
     company: company.company || "Unnamed organization",
-    tier: company.tier ?? null,
     volume: company.volume || "",
     billing: company.billing || "",
     status,
@@ -301,6 +366,8 @@ export const toAppCompany = (company) => {
     workEmail: company.workEmail || "",
     lead: company.lead && typeof company.lead === "object" ? company.lead : {},
     quote,
+    licenseDocument: company.licenseDocument ?? null,
+    licenseReviewedAt: company.licenseReviewedAt ?? null,
     reviewedAt: company.reviewedAt ?? null,
     accountActivatedAt: company.accountActivatedAt ?? null,
     createdAt: company.createdAt ?? null,
@@ -308,22 +375,6 @@ export const toAppCompany = (company) => {
 };
 
 export const backendCompanies = {
-  async submitApplication(data) {
-    const payload = await request("/business/applications", {
-      method: "POST",
-      body: data,
-    });
-    return toAppCompany(payload.companyAccount);
-  },
-
-  async saveDraftApplication(data) {
-    const payload = await request("/business/applications/draft", {
-      method: "POST",
-      body: data,
-    });
-    return toAppCompany(payload.companyAccount);
-  },
-
   async getBusinessCompany() {
     const payload = await request("/business/company");
     return payload.companyAccount ? toAppCompany(payload.companyAccount) : null;
@@ -344,43 +395,211 @@ export const backendCompanies = {
     return toAppCompany(payload.companyAccount);
   },
 
-  async adminReview(id) {
+  async adminApproveLicense(id) {
     return toAppCompany(
-      (await request(`/admin/companies/${encodeURIComponent(id)}/review`, {
+      (await request(`/admin/companies/${encodeURIComponent(id)}/approve-license`, {
         method: "POST",
       })).companyAccount,
     );
   },
 
-  async adminPrepareQuote(id) {
+  async adminDeclineLicense(id) {
     return toAppCompany(
-      (await request(`/admin/companies/${encodeURIComponent(id)}/quote`, {
+      (await request(`/admin/companies/${encodeURIComponent(id)}/decline-license`, {
         method: "POST",
       })).companyAccount,
     );
   },
+};
 
-  async adminApprove(id) {
-    return toAppCompany(
-      (await request(`/admin/companies/${encodeURIComponent(id)}/approve`, {
-        method: "POST",
-      })).companyAccount,
-    );
+export const toAppLocation = (location) => ({
+  id: location.id,
+  companyAccountId: location.companyAccountId ?? null,
+  location: location.location || "",
+  region: location.region || "",
+  copies: location.copies || "",
+  contact: location.contact || "",
+  status: location.status || "Review",
+  tone: location.tone || "warning",
+  createdAt: location.createdAt || "",
+  updatedAt: location.updatedAt || "",
+});
+
+export const backendLocations = {
+  async businessList() {
+    const payload = await request("/business/locations");
+    return (payload.locations || []).map(toAppLocation);
   },
 
-  async adminConvert(id) {
-    return toAppCompany(
-      (await request(`/admin/companies/${encodeURIComponent(id)}/convert`, {
-        method: "POST",
-      })).companyAccount,
-    );
+  async businessGet(id) {
+    const payload = await request(`/business/locations/${encodeURIComponent(id)}`);
+    return payload.location ? toAppLocation(payload.location) : null;
   },
 
-  async adminDecline(id) {
-    return toAppCompany(
-      (await request(`/admin/companies/${encodeURIComponent(id)}/decline`, {
-        method: "POST",
-      })).companyAccount,
+  async businessConfirm(id) {
+    const payload = await request(
+      `/business/locations/${encodeURIComponent(id)}/confirm`,
+      { method: "POST", body: {} },
     );
+    return toAppLocation(payload.location);
+  },
+
+  async businessCreate(data) {
+    const payload = await request("/business/locations", {
+      method: "POST",
+      body: data,
+    });
+    return toAppLocation(payload.location);
+  },
+};
+
+const SHIPMENT_TONES = {
+  "Address review": "warning",
+  Preparing: "neutral",
+  "In dispatch": "info",
+  Delivered: "success",
+  "Delay flagged": "warning",
+};
+
+export const toAppShipment = (shipment) => {
+  const hasCompany = Boolean(shipment.companyAccountId);
+  return {
+    id: shipment.id,
+    companyAccountId: shipment.companyAccountId ?? null,
+    shipmentId: shipment.shipmentId || "",
+    label: shipment.label || "",
+    route: shipment.route || "",
+    scope: shipment.scope || "",
+    status: shipment.status || "Preparing",
+    tone: SHIPMENT_TONES[shipment.status] || shipment.tone || "neutral",
+    eta: shipment.eta || "",
+    owner: shipment.owner || (hasCompany ? "business" : "admin"),
+    company: shipment.company || "",
+    createdAt: shipment.createdAt || "",
+    updatedAt: shipment.updatedAt || "",
+  };
+};
+
+export const toAppShipmentActivity = (activity) => ({
+  id: activity.id,
+  event: activity.event || "",
+  shipment: activity.shipmentId || "",
+  status: activity.status || "",
+  tone: activity.tone || "neutral",
+  date: activity.date || "",
+});
+
+export const backendShipments = {
+  async businessList() {
+    const payload = await request("/business/shipments");
+    return (payload.shipments || []).map(toAppShipment);
+  },
+
+  async businessGet(id) {
+    const payload = await request(`/business/shipments/${encodeURIComponent(id)}`);
+    if (!payload.shipment) return null;
+    return {
+      shipment: toAppShipment(payload.shipment),
+      activity: (payload.activity || []).map(toAppShipmentActivity),
+    };
+  },
+
+  async businessAdvance(id) {
+    const payload = await request(
+      `/business/shipments/${encodeURIComponent(id)}/advance`,
+      { method: "POST", body: {} },
+    );
+    return toAppShipment(payload.shipment);
+  },
+
+  async adminList() {
+    const payload = await request("/admin/shipments");
+    return (payload.shipments || []).map(toAppShipment);
+  },
+
+  async adminGet(id) {
+    const payload = await request(`/admin/shipments/${encodeURIComponent(id)}`);
+    if (!payload.shipment) return null;
+    return {
+      shipment: toAppShipment(payload.shipment),
+      activity: (payload.activity || []).map(toAppShipmentActivity),
+    };
+  },
+
+  async adminAdvance(id) {
+    const payload = await request(
+      `/admin/shipments/${encodeURIComponent(id)}/advance`,
+      { method: "POST", body: {} },
+    );
+    return toAppShipment(payload.shipment);
+  },
+};
+
+export const toAppOrderPlan = (plan) => ({
+  id: plan.id,
+  companyAccountId: plan.companyAccountId ?? null,
+  order: plan.order || "",
+  copies: plan.copies || "",
+  cadence: plan.cadence || "",
+  sites: plan.sites || "",
+  status: plan.status || "Queued",
+  tone: plan.tone || "neutral",
+  nextWindow: plan.nextWindow || "",
+  createdAt: plan.createdAt || "",
+  updatedAt: plan.updatedAt || "",
+});
+
+export const backendOrderPlans = {
+  async businessList() {
+    const payload = await request("/business/order-plans");
+    return (payload.orderPlans || []).map(toAppOrderPlan);
+  },
+
+  async businessGet(id) {
+    const payload = await request(
+      `/business/order-plans/${encodeURIComponent(id)}`,
+    );
+    return payload.orderPlan ? toAppOrderPlan(payload.orderPlan) : null;
+  },
+
+  async businessConfirm(id) {
+    const payload = await request(
+      `/business/order-plans/${encodeURIComponent(id)}/confirm`,
+      { method: "POST", body: {} },
+    );
+    return toAppOrderPlan(payload.orderPlan);
+  },
+};
+
+export const toAppInvoice = (invoice) => ({
+  id: invoice.id,
+  companyAccountId: invoice.companyAccountId ?? null,
+  invoice: invoice.invoice || "",
+  scope: invoice.scope || "",
+  amount: invoice.amount || "",
+  status: invoice.status || "Upcoming",
+  tone: invoice.tone || "neutral",
+  date: invoice.date || "",
+  createdAt: invoice.createdAt || "",
+  updatedAt: invoice.updatedAt || "",
+});
+
+export const backendInvoices = {
+  async businessList() {
+    const payload = await request("/business/invoices");
+    return (payload.invoices || []).map(toAppInvoice);
+  },
+
+  async businessGet(id) {
+    const payload = await request(`/business/invoices/${encodeURIComponent(id)}`);
+    return payload.invoice ? toAppInvoice(payload.invoice) : null;
+  },
+
+  async businessConfirm(id) {
+    const payload = await request(
+      `/business/invoices/${encodeURIComponent(id)}/confirm`,
+      { method: "POST", body: {} },
+    );
+    return toAppInvoice(payload.invoice);
   },
 };

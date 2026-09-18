@@ -1,31 +1,27 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
+
 from models import db
 
 UUID_LEN = 36
 
-# Canonical workflow states matching COMPANY_WORKFLOW_STATES in company-store.js.
+# A company registration has one short compliance workflow. Once approved the
+# account can sign in and place bulk orders; commercial quote stages are not
+# part of this product flow.
 COMPANY_WORKFLOW_STATES = (
-    "Draft",
-    "Submitted",
-    "Under review",
-    "Quote ready",
-    "Approved",
-    "Declined",
-    "Converted to account",
+    "License submitted",
+    "License approved",
+    "License declined",
 )
 
 # Visual tone per state so status badges render without client-side inference.
 # Mirrors workflowTone in the mock store.
 TONE_FOR_STATUS = {
-    "Draft": "neutral",
-    "Submitted": "info",
-    "Under review": "warning",
-    "Quote ready": "info",
-    "Approved": "success",
-    "Declined": "neutral",
-    "Converted to account": "success",
+    "License submitted": "warning",
+    "License approved": "success",
+    "License declined": "neutral",
 }
 
 
@@ -39,12 +35,11 @@ class CompanyAccount(db.Model):
     )
     company = db.Column(db.String(255), nullable=False)
 
-    tier = db.Column(db.String(50))
     volume = db.Column(db.String(120))
     billing = db.Column(db.String(120))
     region = db.Column(db.String(120))
 
-    status = db.Column(db.String(50), default="Draft")
+    status = db.Column(db.String(50), default="License submitted")
 
     # The owning business user — nullable because seed/anonymous applications may
     # lack a user account at creation time.
@@ -61,8 +56,13 @@ class CompanyAccount(db.Model):
     # application/lead table; the entity itself owns both the application data and
     # the resulting company record.
     lead = db.Column(db.JSON, default=dict)
-    # Populated when the workflow reaches "Quote ready".
+    # Retained for backwards-compatible reads of existing rows. New company
+    # registrations do not use quotes.
     quote = db.Column(db.JSON, default=dict)
+    # Data URL for the uploaded business licence. File storage can be swapped
+    # in later without changing the API contract.
+    license_document = db.Column(MEDIUMTEXT, nullable=True)
+    license_reviewed_at = db.Column(db.DateTime, nullable=True)
 
     reviewed_at = db.Column(db.DateTime, nullable=True)
     account_activated_at = db.Column(db.DateTime, nullable=True)
@@ -87,7 +87,6 @@ class CompanyAccount(db.Model):
         return {
             "id": self.id,
             "company": self.company,
-            "tier": self.tier,
             "volume": self.volume,
             "billing": self.billing,
             "region": self.region,
@@ -98,6 +97,12 @@ class CompanyAccount(db.Model):
             "workEmail": self.work_email,
             "lead": self.lead or {},
             "quote": self.quote or {},
+            "licenseDocument": self.license_document,
+            "licenseReviewedAt": (
+                self.license_reviewed_at.isoformat()
+                if self.license_reviewed_at
+                else None
+            ),
             "reviewedAt": (
                 self.reviewed_at.isoformat() if self.reviewed_at else None
             ),
