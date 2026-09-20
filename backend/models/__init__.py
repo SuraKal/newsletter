@@ -20,6 +20,7 @@ from .business_order import BusinessOrder
 from .business_invoice import BusinessInvoice
 from .business_team import BusinessTeamMember
 from .governance_request import GovernanceRequest
+from .legal_page import LegalPage
 
 __all__ = [
     "db",
@@ -44,4 +45,5 @@ __all__ = [
     "BusinessInvoice",
     "BusinessTeamMember",
     "GovernanceRequest",
+    "LegalPage",
 ]

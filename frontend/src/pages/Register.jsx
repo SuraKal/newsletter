@@ -583,7 +583,21 @@ export default function Register() {
                 <span className="font-body text-sm leading-5 text-[#3a2b1f]">
                   I agree that my contact and delivery information can be used
                   for account setup, shipment routing, and account support, as
-                  described in the privacy policy.
+                  described in the{" "}
+                  <Link
+                    to="/privacy"
+                    className="font-semibold text-[#4A2A08] underline underline-offset-2 hover:text-[#2a1b12]"
+                  >
+                    Privacy Policy
+                  </Link>{" "}
+                  and under the{" "}
+                  <Link
+                    to="/terms"
+                    className="font-semibold text-[#4A2A08] underline underline-offset-2 hover:text-[#2a1b12]"
+                  >
+                    Terms of Service
+                  </Link>
+                  .
                 </span>
               </label>
 
@@ -618,6 +632,24 @@ export default function Register() {
                 Sign in
               </Link>
             </p>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-[#e2d7ca] pt-5 font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#9b8c7d]">
+              <Link to="/terms" className="transition-colors hover:text-[#4A2A08]">
+                Terms of Service
+              </Link>
+              <Link
+                to="/privacy"
+                className="transition-colors hover:text-[#4A2A08]"
+              >
+                Privacy Policy
+              </Link>
+              <Link to="/cookies" className="transition-colors hover:text-[#4A2A08]">
+                Cookies Policy
+              </Link>
+              <Link to="/refund" className="transition-colors hover:text-[#4A2A08]">
+                Refund Policy
+              </Link>
+            </div>
           </section>
         </div>
       </div>

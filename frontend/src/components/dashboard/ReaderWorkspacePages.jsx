@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CreditCard, Package, Search, Truck } from "lucide-react";
+import { ArrowLeft, CreditCard, ExternalLink, Package, Search, Truck } from "lucide-react";
 import { appClient } from "@/api/appClient";
 import { useAuth } from "@/lib/AuthContext";
 import { appParams } from "@/lib/app-params";
@@ -728,6 +728,15 @@ export function ReaderPrivacyPage() {
         title="Consent and data-governance controls"
         description="Control marketing consent and request data export or deletion."
         breadcrumbs={makeBreadcrumbs("Privacy")}
+        action={
+          <Link
+            to="/privacy"
+            className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-stone-700 transition-colors hover:bg-stone-50"
+          >
+            Read the full Privacy Policy
+            <ExternalLink className="h-4 w-4" />
+          </Link>
+        }
       />
 
       <DashboardPanel title="Consent settings" className="p-5 sm:p-6">

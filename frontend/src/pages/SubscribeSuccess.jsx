@@ -15,7 +15,6 @@ import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import { appClient } from "@/api/appClient";
 import { useAuth } from "@/lib/AuthContext";
-import { readCheckoutSessions } from "@/lib/checkout-store";
 
 const statusContent = {
   succeeded: {
@@ -85,11 +84,6 @@ export default function SubscribeSuccess() {
         loaded = null;
       }
 
-      if (!loaded) {
-        const sessions = readCheckoutSessions();
-        loaded = sessions[sessionId] || null;
-      }
-
       if (!cancelled) {
         setSession(loaded);
         setIsLoading(false);
@@ -102,8 +96,7 @@ export default function SubscribeSuccess() {
     };
   }, [sessionId]);
 
-  const paymentStatus =
-    session?.status || searchParams.get("status") || "expired";
+  const paymentStatus = session?.status || "expired";
   const status = statusContent[paymentStatus] || statusContent.expired;
   const StatusIcon = status.Icon;
   const isSuccessful = paymentStatus === "succeeded";

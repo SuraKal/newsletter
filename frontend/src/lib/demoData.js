@@ -2347,38 +2347,6 @@ export const businessContactCards = [
   },
 ];
 
-export const privacyPrinciples = [
-  {
-    title: "Data collected at sign-up",
-    body: "The platform needs name, contact details, delivery address, account type, and payment references so it can create the correct subscription, delivery, and billing records.",
-  },
-  {
-    title: "Why delivery addresses matter",
-    body: "Delivery addresses are used to determine shipment routing and may be shared with the courier or fleet-integrated logistics workflow that powers physical newspaper delivery.",
-  },
-  {
-    title: "How payments stay safer",
-    body: "Raw card numbers should not be stored in the platform database. Payment details are expected to be captured and vaulted by a PCI-compliant processor, with the platform retaining only a reference token.",
-  },
-  {
-    title: "How consent should be presented",
-    body: "Consent needs to be explicit at sign-up, especially when personal data supports billing, account management, and delivery coordination across Belgium and Germany.",
-  },
-];
-
-export const privacyRights = [
-  "Access the personal data stored for your account.",
-  "Request export of your account and subscription-related data.",
-  "Request deletion or retention review where legal and operational obligations allow it.",
-  "Understand when address data is shared with logistics or payment partners.",
-];
-
-export const privacyRetentionNotes = [
-  "Account and subscription records should be retained only as long as operational, legal, and billing obligations require.",
-  "Delivery and shipment history may need limited retention to resolve disputes, missed deliveries, or account support issues.",
-  "Business-account invoicing records may require longer retention than ordinary reader marketing preferences.",
-];
-
 export const readerProfileHighlights = [
   {
     label: "Account type",
@@ -2459,39 +2427,6 @@ export const businessGovernanceActionNotes = [
     detail: "Some requests need operations or admin confirmation so the team can verify authority before changing company-level records.",
   },
 ];
-
-export const termsHighlights = [
-  {
-    title: "Subscription billing",
-    body: "Individual reader subscriptions are offered on monthly or yearly billing cycles. Business accounts may instead use negotiated or invoice-based billing arrangements.",
-  },
-  {
-    title: "Delivery cadence",
-    body: "Billing frequency does not control newspaper arrival frequency. Active print subscribers follow the fixed two-week delivery cadence described in the product proposal.",
-  },
-  {
-    title: "Access timing",
-    body: "Recent articles are reserved for active subscribers, while public readers gain access once the content moves beyond the 30-day delay window.",
-  },
-  {
-    title: "Account responsibilities",
-    body: "Subscribers are responsible for keeping contact and delivery details accurate so billing and shipment routing can function correctly.",
-  },
-  {
-    title: "Business orders and pricing",
-    body: "Business ordering may involve bulk copy counts, separate invoice handling, and volume-based pricing rules that differ from individual reader plans.",
-  },
-  {
-    title: "Content use",
-    body: "Editorial content remains protected by copyright and may not be reproduced or redistributed commercially without permission.",
-  },
-];
-
-export const policyContacts = {
-  privacyEmail: "privacy@newsletter.local",
-  supportEmail: "support@newsletter.local",
-  billingEmail: "billing@newsletter.local",
-};
 
 const MONTH_INDEX = {
   January: 0,

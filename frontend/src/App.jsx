@@ -75,6 +75,9 @@ const BusinessInvoiceDetail = lazy(
 );
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
+const Refund = lazy(() => import("@/pages/Refund"));
+const Cookies = lazy(() => import("@/pages/Cookies"));
+const AdminLegalContent = lazy(() => import("@/pages/AdminLegalContent"));
 const TemplatePreview = lazy(() => import("@/pages/TemplatePreview"));
 const ReaderOverviewPage = lazy(
   () => import("@/components/dashboard/ReaderOverviewPage"),
@@ -303,9 +306,12 @@ const AuthenticatedApp = () => {
           />
           <Route path="order-requests" element={<AdminOrderRequests />} />
           <Route path="subscriptions" element={<AdminSubscriptions />} />
+          <Route path="legal-content" element={<AdminLegalContent />} />
         </Route>
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/refund" element={<Refund />} />
+        <Route path="/cookies" element={<Cookies />} />
         <Route path="/templates" element={<TemplatePreview />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>

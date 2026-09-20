@@ -47,6 +47,8 @@ const baseFooterSections = [
       { label: "Admin Console", path: "/admin" },
       { label: "Privacy Policy", path: "/privacy" },
       { label: "Terms of Service", path: "/terms" },
+      { label: "Refund Policy", path: "/refund" },
+      { label: "Cookies Policy", path: "/cookies" },
     ],
   },
 ];

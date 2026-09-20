@@ -197,6 +197,13 @@ export default function Login() {
             <div className="mt-8 grid gap-2 rounded-xl border border-[#e2d7ca] bg-[#faf6ef] p-4 text-sm text-[#756253]"><p className="flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-[0.16em] text-[#4A2A08]"><CheckCircle2 className="h-4 w-4" />Demo access</p><p>Reader, company, and admin demo credentials are available in the project handoff notes.</p></div>
 
             <p className="mt-6 text-center text-sm text-[#756253]">{journeyKey === "admin" ? "Admin accounts are provisioned for internal operators." : <>Don&apos;t have an account? <Link to={`/register?journey=${journeyKey}`} className="font-bold text-[#4A2A08] hover:underline">Create one</Link></>}</p>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-[#e2d7ca] pt-5 font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#9b8c7d]">
+              <Link to="/terms" className="transition-colors hover:text-[#4A2A08]">Terms of Service</Link>
+              <Link to="/privacy" className="transition-colors hover:text-[#4A2A08]">Privacy Policy</Link>
+              <Link to="/cookies" className="transition-colors hover:text-[#4A2A08]">Cookies Policy</Link>
+              <Link to="/refund" className="transition-colors hover:text-[#4A2A08]">Refund Policy</Link>
+            </div>
           </section>
         </div>
       </div>

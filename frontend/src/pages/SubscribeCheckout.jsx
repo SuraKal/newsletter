@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
   CreditCard,
@@ -76,7 +76,9 @@ export default function SubscribeCheckout() {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({});
+  const [fieldErrors, setFieldErrors] = useState(
+    /** @type {Record<string, boolean>} */ ({}),
+  );
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -194,6 +196,7 @@ export default function SubscribeCheckout() {
   };
 
   const collectCardErrors = () => {
+    /** @type {Record<string, boolean>} */
     const errors = {};
     const number = String(form.cardNumber || "").replace(/\D/g, "");
     const { month, year } = splitExpiry(form.cardExpiry);
@@ -607,7 +610,14 @@ export default function SubscribeCheckout() {
                       className="mt-1 accent-heritage"
                     />
                     <span className="font-body text-sm leading-6 text-ink">
-                      I understand this is a recurring subscription billed {billingCycle === "yearly" ? "yearly" : "monthly"} until it is cancelled under the plan terms.
+                      I understand this is a recurring subscription billed {billingCycle === "yearly" ? "yearly" : "monthly"} until it is cancelled under the{" "}
+                      <Link
+                        to="/terms"
+                        className="font-semibold text-heritage underline underline-offset-2 hover:opacity-80"
+                      >
+                        plan terms
+                      </Link>
+                      .
                     </span>
                   </label>
                   <label className="flex items-start gap-3">
@@ -620,7 +630,14 @@ export default function SubscribeCheckout() {
                       className="mt-1 accent-heritage"
                     />
                     <span className="font-body text-sm leading-6 text-ink">
-                      I agree that my contact and address information may be used for billing, delivery coordination, and logistics handoff where physical newspaper fulfillment applies.
+                      I agree that my contact and address information may be used for billing, delivery coordination, and logistics handoff as described in the{" "}
+                      <Link
+                        to="/privacy"
+                        className="font-semibold text-heritage underline underline-offset-2 hover:opacity-80"
+                      >
+                        Privacy Policy
+                      </Link>
+                      .
                     </span>
                   </label>
                   <label className="flex items-start gap-3">
@@ -667,6 +684,24 @@ export default function SubscribeCheckout() {
                 >
                   Back to plans
                 </Button>
+
+                <p className="flex flex-wrap justify-center gap-x-4 gap-y-1 font-sans text-[0.6rem] font-bold uppercase tracking-[0.16em] text-stone-400 lg:justify-start">
+                  <Link to="/terms" className="transition-colors hover:text-heritage">
+                    Terms
+                  </Link>
+                  <Link
+                    to="/privacy"
+                    className="transition-colors hover:text-heritage"
+                  >
+                    Privacy
+                  </Link>
+                  <Link to="/cookies" className="transition-colors hover:text-heritage">
+                    Cookies
+                  </Link>
+                  <Link to="/refund" className="transition-colors hover:text-heritage">
+                    Refund
+                  </Link>
+                </p>
               </div>
 
               <p className="mt-4 flex items-center justify-center gap-2 font-body text-xs leading-5 text-redacted">

@@ -1,6 +1,7 @@
 import { appParams } from "@/lib/app-params";
 import { COMPANY_WORKFLOW_STATES } from "@/lib/company-store";
 import { toCheckoutSession } from "@/lib/checkout-store";
+import { toLegalPage } from "@/lib/legal-store";
 
 // Re-exported so consumers can validate workflow states without importing the
 // mock store directly.
@@ -217,6 +218,36 @@ export const backendSubscriptions = {
       method: "POST",
     });
     return (payload.plans || []).map(toAppPlan);
+  },
+};
+
+export const backendLegal = {
+  async get(key) {
+    const payload = await request(`/legal/${encodeURIComponent(key)}`, {
+      auth: false,
+    });
+    return toLegalPage(payload.page);
+  },
+
+  async adminList() {
+    const payload = await request("/admin/legal-pages");
+    return (payload.pages || []).map(toLegalPage);
+  },
+
+  async adminUpdate(key, data) {
+    const payload = await request(
+      `/admin/legal-pages/${encodeURIComponent(key)}`,
+      { method: "PUT", body: data },
+    );
+    return toLegalPage(payload.page);
+  },
+
+  async adminReset(key) {
+    const payload = await request(
+      `/admin/legal-pages/${encodeURIComponent(key)}/reset`,
+      { method: "POST" },
+    );
+    return toLegalPage(payload.page);
   },
 };
 

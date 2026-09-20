@@ -9,6 +9,7 @@ import {
   backendConsents,
   backendGovernance,
   backendInvoices,
+  backendLegal,
   backendLocations,
   backendOrderPlans,
   backendOrders,
@@ -82,6 +83,13 @@ import {
   saveCheckoutSession,
 } from "@/lib/checkout-store";
 import { DEFAULT_PAYMENT_METHODS } from "@/lib/payment-methods";
+import {
+  getDefaultLegalPage,
+  getLegalPage,
+  LEGAL_PAGE_KEYS,
+  saveLegalPage,
+  toLegalPage,
+} from "@/lib/legal-store";
 
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
@@ -2143,6 +2151,22 @@ export const appClient = {
       return session;
     },
   },
+  legal: {
+    async get(key) {
+      try {
+        const page = await backendLegal.get(key);
+        if (page) {
+          saveLegalPage(page);
+        }
+        return page;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+      return getLegalPage(key) || getDefaultLegalPage(key);
+    },
+  },
   admin: {
     async overview() {
       const currentUser = getCurrentSessionUser("admin");
@@ -2222,6 +2246,63 @@ export const appClient = {
       requests[index] = updated;
       writeGovernanceRequests(requests);
       return enrichGovernanceRequest(updated);
+    },
+
+    legal: {
+      async list() {
+        requireAdmin();
+
+        try {
+          const pages = await backendLegal.adminList();
+          pages.forEach(saveLegalPage);
+          return pages;
+        } catch (error) {
+          if (!isNetworkError(error)) {
+            throw error;
+          }
+        }
+
+        return LEGAL_PAGE_KEYS.map(
+          (key) => getLegalPage(key) || getDefaultLegalPage(key),
+        );
+      },
+
+      async update(key, updates) {
+        requireAdmin();
+
+        try {
+          const page = await backendLegal.adminUpdate(key, updates);
+          saveLegalPage(page);
+          return page;
+        } catch (error) {
+          if (!isNetworkError(error)) {
+            throw error;
+          }
+        }
+
+        const current = getLegalPage(key) || getDefaultLegalPage(key);
+        const page = toLegalPage({ ...current, ...updates, key });
+        saveLegalPage(page);
+        return page;
+      },
+
+      async reset(key) {
+        requireAdmin();
+
+        try {
+          const page = await backendLegal.adminReset(key);
+          saveLegalPage(page);
+          return page;
+        } catch (error) {
+          if (!isNetworkError(error)) {
+            throw error;
+          }
+        }
+
+        const page = getDefaultLegalPage(key);
+        saveLegalPage(page);
+        return page;
+      },
     },
 
     subscribers: {
