@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Check, RotateCcw, Save } from "lucide-react";
+import { Check, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { appClient } from "@/api/appClient";
 import {
   getReaderPlans,
@@ -40,10 +40,40 @@ export default function AdminSubscriptionCatalog() {
     plans[0] ? toFormState(plans[0]) : null,
   );
   const [status, setStatus] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(false);
   const selectedPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedId) || plans[0],
     [plans, selectedId],
   );
+
+  useEffect(() => {
+    let active = true;
+    const loadCatalog = async () => {
+      try {
+        await appClient.subscriptions.refresh();
+        if (active) {
+          setActionError("");
+        }
+      } catch (error) {
+        if (active) {
+          setActionError(
+            error.message || "The subscription catalog could not be loaded.",
+          );
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    };
+    loadCatalog();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!selectedPlan) {
@@ -64,25 +94,95 @@ export default function AdminSubscriptionCatalog() {
       return;
     }
 
+    setIsSaving(true);
     try {
       await appClient.subscriptions.update(selectedPlan.id, toPlanUpdates(form));
       setStatus("Saved. Public subscription pages now use this plan.");
+      setActionError("");
     } catch (error) {
-      setStatus(error.message || "The plan could not be saved.");
+      setActionError(error.message || "The plan could not be saved.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const addPlan = async () => {
+    setIsSaving(true);
+    setStatus("");
+    setActionError("");
+    try {
+      const created = await appClient.subscriptions.create({
+        name: "New reader plan",
+        price: "9.99",
+        monthlyPrice: 9.99,
+        yearlyPrice: 119.88,
+        description: "Describe who this reader plan is for.",
+        features: ["Feature one", "Feature two"],
+        audience: "New reader audience",
+        deliveryNote: "Digital only",
+        paymentNote: "PayPal, Visa, or Mastercard",
+        highlighted: false,
+      });
+      setSelectedId(created.id);
+      setStatus(`Added "${created.name}". Update the details and save.`);
+    } catch (error) {
+      setActionError(error.message || "The plan could not be added.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const deletePlan = async () => {
+    if (!selectedPlan) {
+      return;
+    }
+    if (!pendingDelete) {
+      setPendingDelete(true);
+      window.setTimeout(() => setPendingDelete(false), 3000);
+      return;
+    }
+
+    setIsSaving(true);
+    setStatus("");
+    setActionError("");
+    try {
+      const nextPlans = await appClient.subscriptions.remove(selectedPlan.id);
+      const nextReaderPlans = getReaderPlans(nextPlans);
+      setPendingDelete(false);
+      setSelectedId(nextReaderPlans[0]?.id || "");
+      setStatus(`Deleted "${selectedPlan.name}".`);
+    } catch (error) {
+      setActionError(error.message || "The plan could not be deleted.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const resetPlans = async () => {
+    setIsSaving(true);
+    setStatus("");
+    setActionError("");
     try {
       await appClient.subscriptions.reset();
+      setPendingDelete(false);
       setStatus("Plans restored to the seeded catalog.");
     } catch (error) {
-      setStatus(error.message || "The plans could not be reset.");
+      setActionError(error.message || "The plans could not be reset.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   if (!form || !selectedPlan) {
-    return null;
+    return (
+      <section className="dashboard-panel p-5 sm:p-6">
+        <p className="font-sans text-sm text-stone-500">
+          {isLoading
+            ? "Loading subscription plans..."
+            : "No reader plans are available."}
+        </p>
+      </section>
+    );
   }
 
   return (
@@ -97,15 +197,36 @@ export default function AdminSubscriptionCatalog() {
             Edit the plans shown on the public subscriptions page and checkout.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={resetPlans}
-          className="inline-flex items-center justify-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-stone-600 transition-colors hover:bg-stone-50"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          Reset seed plans
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={addPlan}
+            disabled={isSaving}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#4A2A08] px-4 py-2 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:bg-stone-900 disabled:opacity-60"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add plan
+          </button>
+          <button
+            type="button"
+            onClick={resetPlans}
+            disabled={isSaving}
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-60"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reset seed plans
+          </button>
+        </div>
       </div>
+
+      {actionError ? (
+        <div
+          role="alert"
+          className="mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 font-sans text-xs font-semibold text-red-700"
+        >
+          {actionError}
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(180px,0.7fr)_minmax(0,1.5fr)]">
         <div className="space-y-2">
@@ -174,10 +295,21 @@ export default function AdminSubscriptionCatalog() {
             Mark as the highlighted public plan
           </label>
           <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-            <Button type="submit" className="gap-2 rounded-full bg-[#4A2A08] font-sans text-xs uppercase tracking-[0.16em] hover:bg-stone-900">
+            <Button type="submit" disabled={isSaving} className="gap-2 rounded-full bg-[#4A2A08] font-sans text-xs uppercase tracking-[0.16em] hover:bg-stone-900">
               <Save className="h-4 w-4" />
               Save plan
             </Button>
+            {plans.length > 1 ? (
+              <button
+                type="button"
+                onClick={deletePlan}
+                disabled={isSaving}
+                className="inline-flex items-center gap-2 rounded-full border border-red-200 px-4 py-2 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-red-700 transition-colors hover:bg-red-50 disabled:opacity-60"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {pendingDelete ? "Confirm delete" : "Delete plan"}
+              </button>
+            ) : null}
             {status ? <span className="font-sans text-xs text-stone-500">{status}</span> : null}
           </div>
         </form>

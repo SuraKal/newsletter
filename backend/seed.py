@@ -9,9 +9,15 @@ from models import (
     BusinessInvoice,
     BusinessLocation,
     BusinessOrder,
+    BusinessTeamMember,
     Category,
     CompanyAccount,
     CompanyOrder,
+    GovernanceRequest,
+    ReaderDelivery,
+    ReaderDeliveryActivity,
+    ReadingHistoryEntry,
+    ReaderBillingEntry,
     Shipment,
     ShipmentActivity,
     SubscriptionPlan,
@@ -124,7 +130,12 @@ SEEDED_USERS = [
         "role": "reader",
         "account_type": "individual",
         "company_name": None,
-        "subscription": {"plan_id": "digital", "billing_cycle": "monthly"},
+        "contact_phone": "+32 470 00 00 00",
+        "delivery_address": "Rue de la Presse 12",
+        "city": "Brussels",
+        "postal_code": "1000",
+        "country": "Belgium",
+        "subscription": {"plan_id": "print-digital", "billing_cycle": "monthly"},
     },
     {
         "name": "Massawa Trading Group",
@@ -143,6 +154,73 @@ SEEDED_USERS = [
         "account_type": "business",
         "company_name": "Red Sea Hospitality Co.",
         "subscription": {"plan_id": "business-enterprise", "billing_cycle": "yearly"},
+    },
+]
+
+
+# Demo reader roster for the admin subscribers surface. Renewal offsets are
+# relative to seed time so the derived states stay stable across reseeds.
+# Mirrors `adminSubscriberRows` from `demoData.js`.
+SEEDED_SUBSCRIBERS = [
+    {
+        "name": "Amelie Laurent",
+        "email": "amelie.laurent@nekedem.local",
+        "password": "reader12345",
+        "plan_id": "print-digital",
+        "billing_cycle": "yearly",
+        "status": "active",
+        "renewal_offset_days": 180,
+        "delivery_data_consent": True,
+        "contact_phone": "+32 471 10 11 12",
+        "delivery_address": "Diestsestraat 45",
+        "city": "Leuven",
+        "postal_code": "3000",
+        "country": "Belgium",
+    },
+    {
+        "name": "Marta Kovacs",
+        "email": "marta.kovacs@nekedem.local",
+        "password": "reader12345",
+        "plan_id": "digital",
+        "billing_cycle": "monthly",
+        "status": "active",
+        "renewal_offset_days": 200,
+        "delivery_data_consent": True,
+        "contact_phone": "+36 20 555 12 34",
+        "delivery_address": "Andrássy út 88",
+        "city": "Budapest",
+        "postal_code": "1062",
+        "country": "Hungary",
+    },
+    {
+        "name": "Jonas Stein",
+        "email": "jonas.stein@nekedem.local",
+        "password": "reader12345",
+        "plan_id": "print-digital",
+        "billing_cycle": "monthly",
+        "status": "active",
+        "renewal_offset_days": 15,
+        "delivery_data_consent": False,
+        "contact_phone": "+49 30 123 45 67",
+        "delivery_address": "Bergmannstraße 21",
+        "city": "Berlin",
+        "postal_code": "10961",
+        "country": "Germany",
+    },
+    {
+        "name": "Niels Verbruggen",
+        "email": "niels.verbruggen@nekedem.local",
+        "password": "reader12345",
+        "plan_id": "print-digital",
+        "billing_cycle": "yearly",
+        "status": "past_due",
+        "renewal_offset_days": -5,
+        "delivery_data_consent": True,
+        "contact_phone": "+32 484 22 33 44",
+        "delivery_address": "Kerkstraat 8",
+        "city": "Ghent",
+        "postal_code": "9000",
+        "country": "Belgium",
     },
 ]
 
@@ -356,6 +434,356 @@ def _upsert_users():
                     renewal_at=renewal,
                 )
             )
+
+
+def _upsert_subscribers():
+    """Seed the demo reader roster for the admin subscribers surface.
+
+    Reproduces the four states shown by ``adminSubscriberRows`` in
+    ``demoData.js``: Active/Eligible, Active digital-only, Needs review /
+    Address review, and Renewal watch / Payment hold. Idempotent per email.
+    """
+    now = datetime.now()
+    for seed in SEEDED_SUBSCRIBERS:
+        profile_fields = ("contact_phone", "delivery_address", "city", "postal_code", "country")
+        user = User.query.filter_by(email=seed["email"]).first()
+        if user is None:
+            user = User(
+                name=seed["name"],
+                email=seed["email"],
+                role="reader",
+                account_type="individual",
+                delivery_data_consent=seed["delivery_data_consent"],
+                **{field: seed.get(field) for field in profile_fields},
+            )
+            user.set_password(seed["password"])
+            db.session.add(user)
+        else:
+            user.name = seed["name"]
+            user.role = "reader"
+            user.account_type = "individual"
+            user.delivery_data_consent = seed["delivery_data_consent"]
+            for field in profile_fields:
+                setattr(user, field, seed.get(field))
+            user.set_password(seed["password"])
+        db.session.flush()
+
+        # Reset the user's subscriptions so the seed matches the spec exactly.
+        UserSubscription.query.filter_by(user_id=user.id).delete()
+        db.session.add(
+            UserSubscription(
+                user_id=user.id,
+                plan_id=seed["plan_id"],
+                billing_cycle=seed["billing_cycle"],
+                status=seed["status"],
+                started_at=now,
+                renewal_at=now + timedelta(days=seed["renewal_offset_days"]),
+            )
+        )
+
+
+# Demo print deliveries for the reader deliveries surface. Mirrors the
+# `readerDelivery*` demo data so the contracts stay 1:1.
+READER_DELIVERY_TIMELINE = [
+    {
+        "label": "Editorial lock",
+        "description": (
+            "The subscriber edition is closed and queued for print preparation."
+        ),
+        "badge": "Completed",
+        "status": "completed",
+        "tone": "neutral",
+    },
+    {
+        "label": "Print and packaging",
+        "description": (
+            "Copies are grouped by route and verified against active subscriber addresses."
+        ),
+        "badge": "In queue",
+        "status": "active",
+        "tone": "neutral",
+    },
+    {
+        "label": "Fleet dispatch",
+        "description": (
+            "Truck assignment and dispatch confirmation will appear here once the route is released."
+        ),
+        "badge": "Pending",
+        "status": "pending",
+        "tone": "neutral",
+    },
+    {
+        "label": "Doorstep confirmation",
+        "description": (
+            "ETA and final drop confirmation will update after dispatch begins."
+        ),
+        "badge": "Pending",
+        "status": "pending",
+        "tone": "neutral",
+    },
+]
+
+READER_DELIVERY_CURRENT = {
+    "tracking_id": "NQ-20260825",
+    "edition": "August 25, 2026 Edition",
+    "status": "Preparing",
+    "eta": "August 25, 2026 · 8:00-9:00 AM",
+    "date": "August 25, 2026",
+    "note": (
+        "The next print cycle is scheduled and the address has already been "
+        "matched to an active regional route."
+    ),
+    "sort_order": 1,
+}
+
+READER_DELIVERY_HISTORY = [
+    {
+        "tracking_id": "NQ-20260811",
+        "edition": "August 11, 2026 Edition",
+        "date": "August 11, 2026 · 8:24 AM",
+        "sort_order": 2,
+    },
+    {
+        "tracking_id": "NQ-20260728",
+        "edition": "July 28, 2026 Edition",
+        "date": "July 28, 2026 · 8:11 AM",
+        "sort_order": 3,
+    },
+    {
+        "tracking_id": "NQ-20260714",
+        "edition": "July 14, 2026 Edition",
+        "date": "July 14, 2026 · 8:29 AM",
+        "sort_order": 4,
+    },
+    {
+        "tracking_id": "NQ-20260630",
+        "edition": "June 30, 2026 Edition",
+        "date": "June 30, 2026 · 8:18 AM",
+        "sort_order": 5,
+    },
+]
+
+READER_DELIVERY_EMAILS = [
+    "viewer@nekedem.local",
+    "amelie.laurent@nekedem.local",
+    "jonas.stein@nekedem.local",
+    "niels.verbruggen@nekedem.local",
+]
+
+READER_DELIVERY_DELIVERED_NOTE = (
+    "This edition completed its print run and was confirmed delivered to the "
+    "saved delivery profile."
+)
+
+
+def _upsert_reader_deliveries():
+    """Seed per-subscriber print deliveries with their timeline events.
+
+    Idempotent per (user, tracking_id): rows are recreated to the spec each
+    seed, so a reset returns the exact August 25 cycle plus four delivered
+    editions. Digital-only subscribers get no rows.
+    """
+    for email in READER_DELIVERY_EMAILS:
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            continue
+        seeds = [READER_DELIVERY_CURRENT] + [
+            {
+                **row,
+                "status": "Delivered",
+                "eta": "",
+                "note": READER_DELIVERY_DELIVERED_NOTE,
+            }
+            for row in READER_DELIVERY_HISTORY
+        ]
+        for seed in seeds:
+            values = {key: value for key, value in seed.items() if key != "timeline"}
+            delivery = ReaderDelivery.query.filter_by(
+                user_id=user.id, tracking_id=values["tracking_id"]
+            ).first()
+            if delivery is None:
+                delivery = ReaderDelivery(user_id=user.id, **values)
+                db.session.add(delivery)
+                db.session.flush()
+            else:
+                for key, value in values.items():
+                    setattr(delivery, key, value)
+                db.session.flush()
+
+            if values["status"] == "Preparing":
+                ReaderDeliveryActivity.query.filter_by(
+                    delivery_id=delivery.id
+                ).delete()
+                for index, item in enumerate(READER_DELIVERY_TIMELINE, start=1):
+                    db.session.add(
+                        ReaderDeliveryActivity(
+                            delivery_id=delivery.id,
+                            sort_order=index,
+                            **item,
+                        )
+                    )
+
+
+# Demo reading history for the reader history surface, mirroring
+# `readerHistoryRows` in demoData.js 1:1 (titles, desks, states, dates).
+READING_HISTORY_SEEDS = [
+    {
+        "article_id": "news-1",
+        "title": "City Council Approves New Waterline and Road Repair Program",
+        "category": "News",
+        "state": "read_today",
+        "activity_at": datetime(2026, 8, 11, 8, 0),
+    },
+    {
+        "article_id": "business-1",
+        "title": "Family-Owned Logistics Firm Expands After Securing Regional Contract",
+        "category": "Business",
+        "state": "saved",
+        "saved": True,
+        "activity_at": datetime(2026, 8, 10, 8, 0),
+    },
+    {
+        "article_id": "feat-1",
+        "title": "The Vanishing Art of the Morning Paper",
+        "category": "Feature",
+        "state": "archive_soon",
+        "activity_at": datetime(2026, 8, 9, 8, 0),
+    },
+    {
+        "article_id": "community-1",
+        "title": "Local Couple Celebrates 50 Years of Marriage Surrounded by Family",
+        "category": "Community",
+        "state": "completed",
+        "activity_at": datetime(2026, 8, 8, 8, 0),
+    },
+]
+
+READING_HISTORY_EMAILS = [
+    "viewer@nekedem.local",
+    "amelie.laurent@nekedem.local",
+    "marta.kovacs@nekedem.local",
+    "jonas.stein@nekedem.local",
+    "niels.verbruggen@nekedem.local",
+]
+
+
+def _upsert_reading_history():
+    """Seed per-reader reading history rows with the demo article set.
+
+    Idempotent per (user, article_id): each seed re-applies title, desk,
+    state, and the pinned activity timestamps, so a reset returns the exact
+    demo queue.
+    """
+    for email in READING_HISTORY_EMAILS:
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            continue
+        for seed in READING_HISTORY_SEEDS:
+            activity_at = seed["activity_at"]
+            entry = ReadingHistoryEntry.query.filter_by(
+                user_id=user.id, article_id=seed["article_id"]
+            ).first()
+            saved = bool(seed.get("saved", False))
+            if entry is None:
+                entry = ReadingHistoryEntry(
+                    user_id=user.id,
+                    article_id=seed["article_id"],
+                    title=seed["title"],
+                    category=seed["category"],
+                    state=seed["state"],
+                    saved=saved,
+                    last_read_at=activity_at,
+                    created_at=activity_at,
+                )
+                db.session.add(entry)
+            else:
+                entry.title = seed["title"]
+                entry.category = seed["category"]
+                entry.state = seed["state"]
+                entry.saved = saved
+                entry.last_read_at = activity_at
+                entry.created_at = activity_at
+
+
+# Demo billing events for the reader billing surface, mirroring
+# `readerBillingRows` in demoData.js 1:1 (items, amounts, statuses, dates).
+READER_BILLING_SEEDS = [
+    {
+        "entry_type": "renewal",
+        "reference": "",
+        "amount": 24.99,
+        "method": "",
+        "status": "upcoming",
+        "event_at": datetime(2026, 9, 11, 9, 0),
+    },
+    {
+        "entry_type": "invoice",
+        "reference": "INV-2026-08",
+        "amount": 24.99,
+        "method": "",
+        "status": "paid",
+        "event_at": datetime(2026, 8, 11, 9, 0),
+    },
+    {
+        "entry_type": "payment",
+        "reference": "",
+        "amount": None,
+        "method": "PayPal",
+        "status": "verified",
+        "event_at": datetime(2026, 8, 10, 9, 0),
+    },
+    {
+        "entry_type": "invoice",
+        "reference": "INV-2026-07",
+        "amount": 24.99,
+        "method": "",
+        "status": "paid",
+        "event_at": datetime(2026, 7, 11, 9, 0),
+    },
+]
+
+READER_BILLING_EMAILS = [
+    "viewer@nekedem.local",
+    "amelie.laurent@nekedem.local",
+    "marta.kovacs@nekedem.local",
+    "jonas.stein@nekedem.local",
+    "niels.verbruggen@nekedem.local",
+]
+
+
+def _upsert_reader_billing():
+    """Seed per-reader billing events with the demo invoice set.
+
+    Idempotent per (user, entry_type, reference): each seed re-applies the
+    type, amount, method, status, and pinned event timestamps, so a reset
+    returns the exact payment-history queue.
+    """
+    for email in READER_BILLING_EMAILS:
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            continue
+        for seed in READER_BILLING_SEEDS:
+            event = ReaderBillingEntry.query.filter_by(
+                user_id=user.id,
+                entry_type=seed["entry_type"],
+                reference=seed["reference"],
+            ).first()
+            if event is None:
+                event = ReaderBillingEntry(
+                    user_id=user.id,
+                    event_at=seed["event_at"],
+                    created_at=seed["event_at"],
+                    **{
+                        key: value
+                        for key, value in seed.items()
+                        if key != "event_at"
+                    },
+                )
+                db.session.add(event)
+            else:
+                for key, value in seed.items():
+                    setattr(event, key, value)
+                event.created_at = seed["event_at"]
 
 
 def _upsert_categories():
@@ -993,9 +1421,122 @@ def _upsert_business_invoices():
             existing.date = date
 
 
+def _upsert_business_team_members():
+    """Seed the access roster for the demo lead org account.
+
+    Mirrors ``businessTeamRows`` from ``demoData.js`` so the team page and the
+    pending-invite badge are populated after a fresh seed. Idempotent per
+    (account, name).
+    """
+    account = CompanyAccount.query.filter_by(
+        company=SEEDED_COMPANY_LEAD["company"]
+    ).first()
+    if account is None:
+        return
+
+    seeded = [
+        ("Sajibur Rahman", "Account owner", "Commercial + oversight", "Active"),
+        ("Lina Van Hove", "Finance lead", "Invoices + VAT follow-up", "Active"),
+        ("Marco Stein", "Receiving coordinator", "Belgium North cluster", "Active"),
+        ("Embassy desk invite", "Receiving contact", "Embassy reception route", "Pending"),
+    ]
+    for index, (name, role, scope, status) in enumerate(seeded):
+        existing = BusinessTeamMember.query.filter_by(
+            company_account_id=account.id, name=name
+        ).first()
+        created_at = SEED_COMPANY_BASE_CREATED + timedelta(days=index)
+        if existing is None:
+            db.session.add(
+                BusinessTeamMember(
+                    company_account_id=account.id,
+                    name=name,
+                    role=role,
+                    scope=scope,
+                    status=status,
+                    created_at=created_at,
+                )
+            )
+        else:
+            existing.role = role
+            existing.scope = scope
+            existing.status = status
+            existing.created_at = created_at
+
+
+def _upsert_governance_requests():
+    """Seed reader and company governance requests for the admin queue.
+
+    Mirrors the demo rows created by ``ensureSeedData`` in ``appClient.js`` so
+    the privacy panels and the admin governance queue are populated after a
+    fresh seed. Idempotent per (user, scope, type).
+    """
+    reader = User.query.filter_by(email="viewer@nekedem.local").first()
+    business = User.query.filter_by(role="business").first()
+    account = CompanyAccount.query.filter_by(
+        company=SEEDED_COMPANY_LEAD["company"]
+    ).first()
+
+    seeded = [
+        {
+            "user": reader,
+            "account": None,
+            "scope": "reader",
+            "type": "Data export",
+            "status": "Queued",
+            "notes": (
+                "Full account and subscription export requested from the "
+                "reader privacy workspace."
+            ),
+        },
+        {
+            "user": business,
+            "account": account,
+            "scope": "company",
+            "type": "Company deletion review",
+            "status": "Review required",
+            "notes": (
+                "Business account retention review requested under the "
+                "company privacy workflow."
+            ),
+        },
+    ]
+
+    for seed in seeded:
+        if seed["user"] is None:
+            continue
+        company_account_id = (
+            seed["account"].id if seed["account"] is not None else None
+        )
+        existing = GovernanceRequest.query.filter_by(
+            user_id=seed["user"].id,
+            scope=seed["scope"],
+            type=seed["type"],
+        ).first()
+        if existing is None:
+            db.session.add(
+                GovernanceRequest(
+                    user_id=seed["user"].id,
+                    company_account_id=company_account_id,
+                    scope=seed["scope"],
+                    type=seed["type"],
+                    status=seed["status"],
+                    notes=seed["notes"],
+                    created_at=SEED_COMPANY_BASE_CREATED,
+                )
+            )
+        else:
+            existing.company_account_id = company_account_id
+            existing.status = seed["status"]
+            existing.notes = seed["notes"]
+
+
 def seed_data():
     _upsert_plans()
     _upsert_users()
+    _upsert_subscribers()
+    _upsert_reader_deliveries()
+    _upsert_reading_history()
+    _upsert_reader_billing()
     _upsert_templates()
     _upsert_categories()
     _upsert_articles()
@@ -1005,6 +1546,8 @@ def seed_data():
     _upsert_shipments()
     _upsert_business_orders()
     _upsert_business_invoices()
+    _upsert_business_team_members()
+    _upsert_governance_requests()
     db.session.commit()
 
 
@@ -1020,6 +1563,13 @@ def seed_command():
         print(
             f"  - {user_data['role']:<8} {user_data['email']:<32} "
             f"{user_data['password']:<16} plan={plan}"
+        )
+    print("Seeded demo subscribers:")
+    for subscriber in SEEDED_SUBSCRIBERS:
+        print(
+            f"  - reader   {subscriber['email']:<32} "
+            f"{subscriber['password']:<16} plan={subscriber['plan_id']} "
+            f"status={subscriber['status']}"
         )
     print("Registered article templates:")
     for template_data in SEEDED_TEMPLATES:
@@ -1055,5 +1605,25 @@ def seed_command():
         f"{len(SEEDED_BUSINESS_SHIPMENTS)} business runs, "
         f"{len(SEEDED_SHIPMENT_ACTIVITY)} activity events"
     )
+    print("Seeded reader print deliveries:")
+    print(
+        f"  - {1 + len(READER_DELIVERY_HISTORY)} deliveries x "
+        f"{len(READER_DELIVERY_EMAILS)} print readers "
+        f"({len(READER_DELIVERY_TIMELINE)} timeline events each)"
+    )
+    print("Seeded reader reading history:")
+    print(
+        f"  - {len(READING_HISTORY_SEEDS)} story rows x "
+        f"{len(READING_HISTORY_EMAILS)} readers"
+    )
+    print("Seeded reader billing events:")
+    print(
+        f"  - {len(READER_BILLING_SEEDS)} billing events x "
+        f"{len(READER_BILLING_EMAILS)} readers"
+    )
     print("Seeded business order plans and invoices:")
     print("  - 4 order plans, 4 invoices (lead org account)")
+    print("Seeded business team roster:")
+    print("  - 4 seats (3 active, 1 pending) for the lead org account")
+    print("Seeded governance requests:")
+    print("  - 1 reader data export, 1 company deletion review")

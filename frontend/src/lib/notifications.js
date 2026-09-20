@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { getAdminContentRows, getAdminScheduleRows } from "@/lib/content-store";
 import { getCompanyWorkflowState } from "@/lib/company-store";
 import { appClient, getGovernanceActionCount } from "@/api/appClient";
@@ -14,7 +15,7 @@ import {
   getBusinessTeamRows,
 } from "@/lib/business-ops-store";
 import { readerBillingRows, readerDeliveryCurrent } from "@/lib/demoData";
-import { useStoreVersion } from "@/lib/store-bus";
+import { notifyStoreChange, useStoreVersion } from "@/lib/store-bus";
 
 const countWhere = (rows, predicate) =>
   Array.isArray(rows) ? rows.filter(predicate).length : 0;
@@ -79,11 +80,11 @@ const businessBadges = () => {
   return counts;
 };
 
-const readerBadges = () => {
+const readerCountsFrom = ({ current, billingRows }) => {
   const counts = {
     overview: 0,
-    deliveries: readerDeliveryCurrent.status !== "Delivered" ? 1 : 0,
-    billing: countWhere(readerBillingRows, (row) =>
+    deliveries: current && current.status !== "Delivered" ? 1 : 0,
+    billing: countWhere(billingRows, (row) =>
       ["Upcoming", "Overdue"].includes(row.status),
     ),
     history: 0,
@@ -94,6 +95,41 @@ const readerBadges = () => {
   return counts;
 };
 
+const demoReaderCounts = () =>
+  readerCountsFrom({ current: readerDeliveryCurrent, billingRows: readerBillingRows });
+
+// Backend-fed counts for the reader workspace chips. Loaded once per page
+// visit; the demo rows stand in while loading and offline. `notifyStoreChange`
+// re-renders `useStoreVersion` consumers (Overview page, DashboardShell).
+let readerBadgeCounts = null;
+let readerBadgeLoadStarted = false;
+
+async function loadReaderBadges() {
+  if (readerBadgeLoadStarted) {
+    return;
+  }
+  readerBadgeLoadStarted = true;
+  try {
+    const [deliveriesResult, billingResult] = await Promise.allSettled([
+      appClient.reader.deliveries(),
+      appClient.reader.billing(),
+    ]);
+    const deliveriesOk = deliveriesResult.status === "fulfilled";
+    const billingOk = billingResult.status === "fulfilled";
+    if (deliveriesOk || billingOk) {
+      readerBadgeCounts = readerCountsFrom({
+        current: deliveriesOk ? deliveriesResult.value.current || null : readerDeliveryCurrent,
+        billingRows: billingOk ? billingResult.value : readerBillingRows,
+      });
+    }
+  } finally {
+    readerBadgeLoadStarted = false;
+    notifyStoreChange("reader-badges");
+  }
+}
+
+const readerBadges = () => readerBadgeCounts || demoReaderCounts();
+
 const badgeComputers = {
   admin: adminBadges,
   business: businessBadges,
@@ -103,6 +139,18 @@ const badgeComputers = {
 const totalFor = (counts) =>
   Object.values(counts).reduce((sum, value) => sum + (value || 0), 0);
 
+const workspaceKeyForPath = (path) => {
+  if (!path) return null;
+  for (const workspace of Object.values(dashboardWorkspaces)) {
+    for (const section of workspace.sections) {
+      if (path === section.path || `${path}/`.startsWith(`${section.path}/`)) {
+        return workspace.key;
+      }
+    }
+  }
+  return null;
+};
+
 export function getWorkspaceSectionBadges(workspaceKey) {
   const compute = badgeComputers[workspaceKey];
   if (!compute) return {};
@@ -111,6 +159,11 @@ export function getWorkspaceSectionBadges(workspaceKey) {
 
 export function useWorkspaceSectionBadges(workspaceKey) {
   useStoreVersion();
+  useEffect(() => {
+    if (workspaceKey === "reader") {
+      loadReaderBadges();
+    }
+  }, [workspaceKey]);
   return getWorkspaceSectionBadges(workspaceKey);
 }
 
@@ -120,6 +173,11 @@ export function getWorkspaceNotificationTotal(workspaceKey) {
 
 export function useWorkspaceNotificationTotal(workspaceKey) {
   useStoreVersion();
+  useEffect(() => {
+    if (workspaceKey === "reader") {
+      loadReaderBadges();
+    }
+  }, [workspaceKey]);
   return getWorkspaceNotificationTotal(workspaceKey);
 }
 
@@ -137,5 +195,10 @@ export function getSectionBadgeForPath(path) {
 
 export function useSectionBadgeForPath(path) {
   useStoreVersion();
+  useEffect(() => {
+    if (workspaceKeyForPath(path) === "reader") {
+      loadReaderBadges();
+    }
+  }, [path]);
   return getSectionBadgeForPath(path);
 }

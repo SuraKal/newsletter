@@ -2,6 +2,9 @@ from datetime import datetime
 
 from models import db
 
+# A renewal this close to its date is surfaced on the subscriber watchlist.
+RENEWAL_WATCH_WINDOW_DAYS = 30
+
 
 class SubscriptionPlan(db.Model):
     __tablename__ = "subscription_plans"

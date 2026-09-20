@@ -12,8 +12,14 @@ from .company import CompanyAccount
 from .company_order import CompanyOrder
 from .location import BusinessLocation
 from .shipment import Shipment, ShipmentActivity
+from .reader_delivery import ReaderDelivery, ReaderDeliveryActivity
+from .reading_history import ReadingHistoryEntry
+from .reader_billing import ReaderBillingEntry
+from .checkout_session import CheckoutSession
 from .business_order import BusinessOrder
 from .business_invoice import BusinessInvoice
+from .business_team import BusinessTeamMember
+from .governance_request import GovernanceRequest
 
 __all__ = [
     "db",
@@ -29,6 +35,13 @@ __all__ = [
     "BusinessLocation",
     "Shipment",
     "ShipmentActivity",
+    "ReaderDelivery",
+    "ReaderDeliveryActivity",
+    "ReadingHistoryEntry",
+    "ReaderBillingEntry",
+    "CheckoutSession",
     "BusinessOrder",
     "BusinessInvoice",
+    "BusinessTeamMember",
+    "GovernanceRequest",
 ]

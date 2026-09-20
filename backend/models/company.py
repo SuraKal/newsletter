@@ -64,6 +64,11 @@ class CompanyAccount(db.Model):
     license_document = db.Column(MEDIUMTEXT, nullable=True)
     license_reviewed_at = db.Column(db.DateTime, nullable=True)
 
+    # Company-level consent preferences (BusinessSettings privacy panel).
+    privacy_updates_opt_in = db.Column(db.Boolean, default=True, nullable=False)
+    delivery_data_consent = db.Column(db.Boolean, default=True, nullable=False)
+    commercial_updates_opt_in = db.Column(db.Boolean, default=False, nullable=False)
+
     reviewed_at = db.Column(db.DateTime, nullable=True)
     account_activated_at = db.Column(db.DateTime, nullable=True)
 

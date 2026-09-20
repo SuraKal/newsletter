@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Check } from "lucide-react";
 import {
@@ -9,10 +9,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import {
-  activateSubscriber,
-  getSubscriberById,
-} from "@/lib/subscriber-store";
+import { appClient } from "@/api/appClient";
 
 const relatedLinks = [
   { label: "Content", to: "/admin/content" },
@@ -37,20 +34,67 @@ const reviewActionFor = (status) => {
 
 export default function AdminSubscriberDetail() {
   const { subscriberId } = useParams();
-  const [, setRevision] = useState(0);
-  const subscriber = getSubscriberById(subscriberId);
+  const [subscriber, setSubscriber] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [actionError, setActionError] = useState("");
 
-  const reviewAction = subscriber
-    ? reviewActionFor(subscriber.status)
-    : null;
-
-  const handleReviewAction = () => {
-    if (!subscriber || !reviewAction) return;
-    if (reviewAction.nextStatus === "Active") {
-      activateSubscriber(subscriber.id);
+  const loadSubscriber = useCallback(async () => {
+    try {
+      const row = await appClient.admin.subscribers.get(subscriberId);
+      setSubscriber(row);
+      setActionError("");
+    } catch (error) {
+      setActionError(error.message || "The subscriber could not be loaded.");
+    } finally {
+      setIsLoading(false);
     }
-    setRevision((value) => value + 1);
+  }, [subscriberId]);
+
+  useEffect(() => {
+    loadSubscriber();
+  }, [loadSubscriber]);
+
+  const reviewAction = subscriber ? reviewActionFor(subscriber.status) : null;
+
+  const handleReviewAction = async () => {
+    if (!subscriber || !reviewAction || isSaving) return;
+    setIsSaving(true);
+    setActionError("");
+    try {
+      const updated = await appClient.admin.subscribers.activate(subscriber.id);
+      if (updated) {
+        setSubscriber(updated);
+      }
+    } catch (error) {
+      setActionError(error.message || "The subscriber could not be updated.");
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <DashboardPageHeader
+          eyebrow="Admin subscriber"
+          title="Loading subscriber"
+          breadcrumbs={[
+            { label: "Admin workspace", to: "/admin/overview" },
+            { label: "Subscribers", to: "/admin/subscribers" },
+          ]}
+        />
+        <DashboardPanel title="Subscriber operations">
+          <div className="dashboard-empty-state px-6 py-10 text-center">
+            <p className="font-sans text-sm text-stone-500">
+              Loading subscriber...
+            </p>
+          </div>
+        </DashboardPanel>
+        <DashboardRelatedLinks title="Quick links" items={relatedLinks} />
+      </div>
+    );
+  }
 
   if (!subscriber) {
     return (
@@ -72,6 +116,14 @@ export default function AdminSubscriberDetail() {
             </Link>
           }
         />
+        {actionError ? (
+          <div
+            role="alert"
+            className="rounded-md border border-red-200 bg-red-50 px-4 py-3 font-sans text-xs font-semibold text-red-700"
+          >
+            {actionError}
+          </div>
+        ) : null}
         <DashboardPanel title="Subscriber operations">
           <DashboardEmptyState title="No subscriber matches this ID." />
         </DashboardPanel>
@@ -104,15 +156,25 @@ export default function AdminSubscriberDetail() {
               <button
                 type="button"
                 onClick={handleReviewAction}
-                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 dark:bg-stone-100 dark:text-stone-900"
+                disabled={isSaving}
+                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-stone-100 dark:text-stone-900"
               >
                 <Check className="h-4 w-4" />
-                {reviewAction.label}
+                {isSaving ? "Saving..." : reviewAction.label}
               </button>
             ) : null}
           </div>
         }
       />
+
+      {actionError ? (
+        <div
+          role="alert"
+          className="rounded-md border border-red-200 bg-red-50 px-4 py-3 font-sans text-xs font-semibold text-red-700"
+        >
+          {actionError}
+        </div>
+      ) : null}
 
       {reviewAction ? (
         <DashboardPanel

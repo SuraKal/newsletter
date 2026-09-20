@@ -18,6 +18,18 @@ class User(db.Model):
     # Business users cannot receive a session until an administrator has
     # verified the company licence submitted with their registration.
     business_access_approved = db.Column(db.Boolean, default=True, nullable=False)
+    # Reader consent preferences. Business consents live on CompanyAccount but
+    # these columns act as a fallback when a business user has no company record.
+    newsletter_opt_in = db.Column(db.Boolean, default=False, nullable=False)
+    privacy_updates_opt_in = db.Column(db.Boolean, default=True, nullable=False)
+    delivery_data_consent = db.Column(db.Boolean, default=True, nullable=False)
+    commercial_updates_opt_in = db.Column(db.Boolean, default=False, nullable=False)
+    # Reader delivery profile (persisted from the reader workspace profile page).
+    contact_phone = db.Column(db.String(40))
+    delivery_address = db.Column(db.String(200))
+    city = db.Column(db.String(120))
+    postal_code = db.Column(db.String(40))
+    country = db.Column(db.String(120))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     subscriptions = db.relationship(
@@ -39,6 +51,11 @@ class User(db.Model):
             "accountType": self.account_type,
             "companyName": self.company_name,
             "businessAccessApproved": self.business_access_approved,
+            "contactPhone": self.contact_phone,
+            "deliveryAddress": self.delivery_address,
+            "city": self.city,
+            "postalCode": self.postal_code,
+            "country": self.country,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
         }
         if include_subscriptions:

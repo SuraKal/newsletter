@@ -111,3 +111,34 @@ def me():
     if not user:
         return jsonify({"error": "User not found"}), 404
     return jsonify({"user": _public_user(user)}), 200
+
+
+_PROFILE_FIELD_MAP = {
+    "name": "name",
+    "contactPhone": "contact_phone",
+    "deliveryAddress": "delivery_address",
+    "city": "city",
+    "postalCode": "postal_code",
+    "country": "country",
+}
+
+
+@auth_bp.put("/me")
+@jwt_required()
+def update_me():
+    user_id = int(get_jwt_identity())
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    data = request.get_json(silent=True) or {}
+    for field, column in _PROFILE_FIELD_MAP.items():
+        if field not in data:
+            continue
+        value = (data.get(field) or "").strip()
+        if field == "name" and not value:
+            return jsonify({"error": "Name is required"}), 400
+        setattr(user, column, value or None)
+
+    db.session.commit()
+    return jsonify({"user": _public_user(user)}), 200

@@ -10,6 +10,7 @@ import {
 } from "@/components/newspaper/ArticleTemplateView";
 
 import { useAuth } from "@/lib/AuthContext";
+import { appClient } from "@/api/appClient";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
 import { getArticleById, getHeroArticle, getPublicListingArticles, registerArticleClick } from "@/lib/content-store";
 import {
@@ -67,6 +68,14 @@ export default function ArticleDetail() {
       trackedArticleId.current = article?.id;
       recordArticleView(article);
       registerArticleClick(article.id);
+      appClient.reader
+        .recordHistoryEvent({
+          articleId: article.id,
+          title: article.headline || article.title || "",
+          category: article.category || "",
+          action: "view",
+        })
+        .catch(() => {});
     }
   }, [article?.id]);
 
@@ -86,6 +95,14 @@ export default function ArticleDetail() {
   const handleShare = async () => {
     if (!article?.id) return;
     recordArticleShare(article);
+    appClient.reader
+      .recordHistoryEvent({
+        articleId: article.id,
+        title: article.headline || article.title || "",
+        category: article.category || "",
+        action: "share",
+      })
+      .catch(() => {});
 
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
@@ -115,6 +132,14 @@ export default function ArticleDetail() {
     if (!article?.id) return;
     const nextSaved = toggleArticleSaved(article);
     setSaved(nextSaved);
+    appClient.reader
+      .recordHistoryEvent({
+        articleId: article.id,
+        title: article.headline || article.title || "",
+        category: article.category || "",
+        action: "toggle_save",
+      })
+      .catch(() => {});
     notify(nextSaved ? "Saved to reading history" : "Removed from saved stories");
   };
 

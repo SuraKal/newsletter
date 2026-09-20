@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Truck, Users } from "lucide-react";
 import {
@@ -12,7 +12,7 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import { getSubscriberRows } from "@/lib/subscriber-store";
+import { appClient } from "@/api/appClient";
 
 const subscriberColumns = [
   {
@@ -59,15 +59,38 @@ const relatedLinks = [
 ];
 
 export default function AdminSubscribers() {
+  const [rows, setRows] = useState([]);
   const [query, setQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [actionError, setActionError] = useState("");
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const table = useTableQuery({
-    rows: getSubscriberRows(),
+    rows,
     query,
     predicate: matchesSearch,
     activeFilters,
     filterGroups: subscriberFilterGroups,
   });
+
+  const refreshSubscribers = useCallback(async () => {
+    try {
+      const nextRows = await appClient.admin.subscribers.list();
+      setRows(nextRows);
+      setActionError("");
+    } catch (error) {
+      setActionError(error.message || "The subscriber list could not be loaded.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshSubscribers();
+  }, [refreshSubscribers]);
+
+  const activeCount = rows.filter((row) => row.status === "Active").length;
+  const reviewCount = rows.filter((row) => row.status === "Needs review").length;
+  const watchCount = rows.filter((row) => row.status === "Renewal watch").length;
 
   return (
     <div className="space-y-6">
@@ -100,7 +123,11 @@ export default function AdminSubscribers() {
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         filterOptions={table.filterOptions}
-        filters={["24.3k active", "37 review cases", "Print + digital watchlist"]}
+        filters={[
+          `${activeCount} active`,
+          `${reviewCount} review cases`,
+          `${watchCount} renewal watch`,
+        ]}
         action={
           <Link
             to="/admin/companies"
@@ -113,7 +140,22 @@ export default function AdminSubscribers() {
       />
 
       <DashboardPanel title="Subscriber operations table" className="p-5 sm:p-6">
-        {table.total ? (
+        {actionError ? (
+          <div
+            role="alert"
+            className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 font-sans text-xs font-semibold text-red-700"
+          >
+            {actionError}
+          </div>
+        ) : null}
+
+        {isLoading ? (
+          <div className="dashboard-empty-state px-6 py-10 text-center">
+            <p className="font-sans text-sm text-stone-500">
+              Loading subscribers...
+            </p>
+          </div>
+        ) : rows.length && table.total ? (
           <>
             <DashboardDataTable
               columns={subscriberColumns}
@@ -130,8 +172,12 @@ export default function AdminSubscribers() {
           </>
         ) : (
           <DashboardEmptyState
-            title="No matching subscribers"
-            description="Try clearing the status or delivery filters to see the full subscriber list."
+            title={rows.length ? "No matching subscribers" : "No subscribers"}
+            description={
+              rows.length
+                ? "Try clearing the status or delivery filters to see the full subscriber list."
+                : "Reader accounts and their subscription renewals will appear here once they register."
+            }
           />
         )}
       </DashboardPanel>

@@ -1,5 +1,6 @@
 import { appParams } from "@/lib/app-params";
 import { COMPANY_WORKFLOW_STATES } from "@/lib/company-store";
+import { toCheckoutSession } from "@/lib/checkout-store";
 
 // Re-exported so consumers can validate workflow states without importing the
 // mock store directly.
@@ -104,6 +105,11 @@ export const toAppUser = (serverUser) => {
     accountType: serverUser.accountType,
     companyName: serverUser.companyName || null,
     businessAccessApproved: serverUser.businessAccessApproved !== false,
+    contactPhone: serverUser.contactPhone || null,
+    deliveryAddress: serverUser.deliveryAddress || null,
+    city: serverUser.city || null,
+    postalCode: serverUser.postalCode || null,
+    country: serverUser.country || null,
     createdAt: serverUser.createdAt ?? null,
     subscriptions,
     subscription: subscriptions[0] || null,
@@ -154,11 +160,62 @@ export const backendAuth = {
     const payload = await request("/auth/me");
     return toAppUser(payload.user);
   },
+
+  async updateProfile({
+    name,
+    contactPhone,
+    deliveryAddress,
+    city,
+    postalCode,
+    country,
+  }) {
+    const payload = await request("/auth/me", {
+      method: "PUT",
+      body: { name, contactPhone, deliveryAddress, city, postalCode, country },
+    });
+    return toAppUser(payload.user);
+  },
 };
 
 export const backendSubscriptions = {
   async list() {
     const payload = await request("/subscriptions/plans", { auth: false });
+    return (payload.plans || []).map(toAppPlan);
+  },
+
+  async adminList() {
+    const payload = await request("/admin/subscriptions/plans");
+    return (payload.plans || []).map(toAppPlan);
+  },
+
+  async adminCreate(data) {
+    const payload = await request("/admin/subscriptions/plans", {
+      method: "POST",
+      body: data,
+    });
+    return toAppPlan(payload.plan);
+  },
+
+  async adminUpdate(planId, updates) {
+    const payload = await request(
+      `/admin/subscriptions/plans/${encodeURIComponent(planId)}`,
+      { method: "PUT", body: updates },
+    );
+    return toAppPlan(payload.plan);
+  },
+
+  async adminRemove(planId) {
+    const payload = await request(
+      `/admin/subscriptions/plans/${encodeURIComponent(planId)}`,
+      { method: "DELETE" },
+    );
+    return (payload.plans || []).map(toAppPlan);
+  },
+
+  async adminReset() {
+    const payload = await request("/admin/subscriptions/plans/reset", {
+      method: "POST",
+    });
     return (payload.plans || []).map(toAppPlan);
   },
 };
@@ -601,5 +658,341 @@ export const backendInvoices = {
       { method: "POST", body: {} },
     );
     return toAppInvoice(payload.invoice);
+  },
+};
+
+// Business overview aggregates. The backend computes the "at a glance" metrics
+// from orders, invoices, locations, shipments, and the active contract, then
+// returns them in the display shape the overview page maps over.
+const toAppOverviewMetric = (metric) => ({
+  label: metric.label || "",
+  value: metric.value || "",
+  detail: metric.detail || "",
+  accent: Boolean(metric.accent),
+});
+
+export const backendBusinessOverview = {
+  async get() {
+    const payload = await request("/business/overview");
+    return (payload.metrics || []).map(toAppOverviewMetric);
+  },
+};
+
+// Admin operations aggregates. Same display shape as the business overview;
+// the backend computes the values across content, subscribers, companies, and
+// shipments.
+export const backendAdminOverview = {
+  async get() {
+    const payload = await request("/admin/overview");
+    return (payload.metrics || []).map(toAppOverviewMetric);
+  },
+};
+
+// Reader subscription snapshot. The backend derives every value from the
+// caller's latest UserSubscription + plan + profile; the frontend passes the
+// shape through untouched (mirrors `getReaderSubscriptionSnapshot`).
+export const toReaderSnapshot = (snapshot) => ({
+  planName: snapshot.planName || "No active plan",
+  billingCycle: snapshot.billingCycle || "monthly",
+  billingAmount: Number(snapshot.billingAmount ?? 0) || 0,
+  nextBillingDate: snapshot.nextBillingDate || "Not scheduled",
+  nextDeliveryDate: snapshot.nextDeliveryDate || "Not scheduled",
+  paymentMethod: snapshot.paymentMethod || "No payment method",
+  deliveryMode: snapshot.deliveryMode || "No delivery scheduled",
+  deliveryWindow: snapshot.deliveryWindow || "Choose a plan to start delivery",
+  subscriptionStatus: snapshot.subscriptionStatus || "No subscription",
+  accessState: snapshot.accessState || "Public archive access only",
+  recoveryAction: snapshot.recoveryAction || "Choose a reader plan",
+  recoveryPath: snapshot.recoveryPath || "/subscriptions",
+  hasReadingAccess: Boolean(snapshot.hasReadingAccess),
+  hasDeliveryAccess: Boolean(snapshot.hasDeliveryAccess),
+  isPrintSubscriber: Boolean(snapshot.isPrintSubscriber),
+  locationSummary: snapshot.locationSummary || "Delivery profile saved",
+});
+
+export const backendReader = {
+  async overview() {
+    const payload = await request("/reader/overview");
+    return toReaderSnapshot(payload.snapshot);
+  },
+
+  async deliveries() {
+    const payload = await request("/reader/deliveries");
+    return (payload.deliveries || []).map(toReaderDelivery);
+  },
+
+  async deliveryGet(key) {
+    const payload = await request(
+      `/reader/deliveries/${encodeURIComponent(key)}`,
+    );
+    return {
+      delivery: payload.delivery ? toReaderDelivery(payload.delivery) : null,
+      timeline: payload.timeline || [],
+    };
+  },
+
+  async history() {
+    const payload = await request("/reader/history");
+    return (payload.history || []).map(toReadingHistoryRow);
+  },
+
+  async recordHistoryEvent(event) {
+    const payload = await request("/reader/history", {
+      method: "POST",
+      body: event,
+    });
+    return (payload.history || []).map(toReadingHistoryRow);
+  },
+
+  async billing() {
+    const payload = await request("/reader/billing");
+    return (payload.entries || []).map(toBillingRow);
+  },
+};
+
+// Public reader checkout. These routes are intentionally open so a guest can
+// complete a subscription before creating an account; the confirm step creates
+// or updates the reader user + subscription server-side.
+export const backendPaymentMethods = {
+  async list() {
+    const payload = await request("/payment-methods", { auth: false });
+    return Array.isArray(payload.methods) ? payload.methods : [];
+  },
+};
+
+export const backendCheckout = {
+  async create(data) {
+    const payload = await request("/subscriptions/checkout", {
+      method: "POST",
+      body: data,
+      auth: false,
+    });
+    return toCheckoutSession(payload.session);
+  },
+
+  async get(sessionId) {
+    const payload = await request(
+      `/subscriptions/checkout/${encodeURIComponent(sessionId)}`,
+      { auth: false },
+    );
+    return toCheckoutSession(payload.session);
+  },
+
+  async confirm(sessionId, details) {
+    const payload = await request(
+      `/subscriptions/checkout/${encodeURIComponent(sessionId)}/confirm`,
+      { method: "POST", body: details, auth: false },
+    );
+    return toCheckoutSession(payload.session);
+  },
+};
+
+// Reader billing/payment events for the billing table. Mirrors the
+// `readerBillingRows` demo contract (item, amount, status, tone, date);
+// backend labels/amounts/statuses/tones/dates are derived server-side.
+const toBillingRow = (row) => ({
+  id: row.id || "",
+  item: row.item || "Billing event",
+  amount: row.amount || "—",
+  status: row.status || "Pending",
+  tone: row.tone || "neutral",
+  date: row.date || "",
+});
+
+// Reading history rows for the reader history table. Mirrors the
+// `readerHistoryRows` demo contract (articleId, item, category, status,
+// tone, date); backend statuses/tone/dates are derived server-side.
+const toReadingHistoryRow = (row) => ({
+  id: row.id || "",
+  articleId: row.articleId || "",
+  item: row.item || "Untitled story",
+  category: row.category || "News",
+  status: row.status || "Viewed",
+  tone: row.tone || "neutral",
+  date: row.date || "",
+});
+
+// One print delivery for the reader deliveries table / hero / detail page.
+// Mirrors the `readerDelivery*` demo contract (trackingId, edition, status,
+// tone, eta, date, destination, note).
+const toReaderDelivery = (row) => ({
+  id: row.id || "",
+  trackingId: row.trackingId || "",
+  edition: row.edition || "",
+  status: row.status || "",
+  tone: row.tone || "neutral",
+  eta: row.eta || "",
+  date: row.date || "",
+  destination: row.destination || "",
+  note: row.note || "",
+});
+
+// Business team seats. Status is canonical ("Active"/"Pending"); the backend
+// supplies the display tone so the roster table stays presentational.
+export const toAppTeamMember = (member) => ({
+  id: member.id,
+  companyAccountId: member.companyAccountId ?? null,
+  name: member.name || "",
+  role: member.role || "",
+  scope: member.scope || "",
+  status: member.status || "Pending",
+  tone: member.tone || "neutral",
+  createdAt: member.createdAt || "",
+  updatedAt: member.updatedAt || "",
+});
+
+export const backendTeam = {
+  async businessList() {
+    const payload = await request("/business/team");
+    return (payload.teamMembers || []).map(toAppTeamMember);
+  },
+
+  async businessActivate(id) {
+    const payload = await request(
+      `/business/team/${encodeURIComponent(id)}/activate`,
+      { method: "POST", body: {} },
+    );
+    return toAppTeamMember(payload.teamMember);
+  },
+};
+// Consent preferences. The backend stores booleans and returns them under a
+// `consents` key; the endpoint differs for reader (user) vs company accounts.
+export const backendConsents = {
+  async readerGet() {
+    const payload = await request("/account/consents");
+    return payload.consents || {};
+  },
+
+  async readerSave(values) {
+    const payload = await request("/account/consents", {
+      method: "PUT",
+      body: values,
+    });
+    return payload.consents || {};
+  },
+
+  async companyGet() {
+    const payload = await request("/business/company/consents");
+    return payload.consents || {};
+  },
+
+  async companySave(values) {
+    const payload = await request("/business/company/consents", {
+      method: "PUT",
+      body: values,
+    });
+    return payload.consents || {};
+  },
+};
+
+// Maps a backend governance request into the shape the privacy/admin panels
+// expect. Admin responses additionally carry `requester` and `scopeLabel`.
+export const toAppGovernanceRequest = (row) => ({
+  id: row.id,
+  userId: row.userId ?? null,
+  companyAccountId: row.companyAccountId ?? null,
+  scope: row.scope || "reader",
+  type: row.type || "",
+  status: row.status || "Queued",
+  tone: row.tone || "neutral",
+  notes: row.notes || "",
+  date: row.date || "",
+  createdAt: row.createdAt || "",
+  updatedAt: row.updatedAt || "",
+  resolvedAt: row.resolvedAt || null,
+  requester: row.requester || null,
+  scopeLabel: row.scopeLabel || "",
+});
+
+export const backendGovernance = {
+  async readerList() {
+    const payload = await request("/account/governance-requests");
+    return (payload.governanceRequests || []).map(toAppGovernanceRequest);
+  },
+
+  async companyList() {
+    const payload = await request("/business/governance-requests");
+    return (payload.governanceRequests || []).map(toAppGovernanceRequest);
+  },
+
+  async adminList() {
+    const payload = await request("/admin/governance-requests");
+    return (payload.governanceRequests || []).map(toAppGovernanceRequest);
+  },
+
+  async readerCreate(action, notes) {
+    const payload = await request("/account/governance-requests", {
+      method: "POST",
+      body: { action, notes },
+    });
+    return toAppGovernanceRequest(payload.governanceRequest);
+  },
+
+  async companyCreate(action, notes) {
+    const payload = await request("/business/governance-requests", {
+      method: "POST",
+      body: { action, notes },
+    });
+    return toAppGovernanceRequest(payload.governanceRequest);
+  },
+
+  async updateStatus(id, status) {
+    const payload = await request(
+      `/admin/governance-requests/${encodeURIComponent(id)}/status`,
+      { method: "PUT", body: { status } },
+    );
+    return toAppGovernanceRequest(payload.governanceRequest);
+  },
+};
+
+// Maps a backend subscriber row (reader user + latest subscription) into the
+// shape `subscriber-store` and the admin subscriber pages read.
+export const toAppSubscriber = (row) => ({
+  id: String(row.id),
+  name: row.name || "",
+  email: row.email || "",
+  plan: row.plan || "—",
+  planId: row.planId ?? null,
+  billingCycle: row.billingCycle || null,
+  subscriptionId: row.subscriptionId ?? null,
+  renewal: row.renewal || "—",
+  deliveryEligibility: row.deliveryEligibility || "Eligible",
+  status: row.status || "Active",
+  tone: row.tone || "neutral",
+});
+
+export const backendSubscribers = {
+  async adminList() {
+    const payload = await request("/admin/subscribers");
+    return (payload.subscribers || []).map(toAppSubscriber);
+  },
+
+  async adminGet(id) {
+    const payload = await request(
+      `/admin/subscribers/${encodeURIComponent(id)}`,
+    );
+    return toAppSubscriber(payload.subscriber);
+  },
+
+  async adminActivate(id) {
+    const payload = await request(
+      `/admin/subscribers/${encodeURIComponent(id)}/activate`,
+      { method: "POST", body: {} },
+    );
+    return toAppSubscriber(payload.subscriber);
+  },
+};
+
+export const backendPlaces = {
+  async autocomplete(text) {
+    const params = new URLSearchParams({ text });
+    const payload = await request(`/places/autocomplete?${params.toString()}`);
+    return payload.features || [];
+  },
+
+  async detail(placeId) {
+    const params = new URLSearchParams({ id: placeId });
+    const payload = await request(`/places/detail?${params.toString()}`);
+    return payload;
   },
 };

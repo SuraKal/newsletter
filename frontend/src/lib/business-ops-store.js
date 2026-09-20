@@ -119,6 +119,11 @@ export function getBusinessTeamRows() {
   return readAll("teamMembers");
 }
 
+export function setBusinessTeamRows(rows) {
+  writeAll("teamMembers", Array.isArray(rows) ? rows : []);
+  return rows;
+}
+
 export function getBusinessTeamMemberById(id) {
   if (!id) return null;
   return readAll("teamMembers").find((row) => row.id === id) || null;

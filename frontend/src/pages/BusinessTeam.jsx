@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, MailPlus } from "lucide-react";
+import { appClient } from "@/api/appClient";
 import {
   DashboardDataTable,
   DashboardEmptyState,
@@ -12,10 +13,8 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
-import {
-  getBusinessTeamRows,
-  updateBusinessTeamMember,
-} from "@/lib/business-ops-store";
+import { getBusinessTeamRows } from "@/lib/business-ops-store";
+import { useStoreVersion } from "@/lib/store-bus";
 
 const createTeamColumns = (handleActivate) => [
   { key: "name", label: "Team member", primary: true },
@@ -66,8 +65,9 @@ const relatedLinks = [
 ];
 
 export default function BusinessTeam() {
+  useStoreVersion();
   const [query, setQuery] = useState("");
-  const [, setRevision] = useState(0);
+  const [actionError, setActionError] = useState("");
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const table = useTableQuery({
     rows: getBusinessTeamRows(),
@@ -77,12 +77,27 @@ export default function BusinessTeam() {
     filterGroups: teamFilterGroups,
   });
 
-  const handleActivate = (memberId) => {
-    updateBusinessTeamMember(memberId, {
-      status: "Active",
-      tone: "success",
+  useEffect(() => {
+    let cancelled = false;
+    appClient.businessTeam.list().catch((error) => {
+      if (!cancelled) {
+        setActionError(
+          error?.message || "The team roster could not be loaded.",
+        );
+      }
     });
-    setRevision((value) => value + 1);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleActivate = async (memberId) => {
+    setActionError("");
+    try {
+      await appClient.businessTeam.activate(memberId);
+    } catch (error) {
+      setActionError(error?.message || "The seat could not be activated.");
+    }
   };
 
   const teamColumns = createTeamColumns(handleActivate);
@@ -120,6 +135,12 @@ export default function BusinessTeam() {
         filterOptions={table.filterOptions}
         filters={["12 active seats", "1 pending invite", "Ops + finance roles"]}
       />
+
+      {actionError ? (
+        <p className="font-sans text-xs font-semibold text-red-600">
+          {actionError}
+        </p>
+      ) : null}
 
       <DashboardPanel title="Team members" className="p-5 sm:p-6">
         {table.total ? (

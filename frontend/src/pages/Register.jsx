@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -10,11 +10,13 @@ import {
   MapPin,
   Newspaper,
   Phone,
+  Search,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
 import { authJourneyContent, useAuth } from "@/lib/AuthContext";
 import { appClient } from "@/api/appClient";
+import { backendPlaces } from "@/api/backendClient";
 import { getDefaultDashboardRoute } from "@/lib/dashboard-config";
 
 const journeyOptions = [
@@ -53,6 +55,82 @@ export default function Register() {
   });
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Autocomplete for delivery address (business journey)
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+  const addressInputRef = useRef(null);
+  const addressSuggestionsRef = useRef(null);
+
+  const debouncedAddressSearch = useCallback(
+    (() => {
+      let timeoutId;
+      return (text) => {
+        clearTimeout(timeoutId);
+        if (!text || text.length < 2) {
+          setAddressSuggestions([]);
+          setShowAddressSuggestions(false);
+          return;
+        }
+        timeoutId = setTimeout(async () => {
+          try {
+            const features = await backendPlaces.autocomplete(text);
+            setAddressSuggestions(features);
+            setShowAddressSuggestions(features.length > 0);
+          } catch {
+            setAddressSuggestions([]);
+            setShowAddressSuggestions(false);
+          }
+        }, 300);
+      };
+    })(),
+    []
+  );
+
+  const handleAddressInput = (event) => {
+    const value = event.target.value;
+    updateField("deliveryAddress")({ currentTarget: { value } });
+    if (value && value.length >= 2) {
+      debouncedAddressSearch(value);
+    } else {
+      setAddressSuggestions([]);
+      setShowAddressSuggestions(false);
+    }
+  };
+
+  const selectAddress = (feature) => {
+    const props = feature.properties || {};
+    const name = props.name || "";
+    const street = props.street || "";
+    const postcode = props.postcode || "";
+    const city = props.city || props.state || "";
+    const country = props.country || "";
+
+    // Build a nice formatted address from components
+    const parts = [name, street, [postcode, city].filter(Boolean).join(" "), country]
+      .filter(Boolean);
+    const formatted = parts.join(", ");
+
+    setForm((current) => ({ ...current, deliveryAddress: formatted }));
+    setAddressSuggestions([]);
+    setShowAddressSuggestions(false);
+  };
+
+  // Close address suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        addressInputRef.current &&
+        !addressInputRef.current.contains(event.target) &&
+        addressSuggestionsRef.current &&
+        !addressSuggestionsRef.current.contains(event.target)
+      ) {
+        setShowAddressSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (query.get("journey") === "admin") {
     return <Navigate to="/login?journey=admin" replace />;
@@ -138,6 +216,10 @@ export default function Register() {
       );
       return;
     }
+
+    // Close address suggestions on submit
+    setAddressSuggestions([]);
+    setShowAddressSuggestions(false);
 
     setError("");
     setIsSubmitting(true);
@@ -399,18 +481,71 @@ export default function Register() {
                   icon: Phone,
                   autoComplete: "tel",
                 })}
-                {renderField({
-                  id: "register-address",
-                  name: "deliveryAddress",
-                  value: form.deliveryAddress,
-                  onChange: updateField("deliveryAddress"),
-                  label: "Delivery context",
-                  placeholder: isBusinessJourney
-                    ? "Primary office or first delivery site"
-                    : "Home or delivery address",
-                  icon: MapPin,
-                  autoComplete: "street-address",
-                })}
+                {isBusinessJourney ? (
+                  <>
+                    <div ref={addressInputRef} className="relative">
+                      <label
+                        htmlFor="register-address"
+                        className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.18em] text-[#4c392b]"
+                      >
+                        Delivery context
+                      </label>
+                      <div className="flex w-full items-center rounded-xl border border-[#cfc0af] bg-white transition-colors focus-within:border-[#4A2A08] focus-within:ring-2 focus-within:ring-[#4A2A08]/15">
+                        <MapPin className="ml-4 h-4 w-4 shrink-0 text-[#8b5f32]" />
+                        <Search className="absolute left-10 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9b8c7d]" />
+                        <input
+                          id="register-address"
+                          name="deliveryAddress"
+                          type="text"
+                          value={form.deliveryAddress}
+                          onChange={handleAddressInput}
+                          onFocus={() => addressSuggestions.length > 0 && setShowAddressSuggestions(true)}
+                          placeholder="Search for a place..."
+                          autoComplete="off"
+                          className="min-h-14 w-full rounded-xl bg-transparent pl-10 pr-4 py-3 text-base text-[#2a1b12] outline-none placeholder:text-[#9b8c7d]"
+                        />
+                      </div>
+                      {showAddressSuggestions && addressSuggestions.length > 0 && (
+                        <div
+                          ref={addressSuggestionsRef}
+                          className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-xl border border-[#cfc0af] bg-white shadow-lg"
+                        >
+                          {addressSuggestions.map((feature, idx) => (
+                            <button
+                              key={feature.properties?.place_id || idx}
+                              type="button"
+                              onClick={() => selectAddress(feature)}
+                              className="w-full px-4 py-2 text-left font-sans text-sm text-[#2a1b12] hover:bg-[#f4efe6]"
+                            >
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-[#8b5f32]" />
+                                <span>{feature.properties?.name || feature.properties?.formatted}</span>
+                              </div>
+                              {feature.properties?.city && (
+                                <div className="ml-6 font-sans text-xs text-[#756253]">
+                                  {feature.properties.city}{" "}
+                                  {feature.properties.country &&
+                                    `, ${feature.properties.country}`}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  renderField({
+                    id: "register-address",
+                    name: "deliveryAddress",
+                    value: form.deliveryAddress,
+                    onChange: updateField("deliveryAddress"),
+                    label: "Delivery context",
+                    placeholder: "Home or delivery address",
+                    icon: MapPin,
+                    autoComplete: "street-address",
+                  })
+                )}
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">

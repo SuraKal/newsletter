@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ArrowRight,
   Building2,
@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { appClient } from "@/api/appClient";
 import {
   DashboardPageHeader,
   DashboardPanel,
@@ -34,7 +35,26 @@ const sectionIconMap = {
 };
 
 export default function AdminOverviewPage() {
+  const [metrics, setMetrics] = useState(() => adminOverviewMetrics);
   const sectionBadges = useWorkspaceSectionBadges("admin");
+
+  useEffect(() => {
+    let cancelled = false;
+    appClient.admin
+      .overview()
+      .then((nextMetrics) => {
+        if (!cancelled && Array.isArray(nextMetrics) && nextMetrics.length) {
+          setMetrics(nextMetrics);
+        }
+      })
+      .catch(() => {
+        // Keep the fallback metrics if the aggregate endpoint is unavailable.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const shortcuts = [
     { id: "content", label: "Content", to: "/admin/content" },
     { id: "schedule", label: "Schedule", to: "/admin/schedule" },
@@ -77,7 +97,7 @@ export default function AdminOverviewPage() {
 
       <DashboardPanel title="At a glance" className="p-5 sm:p-6">
         <div className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-5">
-          {adminOverviewMetrics.map((metric) => (
+          {metrics.map((metric) => (
             <div key={metric.label}>
               <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
                 {metric.label}
@@ -85,6 +105,11 @@ export default function AdminOverviewPage() {
               <p className="mt-1.5 font-sans text-lg font-semibold text-stone-900 dark:text-stone-100">
                 {metric.value}
               </p>
+              {metric.detail ? (
+                <p className="mt-1 font-sans text-xs leading-4 text-stone-500 dark:text-stone-400">
+                  {metric.detail}
+                </p>
+              ) : null}
             </div>
           ))}
         </div>

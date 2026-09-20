@@ -44,12 +44,30 @@ const sectionIconMap = {
 export default function BusinessOverviewPage() {
   useStoreVersion();
   const [entity, setEntity] = useState(() => appClient.company.snapshot());
+  const [metrics, setMetrics] = useState(() => businessOverviewMetrics);
 
   useEffect(() => {
     let cancelled = false;
     appClient.company.refresh().then((nextEntity) => {
       if (!cancelled && nextEntity) setEntity(nextEntity);
     });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    appClient.company
+      .overview()
+      .then((nextMetrics) => {
+        if (!cancelled && Array.isArray(nextMetrics) && nextMetrics.length) {
+          setMetrics(nextMetrics);
+        }
+      })
+      .catch(() => {
+        // Keep the fallback metrics if the aggregate endpoint is unavailable.
+      });
     return () => {
       cancelled = true;
     };
@@ -65,9 +83,9 @@ export default function BusinessOverviewPage() {
   const contractStateDetail =
     entity ? workflow.detail : "Start a business registration to have your company licence reviewed for access.";
 
-  const metrics = entity && workflowState === "License approved"
-    ? businessOverviewMetrics
-    : [{ label: "Account access", value: statusInfo.label, detail: contractStateDetail }, ...businessOverviewMetrics.slice(1)];
+  const displayedMetrics = entity && workflowState === "License approved"
+    ? metrics
+    : [{ label: "Account access", value: statusInfo.label, detail: contractStateDetail }, ...metrics.slice(1)];
 
   const shortcuts = [
     { id: "team", label: "Team", to: "/business-dashboard/team" },
@@ -126,7 +144,7 @@ export default function BusinessOverviewPage() {
 
       <DashboardPanel title="At a glance" className="p-5 sm:p-6">
         <div className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-5">
-          {metrics.map((metric) => (
+          {displayedMetrics.map((metric) => (
             <div key={metric.label}>
               <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
                 {metric.label}

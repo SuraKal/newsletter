@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, CreditCard, Package, Search, Truck } from "lucide-react";
 import { appClient } from "@/api/appClient";
@@ -21,15 +21,16 @@ import AccountConsentForm from "@/components/forms/AccountConsentForm";
 import GovernanceRequestPanel from "@/components/forms/GovernanceRequestPanel";
 import DeliveryStatusHero from "@/components/delivery/DeliveryStatusHero";
 import DeliveryHistoryTable from "@/components/delivery/DeliveryHistoryTable";
-import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
-import { getReadingHistoryRows } from "@/lib/reading-history";
-import { getDeliveryByTrackingCode } from "@/lib/delivery-store";
+import { useReaderOverview } from "@/lib/use-reader-overview";
+import {
+  useReaderDeliveries,
+  useReaderDeliveryDetail,
+} from "@/lib/use-reader-deliveries";
+import { useReaderHistory } from "@/lib/use-reader-history";
+import { useReaderBilling } from "@/lib/use-reader-billing";
 import { useStoreVersion } from "@/lib/store-bus";
 import {
   readerConsentChecklist,
-  readerBillingRows,
-  readerDeliveryCurrent,
-  readerDeliveryHistoryRows,
   readerGovernanceActionNotes,
   readerSavedCollections,
 } from "@/lib/demoData";
@@ -105,24 +106,8 @@ const makeBreadcrumbs = (label) => [
 export function ReaderDeliveriesPage() {
   useStoreVersion();
   const { user } = useAuth();
-  const subscription = useMemo(
-    () => getReaderSubscriptionSnapshot(user?.email),
-    [user?.email],
-  );
-
-  const currentDelivery = {
-    ...readerDeliveryCurrent,
-    destination: subscription.locationSummary,
-    eta: subscription.isPrintSubscriber
-      ? readerDeliveryCurrent.eta
-      : "Digital-only plan",
-    note: subscription.isPrintSubscriber
-      ? readerDeliveryCurrent.note
-      : "Your current plan does not schedule physical newspaper drops yet.",
-  };
-
-  const currentTone = subscription.isPrintSubscriber ? readerDeliveryCurrent.tone : "neutral";
-  const currentStatus = subscription.isPrintSubscriber ? readerDeliveryCurrent.status : "No print route";
+  const subscription = useReaderOverview(user?.email);
+  const { current: currentDelivery, history: historyRows } = useReaderDeliveries();
 
   return (
     <div className="space-y-6">
@@ -155,14 +140,14 @@ export function ReaderDeliveriesPage() {
             </Link>
           }
         />
-      ) : (
+      ) : currentDelivery ? (
         <>
           <DeliveryStatusHero
             edition={currentDelivery.edition}
             trackingId={currentDelivery.trackingId}
-            status={currentStatus}
-            tone={currentTone}
-            destination={currentDelivery.destination}
+            status={currentDelivery.status}
+            tone={currentDelivery.tone}
+            destination={currentDelivery.destination || subscription.locationSummary}
             eta={currentDelivery.eta}
             note={currentDelivery.note}
           />
@@ -170,11 +155,13 @@ export function ReaderDeliveriesPage() {
           <DashboardPanel title="Delivery history" className="p-5 sm:p-6">
             <DeliveryHistoryTable
               title=""
-              rows={readerDeliveryHistoryRows}
+              rows={historyRows}
               trackingHref={(row) => `/dashboard/deliveries/${row.trackingId}`}
             />
           </DashboardPanel>
         </>
+      ) : (
+        <DashboardEmptyState title="No delivery has been scheduled yet." />
       )}
 
       <DashboardRelatedLinks title="Quick links" items={readerRelatedLinks("Deliveries")} />
@@ -186,11 +173,9 @@ export function ReaderDeliveryDetailPage() {
   useStoreVersion();
   const { user } = useAuth();
   const { trackingCode } = useParams();
-  const subscription = useMemo(
-    () => getReaderSubscriptionSnapshot(user?.email),
-    [user?.email],
-  );
-  const delivery = getDeliveryByTrackingCode(trackingCode) || null;
+  const subscription = useReaderOverview(user?.email);
+  const deliveryDetail = useReaderDeliveryDetail(trackingCode);
+  const delivery = deliveryDetail ? deliveryDetail.delivery : null;
 
   if (!subscription.isPrintSubscriber) {
     return (
@@ -272,7 +257,7 @@ export function ReaderDeliveryDetailPage() {
         trackingId={delivery.trackingId}
         status={delivery.status}
         tone={delivery.tone}
-        destination={subscription.locationSummary}
+        destination={delivery.destination || subscription.locationSummary}
         eta={delivery.eta || delivery.date}
         note={delivery.note}
       />
@@ -282,7 +267,7 @@ export function ReaderDeliveryDetailPage() {
           items={[
             { label: "Edition", value: delivery.edition },
             { label: "Tracking ID", value: delivery.trackingId },
-            { label: "Destination", value: subscription.locationSummary },
+            { label: "Destination", value: delivery.destination || subscription.locationSummary },
             {
               label: "Delivery status",
               value: (
@@ -301,14 +286,12 @@ export function ReaderDeliveryDetailPage() {
 export function ReaderBillingPage() {
   useStoreVersion();
   const { user } = useAuth();
-  const subscription = useMemo(
-    () => getReaderSubscriptionSnapshot(user?.email),
-    [user?.email],
-  );
+  const subscription = useReaderOverview(user?.email);
+  const billingRows = useReaderBilling();
   const [query, setQuery] = useState("");
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const table = useTableQuery({
-    rows: readerBillingRows,
+    rows: billingRows,
     query,
     predicate: matchesBillingSearch,
     activeFilters,
@@ -447,7 +430,7 @@ export function ReaderBillingPage() {
 
 export function ReaderHistoryPage() {
   useStoreVersion();
-  const readingRows = getReadingHistoryRows();
+  const readingRows = useReaderHistory();
   const [query, setQuery] = useState("");
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
   const table = useTableQuery({
@@ -712,7 +695,7 @@ export function ReaderPrivacyPage() {
     try {
       await appClient.account.requestDataExport({ notes });
       await refreshGovernanceRequests();
-      setRequestSuccess("Data export request logged in the local governance queue.");
+      setRequestSuccess("Data export request submitted for the privacy review queue.");
       setNotes("");
     } catch (requestActionError) {
       setRequestError(requestActionError.message || "The export request could not be created.");
@@ -729,7 +712,7 @@ export function ReaderPrivacyPage() {
     try {
       await appClient.account.requestDeletion({ reason: notes });
       await refreshGovernanceRequests();
-      setRequestSuccess("Deletion review request logged in the local governance queue.");
+      setRequestSuccess("Deletion review request submitted for the privacy review queue.");
       setNotes("");
     } catch (requestActionError) {
       setRequestError(requestActionError.message || "The deletion request could not be created.");

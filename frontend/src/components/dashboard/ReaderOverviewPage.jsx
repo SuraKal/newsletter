@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import {
   BookOpenText,
   CreditCard,
@@ -16,7 +16,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
-import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
+import { useReaderOverview } from "@/lib/use-reader-overview";
 import { useWorkspaceSectionBadges } from "@/lib/notifications";
 
 const sectionIconMap = {
@@ -38,10 +38,7 @@ const factRows = [
 export default function ReaderOverviewPage() {
   const { user } = useAuth();
 
-  const overview = useMemo(
-    () => getReaderSubscriptionSnapshot(user?.email),
-    [user?.email],
-  );
+  const overview = useReaderOverview(user?.email);
 
   const sectionBadges = useWorkspaceSectionBadges("reader");
 

@@ -1,408 +1,466 @@
-# Category Management Phase
-
-Backend-driven categories replacing localStorage mock. Admin CRUD + public listing wired to Flask.
-
----
-
-## TASK-101 — Backend Category & Subcategory models + migration
-
-Create SQLAlchemy models in `backend/models/`:
-- `Category` — `id` (UUID), `label` (unique, required), `slug` (unique, auto-generated from label), `image` (nullable URL), `template_key` (string, default `DEFAULT_ARTICLE_TEMPLATE`), `sort_order` (int), `created_at`, `updated_at`
-- `Subcategory` — `id` (UUID), `category_id` (FK → categories), `label` (required), `slug` (auto-generated), `sort_order` (int), `created_at`
-
-Generate Alembic migration. Seed with the 10 existing `CATEGORIES` from `frontend/src/lib/constants.js` plus representative subcategories. Include `category_id` FK on existing `articles` table (nullable, set via a later content phase).
-
-**Verify:** `python -m flask db migrate && python -m flask db upgrade` succeeds; seed runs without error.
-
----
-
-## TASK-102 — Backend Category CRUD API routes
-
-Add `backend/routes/categories.py` blueprint:
-- `GET /api/categories` — public, returns all categories with subcategories nested, ordered by `sort_order`
-- `GET /api/categories/<id_or_slug>` — public, single category + its subcategories
-- `POST /api/admin/categories` — admin JWT, create category (label required, image optional, template_key optional)
-- `PUT /api/admin/categories/<id>` — admin JWT, update category fields + replace subcategory list (accept `{ subcategories: [{ id?, label }] }` for upsert/delete semantics)
-- `DELETE /api/admin/categories/<id>` — admin JWT, delete category (cascade subcategories; articles keep their label text)
-- `PUT /api/admin/categories/<id>/order` — admin JWT, accept `{ sort_order: int }` to reorder
-
-Register blueprint in `backend/app.py`. Protect admin routes with `@require_admin`.
-
-**Verify:** curl each endpoint; admin routes return 401 without JWT; public routes work unauthenticated.
-
----
-
-## TASK-103 — Frontend backendClient category helpers
-
-Add to `frontend/src/api/backendClient.js`:
-- `listCategories()` → `GET /api/categories` (public)
-- `getCategory(idOrSlug)` → `GET /api/categories/<id_or_slug>` (public)
-- `adminCreateCategory(data)` → `POST /api/admin/categories`
-- `adminUpdateCategory(id, data)` → `PUT /api/admin/categories/<id>`
-- `adminDeleteCategory(id)` → `DELETE /api/admin/categories/<id>`
-- `adminReorderCategory(id, sortOrder)` → `PUT /api/admin/categories/<id>/order`
-
-Map responses to `{ id, label, slug, image, templateKey, subcategories: [{ id, label, slug }] }`.
-
-**Verify:** `npm run lint && npm run typecheck` pass.
-
----
-
-## TASK-104 — Wire public `/categories` page to backend
-
-Update `frontend/src/pages/Categories.jsx` and `frontend/src/components/newspaper/CategoriesSection.jsx`:
-- Fetch categories from `backendClient.listCategories()` on mount
-- On network error (backend down), fall back to current `getCategories()` from `category-store.js`
-- Replace hardcoded `CATEGORIES` string array usage with fetched category objects
-
-**Verify:** With backend running, categories come from DB; with backend stopped, localStorage mock shows.
-
----
-
-## TASK-105 — Wire admin `AdminCategories` page to backend
-
-Update `frontend/src/pages/AdminCategories.jsx`:
-- Fetch categories from `backendClient.listCategories()` on mount (fallback to `category-store.js` on error)
-- Replace `saveCategory`/`deleteCategory`/`moveCategory` localStorage calls with `backendClient.adminCreateCategory` / `adminUpdateCategory` / `adminDeleteCategory` / `adminReorderCategory`
-- Category image: keep client-side file→dataURL upload; send resulting data URL (or external URL) to backend in the `image` field
-- After successful create/update/delete, refetch list from backend (simplest correct approach)
-
-**Verify:** Creating, editing, deleting, reordering categories persists across page reloads when backend is running.
-
----
-
-## TASK-106 — Wire `appClient.js` category catalog sync
-
-Update `frontend/src/api/appClient.js`:
-- On `appClient.ready` (startup) and after `auth.login`, call `backendClient.listCategories()` and store result
-- Expose `appClient.categories.list()` returning the synced array (fallback to `category-store.js` values)
-- Update `Masthead.jsx` and `Footer.jsx` to read categories from `appClient.categories.list()` instead of hardcoded strings
-
-**Verify:** Nav footer links and masthead category links reflect backend data; no hardcoded category slugs in nav/footer after this task.
-
----
-
-# Article Management Phase
-
-Backend-driven articles replacing the `content-store.js` localStorage mock. Admin create/edit/publish/schedule/delete wired to Flask; published articles surface on the public site from the same backend data. Mirrors the Category phase structure (model → API → client helpers → page wiring → sync).
-
----
-
-## TASK-107 — Backend Article model + migration
-
-Create `Article` model in `backend/models/article.py` adopting the field set already used by `content-store.js` records so the admin editor round-trips cleanly:
-- `id` (UUID), `headline` (required), `summary` (Text), `body` (Text), `image` (Text, nullable — supports data URL uploads like categories)
-- `author`, `editor` (strings), `status` (Draft / Scheduled / Published), `tone` (string), `access_label`, `read_time` (nullable)
-- `source` (placement key: `latest` / `hero` / `sidebar` / `featured` / `editorial` / `admin`) — matches `ARTICLE_PLACEMENTS`
-- `category_id` (FK → `categories.id`, nullable), plus denormalized `category_label` snapshot so articles survive category renames
-- `date`, `public_access_date`, `publish_date`, `publish_time`, `clicks` (int, default 0)
-- `meta` (JSON) capturing category-specific template extras (`council_session`, `event_date`, `location`, `scoreline_focus`, `market_impact`) instead of dedicated columns
-- `created_at`, `updated_at`
-
-Register in `backend/models/__init__.py`, generate Alembic migration. This also completes the `category_id` FK on `articles` that TASK-101 deferred.
-
-**Verify:** `flask db migrate && flask db upgrade` succeeds; seed optionally plants a few sample articles linked to seeded categories.
-
----
-
-## TASK-108 — Backend Article API routes + publishing
-
-Add `backend/routes/articles.py` blueprint (`url_prefix="/api/v1"`), register in `backend/app.py`:
-- `GET /articles` — public, only `status == "Published"`, optional `?category=` and `?source=` filters, ordered by `publish_date` desc
-- `GET /articles/<id_or_slug>` — public single published article
-- `GET /admin/articles` — admin JWT, all statuses (list view for the queue)
-- `POST /admin/articles` — admin JWT, create article (validates `headline`; default status Draft)
-- `PUT /admin/articles/<id>` — admin JWT, update fields + status; on `status = "Published"` set `publish_date` to now if blank
-- `DELETE /admin/articles/<id>` — admin JWT
-- `POST /admin/articles/<id>/publish` — admin JWT, transition to Published with headline validation (mirrors "Publish now" button)
-- `POST /admin/articles/<id>/unpublish` — admin JWT, revert to Draft
-
-Return camelCase JSON shape mirroring `content-store` rows (`{ article: { id, headline, summary, body, image, ..., meta, createdAt } }`). Protect admin routes with `@jwt_required()` + `@role_required("admin")`; public 401/403 behavior verified like categories.
-
-**Verify:** curl each endpoint; admin routes return 401 without token; public routes hide Draft/Scheduled articles.
-
----
-
-## TASK-109 — Frontend `backendClient.js` article helpers
-
-Add to `frontend/src/api/backendClient.js`, mirroring the existing `backendCategories` pattern:
-- `listArticles(params)` → `GET /articles` (public, published only)
-- `getArticle(idOrSlug)` → `GET /articles/<id_or_slug>`
-- `adminListArticles()` → `GET /admin/articles`
-- `adminCreateArticle(data)` → `POST /admin/articles`
-- `adminUpdateArticle(id, data)` → `PUT /admin/articles/<id>`
-- `adminDeleteArticle(id)` → `DELETE /admin/articles/<id>`
-- `adminPublishArticle(id)` / `adminUnpublishArticle(id)` → the dedicated publish/unpublish routes
-
-Map responses to `{ id, headline, summary, body, image, author, editor, status, tone, source, categoryId, categoryLabel, readTime, accessLabel, publishDate, publishTime, clicks, meta }`, with `body` normalized to a string. Reuse the same `isNetworkError` fallback semantics.
-
-**Verify:** `npm run lint && npm run typecheck` pass.
-
----
-
-## TASK-110 — Wire `AdminContentList` to backend
-
-Update `frontend/src/pages/AdminContentList.jsx`:
-- On mount, fetch `backendClient.adminListArticles()`; on network error fall back to `getAdminContentRows()` from `content-store.js`
-- Map backend rows to the table shape (id, headline, source placement label, category label, status, tone, image)
-- Derive category + status filter options from fetched data; count draft/scheduled/published like today
-- Table "headline" link keeps `/admin/content/<id>` (backend `id` is a UUID; mock ids stay strings)
-- Deleted-from-backend rows disappear on reload through the refetch after mutations elsewhere
-
-**Verify:** With backend running, queue shows DB articles; with backend stopped, localStorage mock shows.
-
----
-
-## TASK-111 — Wire `AdminContentEditor` (and form) to backend
-
-Update `frontend/src/pages/AdminContentEditor.jsx`:
-- Edit mode: fetch `backendClient.getArticle(id)`; on network error fall back to `getRawArticleById(id)`; map backend `meta` JSON back into the form's template field keys (`councilSession`, `eventDate`, `location`, `scorelineFocus`, `marketImpact`)
-- Create/update: `adminCreateArticle` / `adminUpdateArticle` (unflatten `meta` from the form extras); fall back to `saveArticle` from `content-store.js` on network error; keep the fake 300ms spinner only for the fallback path
-- "Publish now" → `adminPublishArticle(id)` (fallback: `saveArticle` with status Published)
-- Category dropdown: prefer `backendClient.listCategories()` (fallback `getCategoryLabels()` from `category-store.js`)
-- Preserve client-side image → dataURL upload; the backend `image` column is already `Text` so large data URLs persist
-
-**Verify:** Saving a new article back-end, reloading, and editing it again round-trips all fields including template extras and the cover image.
-
----
-
-## TASK-112 — Wire `AdminSchedule` + scheduled publishing
-
-Update `frontend/src/pages/AdminSchedule.jsx`:
-- Fetch scheduled articles from `backendClient.adminListArticles()` filtered to those with a `publishDate`/`publishTime`; fall back to `getAdminScheduleRows()` on network error
-- Keep the release label logic driven by backend `status` (Published → "Live in newsroom", Scheduled → "Subscriber release", else sign-off)
-- Publishing a draft or schedule change goes through `adminPublishArticle` / `adminUpdateArticle` so the backend owns the state machine
-
-**Verify:** Schedule page reflects real publish windows for DB articles with backend up; mock rows show when backend is down.
-
----
-
-## TASK-113 — Public article read path + `appClient.js` sync
-
-Make the public site read published articles from the backend instead of `content-store.js`:
-- Add backend-backed getters to `frontend/src/lib/content-store.js` (or a thin wrapper) so `getAllArticles`, `getHeroArticle`, `getLatestNews`, `getEditorials`, `getCategoryArticles`, `getArticleById`, and `getPublicListingArticles` serve `backendClient.listArticles()` results when the backend is reachable, falling back to the mock otherwise
-- Via `appClient.js` startup sync (like TASK-106 categories) or per-page fetch — keep the graceful network-error fallback consistent
-- Key placement mapping (`source`) drives which public slot each article lands in, so a backend article with `source: "hero"` renders in the hero slider
-
-**Verify:** With backend running, articles created in `/admin/content` appear on Home/News/Categories; Draft/Scheduled stay hidden; with backend stopped the seeded mock renders.
-
----
-
-Once TASK-113 is done, the mock article store remains only as the offline fallback (same role `category-store.js` and `getCategories()` play after the Category phase).
-
----
-
-# Company & Business Account Management Phase
-
-Backend-driven business accounts replacing the `company-store.js` localStorage mock. The business-apply submission flow, the admin lead/account workflow, and the business-dashboard company snapshot all wire to Flask. Mirrors the Category/Article phase structure (model → API → client helpers → admin wiring → business wiring → sync), and touches the non-admin surfaces (`BusinessApply`, `BusinessApplySuccess`, `BusinessOverviewPage`, notification badges) because they consume the same underlying company records.
-
----
-
-## TASK-114 — Backend CompanyAccount model + migration
-
-Create `CompanyAccount` in `backend/models/company.py` adopting the entity shape already used by `company-store.js` records so the admin pages and apply form round-trip cleanly:
-- `id` (UUID), `company` (required), `tier` (nullable), `volume` (nullable), `billing` (nullable), `region` (nullable)
-- `status` — one of `COMPANY_WORKFLOW_STATES` (`Draft` / `Submitted` / `Under review` / `Quote ready` / `Approved` / `Declined` / `Converted to account`), exported as a module constant mirroring the mock's canonical list
-- `owner_user_id` (FK → `users.id`, nullable, index), `owner_email` (nullable), `work_email` (nullable)
-- `lead` (JSON) — raw BusinessApply form payload
-- `quote` (JSON) — populated when the workflow reaches "Quote ready"
-- `reviewed_at` (nullable), `account_activated_at` (nullable), `created_at`, `updated_at`
-- `to_dict()` → camelCase (`ownerUserId`, `workEmail`, `accountActivatedAt`, …) matching the mock record shape
-- `TONE_FOR_STATUS` mapping (same as `workflowTone` in the mock) so badges render without client-side inference
-
-Register in `backend/models/__init__.py`, generate Alembic migration. Seed with the 4 active `adminCompanyRows` accounts from `demoData.js` (`status: "Converted to account"`/"Invoice review"/"Onboarding" normalized to the canonical list) plus one "Submitted" lead mirroring `business-account-1`.
-
-**Verify:** `flask db migrate && flask db upgrade` succeeds; seed runs without error.
-
----
-
-## TASK-115 — Backend business + admin company API routes
-
-Add `backend/routes/companies.py` blueprint (url_prefix `/api/v1`), register in `backend/app.py`, mirror `_parse_data`/`_find_*` helpers used by `articles.py`:
-- `POST /business/applications/draft` — any logged-in user, saves an application with `status: "Draft"`, sets `owner_user_id` from the JWT
-- `POST /business/applications` — any logged-in user, submits (`status: "Submitted"`), `headline`-style validation on `organizationName`
-- `GET /business/company` — authenticated, returns the caller's snapshot matched by `owner_user_id` (falls back to `owner_email`/`work_email` match), `{ entity | null }`
-- `GET /business/applications/<id>` — authenticated, the entity only if the caller owns it (404 for anyone else)
-- `GET /admin/companies` — admin JWT, all entities ordered newest-first (leads + accounts)
-- `GET /admin/companies/<id>` — admin JWT, single entity
-- `POST /admin/companies/<id>/review` / `quote` / `approve` / `convert` / `decline` — admin JWT, guarded transitions enforcing the mock's state machine (e.g. `quote` only from "Under review" or "Quote ready"; `decline` only from Submittable/Under review/Quote ready; `convert` only from "Approved"; sets `quote` on `quote`, `reviewedAt` on first transition, `ownerEmail` + `accountActivatedAt` on `convert`)
-
-All requests return `{ companyAccount: {...} }`; admin routes use `@jwt_required()` + `@role_required("admin")`.
-
-**Verify:** curl each endpoint; admin routes 401 without token; a business user cannot read another company's application (404).
-
----
-
-## TASK-116 — Frontend `backendClient.js` company helpers
-
-Add `backendCompanies` to `frontend/src/api/backendClient.js`, mirroring the `backendArticles` pattern:
-- `submitApplication(data)` → `POST /business/applications`
-- `saveDraftApplication(data)` → `POST /business/applications/draft`
-- `getBusinessCompany()` → `GET /business/company`
-- `getMyApplication(id)` → `GET /business/applications/<id>`
-- `adminListCompanies()` → `GET /admin/companies`
-- `adminGetCompany(id)` → `GET /admin/companies/<id>`
-- `adminReview(id)` / `adminPrepareQuote(id)` / `adminApprove(id)` / `adminConvert(id)` / `adminDecline(id)` → the transition endpoints
-
-Map responses to the mock entity shape (`{ id, company, tier, volume, billing, status, region, ownerEmail, ownerUserId, workEmail, lead, quote, reviewedAt, accountActivatedAt, createdAt }`) and re-export/validate workflow states through the existing `COMPANY_WORKFLOW_STATES`. Reuse the same `isNetworkError` fallback semantics.
-
-**Verify:** `npm run lint && npm run typecheck` pass.
-
----
-
-## TASK-117 — Wire `AdminCompanies` to backend
-
-Update `frontend/src/pages/AdminCompanies.jsx`:
-- On mount, fetch `backendCompanies.adminListCompanies()`; on network error fall back to `getCompanyLeads()`/`getCompanyAccounts()`
-- Classify each backend row into the leads vs accounts tables using the same rule as the mock (`status === "Converted to account"` → account table, else leads table) — the raw `status` badge comes straight from the row
-- Replace the `startCompanyReview` / `prepareCompanyQuote` / `approveCompanyLead` / `convertCompanyLead` / `declineCompanyLead` button actions with the matching `backendCompanies.admin*` calls, falling back to the `company-store.js` transition on network error
-- Refetch the admin list after each successful transition so the tables stay in sync with the backend
-
-**Verify:** With backend running, submitting through the apply flow then moving a lead through review → quote → approve → convert persists across reloads; with backend stopped, the localStorage mock renders and transitions.
-
----
-
-## TASK-118 — Wire `AdminCompanyDetail` to backend
-
-Update `frontend/src/pages/AdminCompanyDetail.jsx`:
-- Fetch `backendCompanies.adminGetCompany(companyId)` on mount (network-error fallback to `getCompanyEntityById`); resolve the workflow presentation from the fetched `status`
-- Header actions (`Start review` / `Prepare quote` / `Approve quote` / `Convert account` / `Decline`) call the matching `backendCompanies.admin*` endpoints with the mock-store fallback + refetch after success
-- Panels (fact list, application details, operations note, prepared quote) read from the fetched `lead`/`quote` JSON when present
-
-**Verify:** Detail view reflects backend state after each transition; opening a URL like `/admin/companies/<seed-id>` renders seeded companies with backend up.
-
----
-
-## TASK-119 — Wire `BusinessApply`, `BusinessApplySuccess` to backend
-
-Update `frontend/src/pages/BusinessApply.jsx`:
-- **Save draft** → `backendCompanies.saveDraftApplication(formData)` (network-error fallback: `saveCompanyLeadDraft`)
-- **Submit** → `backendCompanies.submitApplication(formData)` (network-error fallback: `submitCompanyLead`); redirect to `/business/apply/success?request=<id>`
-- Keep pre-fill from `useAuth().user` and the `?draft={id}` load (draft load stays client-side from `getCompanyEntityById` fallback, or the returned draft id)
-
-Update `frontend/src/pages/BusinessApplySuccess.jsx`:
-- On mount, fetch `backendCompanies.getMyApplication(requestId)` (network-error fallback to current `getCompanyEntityById`/localStorage lead)
-- Derive status badge + quote section from the fetched `status`/`quote` so a live request shows the true backend state
-
-**Verify:** Submitting an application against a running backend creates a row visible in `/admin/companies`; the success page tracks its live workflow state (Submitted → Under review → Quote ready → Approved) without a reload of the mock.
-
----
-
-## TASK-120 — Business dashboard snapshot + `appClient.js` company sync + notification badge
-
-Update `frontend/src/pages/BusinessOverviewPage.jsx`:
-- Fetch `backendCompanies.getBusinessCompany()` on mount (network-error fallback to `getBusinessCompanySnapshot(user.email)`); feed the fetched/fallback entity into the existing workflow-presentation render so the overview banner reflects live state
-
-Update `frontend/src/api/appClient.js`:
-- Add startup + post-login sync like `refreshCategoriesFromBackend`: fetch `backendCompanies.getBusinessCompany()` for an authenticated business user and cache it under a `company_sync` key; expose `appClient.company.snapshot()` returning the synced snapshot (fallback to the mock store) so `BusinessOverviewPage`/`BusinessSettings` share one read path
-
-Update `frontend/src/lib/notifications.js`:
-- The admin "Companies" badge count and the business "Settings" badge gate should use the synced company list/snapshot instead of `getCompanyLeads()` alone; keep mock fallback on network error
-
-**Verify:** Business-dashboard overview reflects the live company entity with backend up; admin sidebar badge counts real submitted leads; mock shows when backend is down.
-
----
-
-Once TASK-120 is done, the mock company store remains only as the offline fallback (same role `category-store.js`/`content-store.js` play after their phases). The business operations surfaces (team, orders, invoices, locations, shipments, governance requests) stay mocked pending their own future phases.
-
----
-
-# Business Locations & Shipments Phase
-
-Backend-driven delivery destinations and shipment runs for approved company accounts. This phase replaces the `business-ops-store.js` locations mock and the `shipment-store.js` business shipment mock while preserving them as offline fallbacks. It deliberately excludes orders, order requests, and invoices, which will be handled in the next phase.
-
----
-
-## TASK-121 — Backend business location and shipment models + migration
-
-Create SQLAlchemy models in `backend/models/`:
-
-- `BusinessLocation` — `id` (UUID), `company_account_id` (FK → `company_accounts.id`, indexed), `location` (required display name), `region`, `address`, `contact`, `copies` (string or integer), `status` (`Ready` / `Review` / `Confirm contact`), `created_at`, `updated_at`.
-- `ShipmentRun` — `id` (UUID), `company_account_id` (FK → `company_accounts.id`, indexed), `shipment_id` (unique human-readable run ID), `route`, `scope`, `status` (`Address review` / `Preparing` / `In dispatch` / `Delivered` / `Delayed`), `eta`, `created_at`, `updated_at`.
-- `ShipmentEvent` — `id`, `shipment_run_id` (FK → `shipment_runs.id`, indexed), `event`, `status`, `occurred_at`, `note` (nullable). Events are returned oldest-first and replace `businessShipmentActivityRows` for the shipment detail page.
-
-Add model exports and an Alembic migration. Seed approved company accounts with the existing location/shipment mock equivalents, attaching every row to a real `CompanyAccount`; do not create orphan rows.
-
-**Verify:** `flask db upgrade && flask seed` succeeds; each seeded shipment and location has a valid company-account foreign key.
-
----
-
-## TASK-122 — Backend location and shipment API routes with ownership rules
-
-Add `backend/routes/business_operations.py` under `/api/v1`, register it in `backend/app.py`:
-
-- `GET /business/locations` — authenticated business user; returns only locations for their approved company account.
-- `GET /business/locations/<id>` — same ownership restriction; return 404 for another company’s location.
-- `PUT /business/locations/<id>` — business user may update receiving-contact fields (`contact`, `address`) and may acknowledge `Review`/`Confirm contact` as `Ready`; reject edits to another company or unsupported status changes.
-- `GET /business/shipments` — authenticated business user; returns only their company shipment runs, newest first.
-- `GET /business/shipments/<id>` — return a shipment plus nested event timeline only when it belongs to the caller’s company.
-- `POST /business/shipments/<id>/confirm-address` — allowed only while the run is `Address review`; records an event and advances to `Preparing`.
-- `GET /admin/shipments` / `GET /admin/shipments/<id>` — admin-only operational view across companies.
-- `PUT /admin/shipments/<id>` — admin-only updates to operational fields/status; append a `ShipmentEvent` whenever status changes.
-
-Return camelCase JSON matching the existing row shapes, including `tone` derived on the server. Enforce JWT authentication and company ownership from the caller’s `CompanyAccount`, not a client-supplied company id.
-
-**Verify:** A business user sees only their locations and runs; cross-company IDs return 404; admin endpoints return 401 without a token and can update a seeded shipment with an event recorded.
-
----
-
-## TASK-123 — Frontend backend client helpers for locations and shipments
-
-Add `backendBusinessOperations` to `frontend/src/api/backendClient.js`:
-
-- `listLocations()` / `getLocation(id)` / `updateLocation(id, patch)`
-- `listShipments()` / `getShipment(id)` / `confirmShipmentAddress(id)`
-- `adminListShipments()` / `adminGetShipment(id)` / `adminUpdateShipment(id, patch)`
-
-Normalize responses to the current frontend contracts:
-
-- locations: `{ id, location, region, address, contact, copies, status, tone }`
-- shipments: `{ id, shipmentId, label, route, scope, status, tone, eta, events: [{ id, event, status, tone, occurredAt, note }] }`
-
-Use the existing `isNetworkError` convention so only an unreachable backend triggers the mock fallback; do not hide authorization or validation errors behind mock data.
-
-**Verify:** `npm run lint && npm run typecheck` pass.
-
----
-
-## TASK-124 — Wire `/business-dashboard/locations` and location detail to backend
-
-Update `frontend/src/pages/BusinessLocations.jsx` and `frontend/src/pages/BusinessLocationDetail.jsx`:
-
-- On mount, use `backendBusinessOperations.listLocations()`; fall back to `getBusinessLocationRows()` only on network error.
-- Build filters, counts, and search options from the loaded list instead of static copy such as “9 active locations”.
-- Detail route uses `getLocation(locationId)` with the same fallback.
-- “Confirm receiving contact” uses `updateLocation(id, { status: "Ready" })` (or the dedicated backend acknowledgement route if implemented), refetches the detail/list state, and keeps `updateBusinessLocation` only for network fallback.
-- Keep company ownership implicit; no company ID appears in URLs or request payloads.
-
-**Verify:** Updating a company location’s contact/readiness survives refresh with the backend running; a different business account cannot open the detail URL; mock locations render with the backend offline.
-
----
-
-## TASK-125 — Wire `/business-dashboard/shipments` and shipment detail to backend
-
-Update `frontend/src/pages/BusinessShipments.jsx` and `frontend/src/pages/BusinessShipmentDetail.jsx`:
-
-- Fetch shipment runs through `backendBusinessOperations.listShipments()` on mount, with `getBusinessShipmentRows()` as the network-only fallback.
-- Derive route/status filters and summary labels from backend rows.
-- Fetch a live shipment plus its `events` timeline in the detail route; fall back to `getShipmentById()` and `businessShipmentActivityRows` only when offline.
-- Replace the business-side address confirmation action with `confirmShipmentAddress(id)` and refetch after success. Business users must not be able to mark a shipment dispatched or delivered.
-- Keep the existing delivery/dispatch status actions for a later admin-shipment wiring task unless `AdminShipments` is explicitly included in this implementation.
-
-**Verify:** A business user sees live shipment status and event history for their company, can confirm an address-review run once, and cannot change dispatch/delivery status. Offline fallback still renders the mock run list and detail page.
-
----
-
-## TASK-126 — Shared business-operation sync and notification badges
-
-Update the shared read paths after locations and shipments are wired:
-
-- Add app-client startup/post-login refresh functions (or a small business-operations cache module) that cache the authenticated company’s location and shipment lists without mixing records across users.
-- Update `frontend/src/lib/notifications.js` so business `locations` and `shipments` badges read these synced backend lists, with mock-store fallback only on network error.
-- Ensure successful empty lists clear old cached rows and that logout clears the business-operation cache keys.
-
-**Verify:** The business sidebar badges match real backend location/shipment states after refresh and after a confirmed-address mutation; they do not show another company’s data; backend-down mode retains mock badges.
-
----
-
-After TASK-126, only `team`, `orders`, `order requests`, and `invoices` remain mocked within the business workspace. Start the next phase with orders and invoices; do not add order or invoice tables/routes as part of this locations-and-shipments phase.
+# Agent Tasks
+
+## Phase E - Admin Governance And Subscription Catalog Wiring
+
+> Scope boundary: this phase only touches the Admin Governance surface
+> (`/admin/governance`) and the Admin Subscriptions surface
+> (`/admin/subscriptions`). No other dashboard block is in scope.
+
+### TASK-E1: Close Out Admin Governance Backend Wiring
+
+- **Phase:** `Phase E - Admin Governance And Subscription Catalog Wiring`
+- **Owner:** `Frontend`
+- **Status:** `done` (verified 2026-09-19, no code changes required)
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `/admin/governance`; `GET /api/v1/admin/governance-requests`; `PUT /api/v1/admin/governance-requests/<key>/status`
+- **Files touched:** `frontend/src/pages/AdminGovernance.jsx`, `frontend/src/api/appClient.js`, `frontend/src/api/backendClient.js`, `backend/routes/privacy.py`, `backend/models/governance_request.py`
+- **Depends on:** `None`
+- **Spec:** `docs/project.md` - admin governance/data-request review; `AGENTS.md` - block-by-block backend migration and localStorage fallback pattern
+- **Setup reference:** `backend/README.md`, `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md`
+- **Definition of Done:** `AdminGovernance.jsx` loads rows from the Flask admin endpoint (no localStorage-only read path), advances status through the backend, and keeps the `getGovernanceActionCount` badge cache in sync. Backend statuses, `tone`, `scopeLabel`, and `requester` match the page's filter groups and badge rendering. No rebuild is expected: Phase A already added the routes, so this is a verification close-out with fixes only if a mismatch is found.`
+- **Runtime Verification:** `FAIL-FIRST BYPASSED (read-only close-out): 17/17 checks passed via app test client on the live app + MySQL. unauth list 401; reader list 403; business list 403; admin list 200 (2 seeded rows); every row carries id/scope/type/status/tone/notes/date/createdAt/requester/scopeLabel; requester has name+email; statuses are validated values; server tone matches the frontend statusTone map; scopeLabel present for both scopes; newest-first ordering; PUT Queued -> In progress 200 and persisted on re-read; invalid status 400; unknown id 404; reader update 403; original status restored. Script: %TEMP%/opencode/governance_closeout_smoke.py.`
+- **Blockers:** `None`
+- **Description:** `Reconcile the stale inventory claim that Admin Governance is still `appClient.admin.*` localStorage with `no governance-request routes`. Confirm the Phase A wiring (`privacy.py` list/update endpoints + `appClient.admin.listGovernanceRequests`/`updateGovernanceRequestStatus`) is live, both against the running backend and against how `AdminGovernance.jsx` consumes it. Fix only genuine gaps (field mismatches, badge count drift). Do not re-implement endpoints that already exist.`
+
+### TASK-E2: Backend Admin Subscription Plan CRUD And Reset
+
+- **Phase:** `Phase E - Admin Governance And Subscription Catalog Wiring`
+- **Owner:** `Backend`
+- **Status:** `done` (2026-09-19)
+- **Implementation side:** `Backend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `GET /api/v1/admin/subscriptions/plans`; `POST /api/v1/admin/subscriptions/plans`; `PUT /api/v1/admin/subscriptions/plans/<plan_id>`; `DELETE /api/v1/admin/subscriptions/plans/<plan_id>`; `POST /api/v1/admin/subscriptions/plans/reset`; existing public `GET /api/v1/subscriptions/plans`
+- **Files touched:** `backend/routes/subscriptions.py`, `backend/app.py`, `backend/models/subscription.py`, `backend/seed.py`
+- **Depends on:** `None`
+- **Spec:** `docs/project.md` - subscription catalog and pricing; `backend/models/subscription.py` (`SubscriptionPlan`, `UserSubscription`); `seed.py` `SEEDED_PLANS`
+- **Setup reference:** `backend/README.md`, `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (`/api/v1` prefix, camelCase JSON, `@role_required("admin")` from `middleware/auth.py`, `to_dict()` serialisation)
+- **Definition of Done:** `An admin can list, create, update, and delete subscription plans and restore the seeded catalog, all persisted in MySQL. Create validates name + monthly/yearly price and rejects duplicate ids (409). Update returns 404 for unknown ids and validates the same fields. Delete returns 404 for unknown ids, 400 when it would remove the last remaining reader plan, and 409 when the plan is referenced by a `UserSubscription` row. Reset re-upserts `SEEDED_PLANS` and deletes extra non-seed reader plans (blocking only with 409 when a non-seed plan is still referenced). All responses use `{"plan": ...}` / `{"plans": [...]}` with `to_dict()` camelCase keys. No schema change, so no Alembic migration is required.`
+- **Runtime Verification:** `PASSED (28/28). Script: %TEMP%/opencode/subscriptions_crud_smoke.py against app test client + live MySQL. Guards 401/403; admin list 4 seeds; public list still open; create 201 (slug id smoke-reader-plan) and duplicate id 409; missing name/price + bad price 400; update 200 and reflected on public endpoint; unknown 404; bad price/empty name 400; non-admin 403; delete referenced 409, unreferenced 200, unknown 404; reset restores the exact 4-seed catalog and is idempotent; delete last reader plan 400 (after temporarily unlinking the viewer subscription); state restored via seed `_upsert_plans`/`_upsert_users`.`
+- **Blockers:** `None`
+- **Description:** `Extend the tiny public-only subscriptions blueprint (`routes/subscriptions.py` currently exposes only GET /plans) with an admin blueprint for full catalog management. Add a shared `_apply_plan_payload` helper mapping camelCase payload keys to the `SubscriptionPlan` columns and a validator for name/price. Register the new blueprint in `app.py`. `price` is display-only on the client and derives from `monthlyPrice`, so the backend stores money fields only. Reuse `SEEDED_PLANS` from `seed.py` for reset (import it; `seed.py` does not import `routes`, so there is no circular import). Do not touch `UserSubscription` business logic or add a migration.`
+
+### TASK-E3: Frontend Backend Client For Admin Subscription Plans
+
+- **Phase:** `Phase E - Admin Governance And Subscription Catalog Wiring`
+- **Owner:** `Frontend`
+- **Status:** `done` (2026-09-19)
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `GET/POST/PUT/DELETE /api/v1/admin/subscriptions/plans[/<plan_id>]`, `POST /api/v1/admin/subscriptions/plans/reset`
+- **Files touched:** `frontend/src/api/backendClient.js`
+- **Depends on:** `TASK-E2`
+- **Spec:** `AGENTS.md` - `frontend/src/api/backendClient.js` is the Flask transport; `toAppPlan` mapping
+- **Setup reference:** `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (single `request()` helper, `auth` defaults on, `toAppPlan` normalisation)
+- **Definition of Done:** `backendSubscriptions` exposes `adminList`, `adminCreate`, `adminUpdate`, `adminRemove`, and `adminReset`. Every returned plan is normalised through the existing `toAppPlan` so the catalog shape is identical to the public list. Methods throw the server error (status + message) rather than swallowing it, so `appClient` can distinguish network failures from auth/validation failures.`
+- **Runtime Verification:** `Exercise through the admin UI/`appClient` against the local backend (covered by TASK-E5); fail-fast on non-2xx.`
+- **Blockers:** `None`
+- **Description:** `Add the admin catalog transport methods next to the existing public `backendSubscriptions.list()`. Keep the same file style: one `export const backendSubscriptions = { ... }` object, `request(path, { method, body })`, and `(payload.plans || []).map(toAppPlan)` / `toAppPlan(payload.plan)`. Do not introduce a new client or duplicate the plan mapping.`
+
+### TASK-E4: Wire `appClient.subscriptions` And The Catalog UI To The Backend
+
+- **Phase:** `Phase E - Admin Governance And Subscription Catalog Wiring`
+- **Owner:** `Both`
+- **Status:** `done` (2026-09-19)
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `/admin/subscriptions`; admin plan CRUD + reset endpoints from TASK-E2
+- **Files touched:** `frontend/src/api/appClient.js`, `frontend/src/components/dashboard/AdminSubscriptionCatalog.jsx`, `frontend/src/pages/AdminSubscriptions.jsx`, `frontend/src/lib/subscription-catalog.js`, `frontend/src/lib/demoData.js`
+- **Depends on:** `TASK-E3`
+- **Spec:** `AGENTS.md` - completed-block pattern: `backendClient` call, cache write + store notify, localStorage fallback only on network error
+- **Setup reference:** `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md`
+- **Definition of Done:** ``appClient.subscriptions.update/create/remove/reset` call the admin backend routes behind `requireAdmin()`, then update the cached catalog via `writeSubscriptionPlans` (which dispatches `nekedem:subscription-plans-updated`) so every `useSubscriptionPlans()` consumer re-renders. The localStorage demo path remains only as an `isNetworkError` fallback (mirroring `businessTeam`). A new `appClient.subscriptions.refresh()` loads backend truth on the admin page. `AdminSubscriptionCatalog` offers working add and delete controls (the `create`/`remove` methods currently have no caller) and surfaces load/save/reset errors. `subscriptions.list()` stays synchronous from cache. The malformed `},    async update` statement at `appClient.js:788` is reformatted.`
+- **Runtime Verification:** `PASSED static gates: npm run typecheck, npm run lint, npm run build (all clean). Live admin CRUD + public propagation is covered end-to-end by TASK-E5. Manual: admin add/edit/delete in the catalog, then /subscriptions, homepage cards, and reader checkout reflect the change; reset restores the seeded catalog.`
+- **Blockers:** `None`
+- **Description:** `Replace the localStorage-only mutation block in `appClient.subscriptions` with the wired pattern already used by `businessTeam`: auth guard, backend call, cache update + notify, and a fallback that runs only when the network is unreachable. Add an explicit `refresh()` so `/admin/subscriptions` re-reads backend truth on mount rather than relying solely on the startup `refreshPlansFromBackend()`. Extend `AdminSubscriptionCatalog` with the missing create/delete affordances and keep reader-plan filtering (`getReaderPlans`) so business plans stay out of the editor. Do not snapshot backend data into `demoData.js`; the seeded defaults remain the offline fallback only.`
+
+### TASK-E5: End-To-End Runtime Verification For Phase E
+
+- **Phase:** `Phase E - Admin Governance And Subscription Catalog Wiring`
+- **Owner:** `Both`
+- **Status:** `done` (2026-09-19)
+- **Implementation side:** `Both`
+- **Actor(s):** `Admin`, `Company`, `User`, `Public guest`
+- **Route(s) or endpoint(s):** `/admin/governance`, `/admin/subscriptions`, `/subscriptions`; governance + admin subscription endpoints
+- **Files touched:** `docs/Agent tasks.md`, `frontend/` (verification only)
+- **Depends on:** `TASK-E1`, `TASK-E4`
+- **Spec:** `docs/project.md` - admin dashboard and subscription catalog acceptance
+- **Setup reference:** `backend/README.md`, `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md`
+- **Definition of Done:** `A fail-first smoke script asserts: unauth 401 and reader/business 403 on both admin surfaces; admin governance list/update works and persists across a reseed; admin plan update changes the public `GET /api/v1/subscriptions/plans` response; create, delete (400 last-plan, 409 referenced), and reset behave as specified; frontend checks pass. Results are recorded in this file under Runtime Verification evidence.`
+- **Runtime Verification:** `PASSED (33/33 HTTP checks). Script: %TEMP%/opencode/phase_e_e2e_smoke.py, run against the live dev server at http://localhost:5050 + seeded MySQL with fail-fast exit-on-mismatch. Governance: unauth 401, reader/business 403, admin 200 with requester/scopeLabel/tone/status, PUT Queued -> In progress persisted on re-read, invalid 400, unknown 404. Subscriptions: unauth 401 + reader/business 403 on admin list, public list open, admin list 4 seeds, create 201 + public endpoint reflects create+update, duplicate id 409, missing name 400, unknown 404, bad price 400, delete referenced 409, unreferenced 200, unknown 404, reset exact 4-seed catalog + idempotent, delete last reader plan 400. Persistence: reseed keeps 2 governance rows + exactly 4 plans; viewer subscription restored; governance row restored. Frontend gates: npm run typecheck, npm run lint, npm run build all clean.`
+- **Blockers:** `None`
+- **Description:** `Close the phase with evidence, not intent. Run the smoke checks against the live backend for both surfaces, then the frontend quality gates. Do not mark TASK-E1..E4 complete until this task passes. Any discovered mismatch reopens the owning task rather than being papered over in the report.`
+
+## Phase F - Admin Subscribers Backend Wiring
+
+> Scope boundary: this phase only touches the Admin Subscribers surface
+> (`/admin/subscribers` and `/admin/subscribers/:subscriberId`). A subscriber
+> is derived from an existing reader `User` + `UserSubscription` +
+> `SubscriptionPlan`; no duplicate subscriber table is introduced.
+
+### TASK-F1: Backend Subscriber Read Model And List/Detail Endpoints
+
+- **Phase:** `Phase F - Admin Subscribers Backend Wiring`
+- **Owner:** `Backend`
+- **Status:** `done`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `GET /api/v1/admin/subscribers`; `GET /api/v1/admin/subscribers/<int:user_id>`
+- **Files touched:** `backend/routes/admin_subscribers.py`, `backend/app.py`, `backend/models/subscription.py`, `backend/routes/admin_overview.py`
+- **Depends on:** `None`
+- **Spec:** `docs/project.md` - admin subscriber operations; `backend/models/user.py`, `backend/models/subscription.py`; existing `_subscriber_watchlist_metric` in `backend/routes/admin_overview.py`
+- **Setup reference:** `backend/README.md`, `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (`/api/v1` prefix, camelCase JSON, `@role_required("admin")`, `to_dict()` serialisation)
+- **Definition of Done:** `An admin-only list endpoint returns one row per reader user, ordered deterministically, and a detail endpoint returns a single row or 404 for a non-reader/missing id. Each row exposes at least id, name, email, plan, billingCycle, planId, subscriptionId, renewal, deliveryEligibility, status, and tone. Derivations: plan label is "<plan name> · Yearly|Monthly"; renewal is the formatted renewal_at (fallback em dash); deliveryEligibility is "Digital only" for non-print plans, "Payment hold" when the subscription status is not active, "Address review" when delivery data consent is missing, else "Eligible"; status is "Needs review" when eligibility is a hold/review, "Renewal watch" when there is no active subscription or renewal_at falls within the watch window, else "Active"; tone is warning for review/watch, info for active digital-only, success for active, neutral as fallback. The 30-day watch window is centralised (e.g. in `models/subscription.py`) and imported by both this route and `admin_overview.py` so the two cannot drift. No schema change, so no Alembic migration.`
+- **Runtime Verification:** `PASSED (19/19 checks). Script: %TEMP%/opencode/admin_subscribers_read_smoke.py, run via Flask test_client against the seeded MySQL database. Guards: unauth list 401, reader 403, business 403. Admin list 200 with reader rows (1 row: Elena Tewelde, the only seeded reader until TASK-F3); every row exposes id/name/email/plan/planId/billingCycle/subscriptionId/renewal/deliveryEligibility/status/tone; ids stringified; status/eligibility/tone derived correctly; rows ordered by name asc; every id resolves to a reader user. Detail: admin 200 and identical to the list row; non-reader id (admin id 1) 404; unknown id 404; reader 403. Admin overview still 200 after centralising RENEWAL_WATCH_WINDOW_DAYS.`
+- **Blockers:** `None`
+- **Description:** `Add the read projection the mock subscriber rows are standing in for, built entirely from existing tables. Do not add a Subscribers model/table: a subscriber is a reader User joined to its latest UserSubscription and that subscription's SubscriptionPlan. Keep the mapping in the route (or a small helper) so the frontend toAppSubscriber mirrors it 1:1. Reuse the formatted-date style from governance_request.format_request_date rather than inventing a new format.`
+
+### TASK-F2: Backend Subscriber Activate/Review Action
+
+- **Phase:** `Phase F - Admin Subscribers Backend Wiring`
+- **Owner:** `Backend`
+- **Status:** `done`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `POST /api/v1/admin/subscribers/<int:user_id>/activate`
+- **Files touched:** `backend/routes/admin_subscribers.py`, `backend/app.py`
+- **Depends on:** `TASK-F1`
+- **Spec:** `docs/project.md` - subscriber review/approval; `frontend/src/lib/subscriber-store.js` `activateSubscriber`; `frontend/src/pages/AdminSubscriberDetail.jsx` `reviewActionFor`
+- **Setup reference:** `backend/README.md`, `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md`
+- **Definition of Done:** `An admin-only action resolves both review states the detail page exposes ("Approve subscriber" for Needs review and "Mark renewal complete" for Renewal watch). It returns 404 for a non-reader/missing id, and on success sets the latest subscription status to "active", clears the delivery-data hold (consent true), and extends renewal_at by one billing cycle (30 days monthly / 365 yearly) so the row re-derives to status "Active"/eligibility "Eligible". The response returns the updated subscriber row from TASK-F1. The action is idempotent. No schema change and no migration.`
+- **Runtime Verification:** `PASSED (12/12 checks). Script: %TEMP%/opencode/admin_subscribers_activate_smoke.py, run via Flask test_client against the seeded MySQL database. Guards: unauth 401, reader 403, business 403. Target (Elena Tewelde, Renewal watch / Digital only) activated by admin -> 200, returned row Active / Digital only; persisted on re-read; re-activate -> 200 with an unchanged renewal date (idempotent no-op); non-reader id (admin) 404; unknown id 404. The smoke snapshots and restores the demo subscription state, and the restore is re-read and asserted.`
+- **Blockers:** `None`
+- **Description:** `Back the single activateSubscriber mutation used by the detail page. There is no separate decline path in the mock, so keep the action surface to activate/renew-complete. Server owns the state transition and renewal extension; the client must not post arbitrary status values.`
+
+### TASK-F3: Seed Demo Reader Subscribers With Varied States
+
+- **Phase:** `Phase F - Admin Subscribers Backend Wiring`
+- **Owner:** `Backend`
+- **Status:** `done`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Admin`, `User`
+- **Route(s) or endpoint(s):** seed only (feeds `GET /api/v1/admin/subscribers`)
+- **Files touched:** `backend/seed.py`
+- **Depends on:** `TASK-F1`
+- **Spec:** `docs/project.md` - demo subscriber roster; `frontend/src/lib/demoData.js` `adminSubscriberRows`; existing `SEEDED_USERS` and `_upsert_users` in `backend/seed.py`
+- **Setup reference:** `backend/README.md`, `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (idempotent seed, reset-the-user's-subscriptions pattern)
+- **Definition of Done:** `flask seed creates the demo reader roster that reproduces the four states the mock showed: one Active/Eligible (success), one Active digital-only (info), one Needs review / Address review (warning), and one Renewal watch / Payment hold (warning). Rows are keyed by a stable reader email so reseeding neither duplicates users nor leaves stale subscriptions, and renewal dates are seeded relative to now (e.g. far, +15d, far, -5d) so the derived states stay correct over time instead of decaying. Re-running flask seed restores both the users and their subscription states. No schema change and no migration.`
+- **Runtime Verification:** `PASSED (16/16 checks). Script: %TEMP%/opencode/admin_subscribers_seed_smoke.py. It deletes the four demo readers to start clean, runs seed_data() twice, and asserts reader count 1 -> 5 on first seed and 5 -> 5 on re-seed, one user per demo email, and via the admin API the four exact combinations: Amelie Laurent = Active/Eligible/success, Marta Kovacs = Active/Digital only/info, Jonas Stein = Needs review/Address review/warning, Niels Verbruggen = Renewal watch/Payment hold/warning. CLI `flask seed` output now lists the demo subscribers. Note the roster also includes the pre-existing primary reader Elena Tewelde (viewer@nekedem.local), so the admin list has 5 reader rows.`
+- **Blockers:** `None`
+- **Description:** `Add a dedicated _upsert_subscribers() (or extend the SEEDED_USERS subscription spec) so /admin/subscribers has real, varied demo data instead of one reader. This is required for the read model to be demonstrable. Keep the demo passwords documented in seed.py alongside the existing credentials.`
+
+### TASK-F4: BackendClient Subscriber Transport
+
+- **Phase:** `Phase F - Admin Subscribers Backend Wiring`
+- **Owner:** `Frontend`
+- **Status:** `done`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `GET /api/v1/admin/subscribers`, `GET /api/v1/admin/subscribers/<id>`, `POST /api/v1/admin/subscribers/<id>/activate`
+- **Files touched:** `frontend/src/api/backendClient.js`
+- **Depends on:** `TASK-F1`, `TASK-F2`
+- **Spec:** `AGENTS.md` - `backendClient.js` is the Flask transport; existing `toApp*` mappers
+- **Setup reference:** `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (single `request()` helper, path `encodeURIComponent`, one exported service object per block)
+- **Definition of Done:** `backendSubscribers (or adminSubscribers) exposes list, get(id), and activate(id). A toAppSubscriber mapper normalises the backend row to the exact shape subscriber-store/pages expect (stringified id, name, plan, renewal, deliveryEligibility, status, tone). Non-2xx errors propagate with status + message so appClient can separate network failures from auth/validation failures.`
+- **Runtime Verification:** `Live-backend response checked over HTTP (5 rows with correct plan/eligibility/status/tone); frontend `npm run lint` clean. Full end-to-end wiring is exercised by TASK-F5/F6.`
+- **Blockers:** `None`
+- **Description:** `Mirror the TASK-E3 transport pattern. Keep the mapper next to the other toApp* mappers and reuse isNetworkError for the fallback contract.`
+
+### TASK-F5: Wire Subscriber Store And Both Subscriber Pages To The Backend
+
+- **Phase:** `Phase F - Admin Subscribers Backend Wiring`
+- **Owner:** `Both`
+- **Status:** `done`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `/admin/subscribers`, `/admin/subscribers/:subscriberId`; admin subscriber endpoints
+- **Files touched:** `frontend/src/lib/subscriber-store.js`, `frontend/src/api/appClient.js`, `frontend/src/pages/AdminSubscribers.jsx`, `frontend/src/pages/AdminSubscriberDetail.jsx`
+- **Depends on:** `TASK-F4`
+- **Spec:** `AGENTS.md` - completed-block pattern: `backendClient` call, cache write + store notify, localStorage fallback only on network error
+- **Setup reference:** `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md`
+- **Definition of Done:** `subscriber-store gains a backend-sync setter (mirroring setBusinessTeamRows/setSubscriberRows) that writes the list and notifies the store; appClient.admin.subscribers exposes list(), get(id), and activate(id) behind admin auth, calling the backend, caching results, and falling back to the localStorage demo rows only on isNetworkError. AdminSubscribers.jsx becomes async (load on mount, loading empty state, action error) and reads rows from the store; the header summary chips ("24.3k active", "37 review cases", "Print + digital watchlist") are replaced with real counts derived from the loaded rows. AdminSubscriberDetail.jsx loads the row by id asynchronously, shows the same loading/not-found handling, and calls the wired activate action so the badge and eligibility update from the server response. The two pages no longer read getSubscriberRows/getSubscriberById synchronously as the source of truth.`
+- **Runtime Verification:** `PASSED. `npm run typecheck`, `npm run lint`, and `npm run build` all clean after the rewires (AdminSubscribers and AdminSubscriberDetail chunks build). `appClient.admin.subscribers.list/get/activate` call `backendSubscribers` behind `requireAdmin()`, cache into the store via `setSubscriberRows`/`upsertSubscriber`, and fall back to the localStorage demo rows only on `isNetworkError`. The live browser rendering flow is covered at the HTTP boundary by TASK-F6; this repo has no browser-automation harness (frontend package.json exposes no test script).`
+- **Blockers:** `None`
+- **Description:** `Replace the localStorage-only subscriber-store read/mutate paths the two pages use with the established wired pattern. Keep the mock rows as the offline fallback only, not a second source of truth. Do not snapshot backend data into demoData.js. Leave subscriber-store's seed builder intact for the fallback path.`
+
+### TASK-F6: End-To-End Runtime Verification For Phase F
+
+- **Phase:** `Phase F - Admin Subscribers Backend Wiring`
+- **Owner:** `Both`
+- **Status:** `done`
+- **Implementation side:** `Both`
+- **Actor(s):** `Admin`, `Company`, `User`
+- **Route(s) or endpoint(s):** `/admin/subscribers`, `/admin/subscribers/:subscriberId`; admin subscriber endpoints
+- **Files touched:** `docs/Agent tasks.md`, `frontend/` (verification only)
+- **Depends on:** `TASK-F1`, `TASK-F2`, `TASK-F3`, `TASK-F4`, `TASK-F5`
+- **Spec:** `docs/project.md` - admin subscriber operations; `docs/Agent tasks.md` TASK-F1..F5
+- **Setup reference:** `AGENTS.md`, `backend/README.md`
+- **Conventions:** `Follow AGENTS.md` (evidence over intent)
+- **Definition of Done:** `A Python smoke script drives the live backend and asserts: admin guards (401/403) on list/detail/activate; admin list returns the seeded roster with the four expected status/eligibility/tone combinations; detail matches the list row; activation flips review rows to Active and persists on re-fetch; a reseed restores the four demo states. The frontend gates (typecheck, lint, build) pass. Every result is recorded under each TASK-F task status in this file.`
+- **Runtime Verification:** `PASSED (29/29 checks). Script: %TEMP%/opencode/phase_f_e2e_smoke.py, run via Flask test_client against the seeded MySQL database. Guards: unauth 401 / reader 403 / business 403 on list and activate, non-reader activate 404, unknown detail 404. Roster: 5 reader rows with the four exact demo combinations (Amelie Active/Eligible/success, Marta Active/Digital only/info, Jonas Needs review/Address review/warning, Niels Renewal watch/Payment hold/warning); detail equals the list row. Activation: Needs review -> Active/Eligible persisted on re-read with subscription status active and delivery consent cleared; Payment hold -> Active/Eligible; re-activate idempotent (unchanged renewal). A reseed restores all four demo states. Frontend: npm run typecheck, npm run lint, npm run build all clean.`
+- **Blockers:** `None`
+- **Description:** `Close the phase with evidence, not intent. Do not mark TASK-F1..F5 complete until this task passes. Any discovered mismatch reopens the owning task rather than being papered over in the report.`
+
+## Phase G - Reader Workspace Snapshot And Profile Wiring
+
+> Scope boundary: this phase wires the reader subscription snapshot (derived
+> from `User` + `UserSubscription` + `SubscriptionPlan` + profile address) into
+> `/dashboard/overview`, `/dashboard/billing`, and the location bits of
+> `/dashboard/deliveries` and `/dashboard/deliveries/:trackingCode`, and makes
+> `/dashboard/profile` edits persist server-side. Delivery records, billing
+> line items, reading history, and saved collections remain client-mocked in
+> this phase. Admin Overview gets a verification close-out (TASK-G1), no new
+> analytics endpoint.
+
+### TASK-G1: Admin Overview Verification Close-Out
+
+- **Phase:** `Phase G - Reader Workspace Snapshot And Profile Wiring`
+- **Owner:** `Both`
+- **Status:** `done`
+- **Implementation side:** `Both (verification + one frontend touch)`
+- **Actor(s):** `Admin`
+- **Route(s) or endpoint(s):** `/admin/overview`; `GET /api/v1/admin/overview`
+- **Files touched:** `docs/Agent tasks.md`, `frontend/src/components/dashboard/AdminOverviewPage.jsx`, `backend/routes/admin_overview.py` (verification only)
+- **Depends on:** `None`
+- **Spec:** `docs/project.md` - admin dashboard acceptance; stale inventory claim "AdminOverviewPage.hardcoded adminOverviewMetrics (demoData), no analytics/overview endpoint" from the 2026-09-20 review
+- **Setup reference:** `backend/README.md`, `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (evidence over intent, like TASK-E1)
+- **Definition of Done:** `A smoke script proves the stale claim is wrong: `GET /api/v1/admin/overview` is guarded (401 unauth, 403 reader/business) and returns 5 admin metrics for an admin (Published today, Scheduled queue, Subscriber watchlist, Company accounts, Routes delayed), each with label, value, and detail. `AdminOverviewPage.jsx` calls `appClient.admin.overview()` (which hits the backend, not demoData) and additionally renders each metric's detail line under its value, so the endpoint response is fully surfaced (today it drops the detail field). `adminOverviewMetrics` in `demoData.js` remains the offline fallback only.`
+- **Runtime Verification:** `PASSED in TASK-G7 smoke (43/43). `GET /api/v1/admin/overview` unauth -> 401, viewer/reader -> 403, admin -> 200 with exactly 5 metrics (Published today, Scheduled queue, Subscriber watchlist, Company accounts, Routes delayed), every metric carrying label + value + detail. `AdminOverviewPage.jsx` now renders the detail line under each metric value; demoData remains the offline fallback. Evidence: `%TEMP%/opencode/phase_g_e2e_smoke.py`, frontend gates clean (typecheck/lint/build).`
+- **Blockers:** `None`
+- **Description:** `The 2026-09-20 review claimed /admin/overview was hardcoded to `adminOverviewMetrics` with no backend endpoint. Review found the page already lazy-loads `appClient.admin.overview()` -> `backendAdminOverview.get()` -> `GET /api/v1/admin/overview` (`backend/routes/admin_overview.py:159`, registered `app.py:56`), with demoData as fallback only. So this task closes the claim out with smoke evidence and one real gap: the page ignores each metric's `detail` field. No new endpoint.`
+
+### TASK-G2: Backend Reader Subscription Snapshot Endpoint
+
+- **Phase:** `Phase G - Reader Workspace Snapshot And Profile Wiring`
+- **Owner:** `Backend`
+- **Status:** `done`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Reader`
+- **Route(s) or endpoint(s):** `GET /api/v1/reader/overview`
+- **Files touched:** `backend/routes/reader.py`, `backend/app.py`
+- **Depends on:** `None`
+- **Spec:** `frontend/src/lib/reader-subscription.js` `getReaderSubscriptionSnapshot` return shape (the page contract); `backend/models/subscription.py`, `backend/models/user.py`
+- **Setup reference:** `backend/README.md`, `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (`/api/v1` prefix, camelCase JSON, `role_required` guard, formatted-date style from `admin_subscribers._format_date`)
+- **Definition of Done:** `An authenticated reader-facing endpoint returns `{"snapshot": {...}}` derived from the caller's latest `UserSubscription` + `SubscriptionPlan` + profile address, matching the pages' snapshot contract: planName, billingCycle, billingAmount (plan monthly/yearly price by cycle), nextBillingDate (formatted renewal_at or "Not scheduled"), subscriptionStatus/accessState/recoveryAction/recoveryPath (mapping none -> No subscription, active -> Active subscriber, past_due -> Payment needs attention, cancelled/expired -> cancelled/expired labels), hasReadingAccess / hasDeliveryAccess / isPrintSubscriber (derived from status + plan delivery note), paymentMethod, deliveryMode, deliveryWindow, nextDeliveryDate, and locationSummary (city, country from the user profile). Non-reader role 403. No schema change and no migration.`
+- **Runtime Verification:** `PASSED in TASK-G7 smoke (43/43). `GET /api/v1/reader/overview` guards: unauth 401, admin 403, business 403. Viewer (print-digital, monthly): Active subscriber, Print + Digital, amount 24.99, delivery window +7d ("Next delivery window opens September 27, 2026"), nextBillingDate October 20, 2026, location Brussels, Belgium, reading + delivery access. Amelie (yearly): 299.88, Leuven. Marta (digital): Digital only, isPrintSubscriber false, nextDeliveryDate "Digital-only plan". Niels (past_due): Payment needs attention, reading locked, recovery "Review payment", window unavailable.`
+- **Blockers:** `None`
+- **Description:** `Back the reader snapshot the Overview, Billing, and Deliveries pages source from localStorage checkout sessions today. Keep the mapping in a small read-model module so `toReaderSnapshot` on the frontend mirrors it 1:1. Statuses `trial`, `paused`, `renewal_scheduled` from the mock are client-only and map to the active/active/locked presentation where applicable.`
+
+### TASK-G3: Reader Profile Persistence With Address Fields
+
+- **Phase:** `Phase G - Reader Workspace Snapshot And Profile Wiring`
+- **Owner:** `Backend`
+- **Status:** `done`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Reader`, `Authenticated user`
+- **Route(s) or endpoint(s):** `PUT /api/v1/auth/me`
+- **Files touched:** `backend/models/user.py`, `backend/routes/auth.py`, `backend/migrations/versions/<new>_reader_profile_fields.py`
+- **Depends on:** `None`
+- **Spec:** `frontend/src/pages/ReaderProfilePage.jsx` form fields (name, contactPhone, deliveryAddress, city, postalCode, country); `backend/models/user.py`
+- **Setup reference:** `backend/README.md` (migrations), `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md`; hand-written Alembic revision chained after `f7b3d1c8e920`
+- **Definition of Done:** `The `users` table gains nullable `contact_phone`, `delivery_address`, `city`, `postal_code`, `country` columns via one Alembic migration, and `User.to_dict()` returns them as contactPhone/deliveryAddress/city/postalCode/country. `PUT /api/v1/auth/me` (jwt_required) persists name + those fields for the caller, rejects an empty name with 400, and returns `{"user": ...}` with the same shape as `GET /auth/me`. This is the drop-in backend for the ReaderProfilePage that currently only writes localStorage.`
+- **Runtime Verification:** `PASSED in TASK-G7 smoke (43/43). Migration a2b4c6d8e0f2 applied via `flask db upgrade`. GET /auth/me returns seeded contactPhone/deliveryAddress/city/postalCode/country. PUT /auth/me (viewer) -> 200 and persists on re-read; empty name -> 400; unauth -> 401; unknown fields ignored (200). Reseed restores the seeded profile (name back to Elena Tewelde, city back to Brussels).`
+- **Blockers:** `None`
+- **Description:** `Upgrade GET-only `auth.py` (`register`/`login`/`me`) with a self-profile update endpoint. Keep validation minimal: name required, the rest optional strings (trimmed). The reader checkbox/consent fields on the profile and privacy pages already persist through `privacy.py`.`
+
+### TASK-G4: Seed Reader Profiles And A Print Reader Subscription
+
+- **Phase:** `Phase G - Reader Workspace Snapshot And Profile Wiring`
+- **Owner:** `Backend`
+- **Status:** `done`
+- **Implementation side:** `Backend`
+- **Actor(s):** `Reader`
+- **Route(s) or endpoint(s):** seed only (feeds `GET /api/v1/reader/overview` and `GET /api/v1/auth/me`)
+- **Files touched:** `backend/seed.py`
+- **Depends on:** `TASK-G3`
+- **Spec:** `docs/project.md` - reader workspace demo; `frontend/src/pages/ReaderProfilePage.jsx` prefill values
+- **Setup reference:** `backend/README.md`, `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (idempotent seed, reset-the-user's-subscriptions pattern)
+- **Definition of Done:** `The primary reader (`viewer@nekedem.local`) seeds with a print+digital plan (monthly) so the snapshot demonstrates physical delivery, plus a real profile (contact phone, Rue de la Presse 12 / Brussels / BE). The four Phase F demo readers also seed profile addresses so `locationSummary` renders for any logged-in demo reader. Re-running `flask seed` restores both the subscriptions and the profile fields. The admin subscribers roster stays coherent (viewer row just re-derives to a print plan).`
+- **Runtime Verification:** `PASSED in TASK-G7 smoke (43/43). `flask seed` assigns the primary reader print-digital monthly plus profile (contact +32 470 00 00 00, Rue de la Presse 12, Brussels 1000, Belgium); Amelie/Marta/Jonas/Niels seed with home addresses (locationSummary e.g. Leuven, Belgium). Re-running seed restores viewer name/city/address and the print subscription. Admin roster re-derives viewer to "Print + Digital · Monthly" while status stays dynamic (Renewal watch).`
+- **Blockers:** `None`
+- **Description:** `Extend `SEEDED_USERS` (viewer) and `SEEDED_SUBSCRIBERS` with address/phone keys and switch the viewer subscription to `print-digital`. `_upsert_users` already applies extra keys via setattr, so no seeding-mechanics change. Document demo addresses in seed.py as with the demo passwords.`
+
+### TASK-G5: BackendClient And appClient Reader Transport
+
+- **Phase:** `Phase G - Reader Workspace Snapshot And Profile Wiring`
+- **Owner:** `Frontend`
+- **Status:** `done`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Reader`
+- **Route(s) or endpoint(s):** `GET /api/v1/reader/overview`, `PUT /api/v1/auth/me`
+- **Files touched:** `frontend/src/api/backendClient.js`, `frontend/src/api/appClient.js`, `frontend/src/lib/reader-subscription.js`
+- **Depends on:** `TASK-G2`, `TASK-G3`
+- **Spec:** `AGENTS.md` - completed-block pattern: backendClient call, cache write + store notify, localStorage fallback only on network error
+- **Setup reference:** `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (single `request()` helper, `toApp*` mappers, `isNetworkError` contract)
+- **Definition of Done:** `backendClient gains `toReaderSnapshot` (identity pass-through of the reader overview contract), `backendReader.overview()`, and `backendAuth.updateProfile(payload)`; `toAppUser` maps the new profile fields. `appClient.reader.overview()` guards the reader role, calls `backendReader.overview()`, caches the snapshot for re-render, and falls back to the current `getReaderSubscriptionSnapshot(user.email)` checkpoint/checkout derivation only on `isNetworkError`. `appClient.auth.updateProfile` tries the backend first (persist + cache), then falls back to the existing localStorage path only on `isNetworkError`.`
+- **Runtime Verification:** `PASSED. `backendClient` gains `toAppUser` profile fields, `backendAuth.updateProfile` (PUT /auth/me), `backendReader.overview`, and `toReaderSnapshot`; `appClient.reader.overview` guards reader, prefers the backend snapshot, keeps the local checkout only when the backend reports "No active plan" and a local session exists, and falls back offline on `isNetworkError`. `appClient.auth.updateProfile` persists via a 200 round-trip in the TASK-G7 smoke and falls back to localStorage only on `isNetworkError`. Frontend gates (typecheck/lint/build) clean.`
+- **Blockers:** `None`
+- **Description:** `Mirror the TASK-E3/TASK-F4 transport pattern. The frontend may not invent status/amount/dates: every displayed value comes from the backend snapshot except the documented offline fallback.`
+
+### TASK-G6: Wire Reader Overview, Billing, Deliveries, And Profile Pages
+
+- **Phase:** `Phase G - Reader Workspace Snapshot And Profile Wiring`
+- **Owner:** `Frontend`
+- **Status:** `done`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Reader`
+- **Route(s) or endpoint(s):** `/dashboard/overview`, `/dashboard/billing`, `/dashboard/deliveries`, `/dashboard/deliveries/:trackingCode`, `/dashboard/profile`
+- **Files touched:** `frontend/src/components/dashboard/ReaderOverviewPage.jsx`, `frontend/src/components/dashboard/ReaderWorkspacePages.jsx`
+- **Depends on:** `TASK-G5`
+- **Spec:** `docs/project.md` - reader workspace acceptance; `AGENTS.md` - block-by-block backend migration
+- **Setup reference:** `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md`
+- **Definition of Done:** `ReaderOverviewPage, ReaderBillingPage, ReaderDeliveriesPage, and ReaderDeliveryDetailPage read the snapshot through `appClient.reader.overview()` (async load with a short loading state that falls back to the local snapshot), so plan/billing/status/location values come from the server while deliveries stay mocked. ReaderProfilePage prefills from `appClient.auth.me()` (now with address fields) and persists through `appClient.auth.updateProfile`. No page keeps the synchronous `getReaderSubscriptionSnapshot` as its source of truth once the backend snapshot loads.`
+- **Runtime Verification:** `PASSED. ReaderOverviewPage, ReaderBillingPage, ReaderDeliveriesPage, and ReaderDeliveryDetailPage source the subscription snapshot through `useReaderOverview` (new `frontend/src/lib/use-reader-overview.js`, async backend load with the local snapshot as in-flight/offline fallback); ReaderProfilePage prefills the backend profile fields and persists through `appClient.auth.updateProfile`. No page keeps the sync `getReaderSubscriptionSnapshot` as its source of truth once the backend snapshot loads. Frontend gates (typecheck/lint/build) clean; HTTP boundary covered by the TASK-G7 smoke.`
+- **Blockers:** `None`
+- **Description:** `Convert the four reader pages' snapshot source from sync localStorage to async backend with fallback, mirroring AdminSubscribers/F5. Keep the local snapshot path intact as the offline fallback. Do not snapshot backend data into demoData.js.`
+
+### TASK-G7: End-To-End Runtime Verification For Phase G
+
+- **Phase:** `Phase G - Reader Workspace Snapshot And Profile Wiring`
+- **Owner:** `Both`
+- **Status:** `done`
+- **Implementation side:** `Both`
+- **Actor(s):** `Reader`, `Admin`
+- **Route(s) or endpoint(s):** reader snapshot, profile, admin overview endpoints + pages
+- **Files touched:** `docs/Agent tasks.md`, `frontend/` (verification only)
+- **Depends on:** `TASK-G1`..`TASK-G6`
+- **Spec:** `docs/project.md` - reader dashboard + admin dashboard acceptance; this file
+- **Setup reference:** `AGENTS.md`, `backend/README.md`
+- **Conventions:** `Follow AGENTS.md` (evidence over intent)
+- **Definition of Done:** `A Python smoke script drives the backend and asserts: reader guards (401/403) on `GET /api/v1/reader/overview`; snapshot derivations for a print+digital active reader (Active subscriber, delivery scheduled), a digital-only reader, a past_due reader (Payment needs attention, reading locked), and a reader with no subscription; profile round-trip via GET /auth/me -> PUT /auth/me -> GET and persistence across a reseed; admin overview guards + 5 metric cards. Frontend gates (typecheck, lint, build) pass. Results recorded under each TASK-G status.`
+- **Runtime Verification:** `PASSED (43/43 backend checks + clean frontend gates). Smoke `%TEMP%/opencode/phase_g_e2e_smoke.py` (Flask test_client vs seeded MySQL): reader guards (401/403), snapshot derivations (print+digital active, digital-only, past_due with reading locked, no-subscription), profile GET -> PUT -> GET round-trip persisted across a reseed, admin overview guards + 5 metric cards with detail. `npm run typecheck`, `npm run lint`, `npm run build` all clean. Results recorded under each TASK-G status.`
+- **Blockers:** `None`
+- **Description:** `Close the phase with evidence, not intent. Any discovered mismatch reopens the owning task rather than being papered over in the report.`
+
+## Phase H - Reader Deliveries Backend Wiring
+
+> Scope note: supersedes the Phase G boundary that kept "delivery records",
+> "reading history", and "billing line items" client-mocked. Reader
+> deliveries come from `reader_deliveries` (per-user rows), reading history
+> from `reading_history`, and billing/payment events from `reader_billing`,
+> all served by Flask. `delivery-store.js`, `reading-history.js`, and
+> `reader-billing-store.js` remain the offline fallbacks only.
+
+### TASK-H1: Reader Deliveries Backend (Models, Migration, Routes, Seed) And Page Wiring
+
+- **Phase:** `Phase H - Reader Deliveries Backend Wiring`
+- **Owner:** `Both`
+- **Status:** `done`
+- **Implementation side:** `Both`
+- **Actor(s):** `Reader`
+- **Route(s) or endpoint(s):** `GET /api/v1/reader/deliveries`; `GET /api/v1/reader/deliveries/<tracking_id>`
+- **Files touched:** `backend/models/reader_delivery.py`, `backend/models/__init__.py`, `backend/migrations/versions/b3e5a1f2c0e4_reader_deliveries.py`, `backend/routes/reader.py`, `backend/seed.py`, `backend/app.py`, `frontend/src/api/backendClient.js`, `frontend/src/api/appClient.js`, `frontend/src/lib/use-reader-deliveries.js`, `frontend/src/components/dashboard/ReaderWorkspacePages.jsx`
+- **Depends on:** `TASK-G2`, `TASK-G3`, `TASK-G4`
+- **Spec:** `frontend/src/lib/delivery-store.js` + `demoData.js` `readerDelivery*` contract (trackingId, edition, status, tone, eta, date, destination, note; timeline events for the current cycle)
+- **Setup reference:** `backend/README.md` (migrations), `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (`/api/v1` prefix, camelCase JSON, `role_required`, presentation derived from machine state, idempotent seed)
+- **Definition of Done:** `ReaderDeliveriesPage and ReaderDeliveryDetailPage source print deliveries from `GET /api/v1/reader/deliveries` (list: current cycle + delivered editions behind it) and `GET /api/v1/reader/deliveries/<code>` (record + timeline), guarded for reader-only and owner-scoped (a caller only ever sees their own rows). The backend models `ReaderDelivery`/`ReaderDeliveryActivity` (new migration `b3e5a1f2c0e4`), destination derived from the user profile, `flask seed` restoring per-print-reader rows (current + 4 delivered editions + 4 timeline events) idempotently, digital-only subscribers returning an empty list. `backendReader.deliveries()/deliveryGet()` + `appClient.reader.deliveries()/deliveryDetail()` with `isNetworkError` fallback to `delivery-store`. No page keeps `delivery-store` as its source of truth once the backend responds.`
+- **Runtime Verification:** `PASSED (35/35 + clean frontend gates). Smoke `%TEMP%/opencode/phase_h_reader_deliveries_smoke.py`: guards (401 unauth, 403 admin/business), viewer list 1 current (NQ-20260825, "Route preparing", tone info, destination Brussels, Belgium) + 4 Delivered history rows, detail timeline 4 events in order + delivered rows return no timeline, case-insensitive lookup, unknown code 404, owner-scoping (same tracking code returns each caller's own profile city), digital-only reader empty list + 404, reseed idempotent (still 5 rows / 4 timeline events). `npm run typecheck`, `npm run lint`, `npm run build` all clean.`
+- **Blockers:** `None`
+- **Description:** `Move the demo print-delivery records that `ReaderDeliveriesPage`/`ReaderDeliveryDetailPage` previously hardcoded from `delivery-store.js`/`demoData.js` into per-user MySQL rows served by Flask, mirroring the block-by-block backend-migration pattern used for the subscription snapshot. The reader's own deliveries are returned by `user_id`, so the same tracking code across readers stays isolated. Public `/delivery` and its tracking lookup remain untouched (out of scope).`
+
+### TASK-H2: Reader Reading History Backend (Model, Migration, Routes, Seed) And Page Wiring
+
+- **Phase:** `Phase H - Reader Deliveries Backend Wiring` (continuing the reader workspace backend migration)
+- **Owner:** `Both`
+- **Status:** `done`
+- **Implementation side:** `Both`
+- **Actor(s):** `Reader`
+- **Route(s) or endpoint(s):** `GET /api/v1/reader/history`; `POST /api/v1/reader/history`
+- **Files touched:** `backend/models/reading_history.py`, `backend/models/__init__.py`, `backend/migrations/versions/c1d2e3f4a5b6_reading_history.py`, `backend/routes/reader.py`, `backend/seed.py`, `frontend/src/api/backendClient.js`, `frontend/src/api/appClient.js`, `frontend/src/lib/use-reader-history.js`, `frontend/src/components/dashboard/ReaderWorkspacePages.jsx`, `frontend/src/pages/ArticleDetail.jsx`
+- **Depends on:** `TASK-H1`
+- **Spec:** `frontend/src/lib/reading-history.js` + `demoData.js` `readerHistoryRows` contract (id, articleId, item, category, status, tone, date) with `seedArticleIds` mapping (history-1->news-1, history-2->business-1, history-3->feat-1, history-4->community-1)
+- **Setup reference:** `backend/README.md` (migrations), `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (`/api/v1` prefix, camelCase JSON, `role_required`, presentation derived from machine state, idempotent seed)
+- **Definition of Done:** `ReaderHistoryPage sources reading history from `GET /api/v1/reader/history` (per-user rows, ordered by last activity desc; status label + tone delivered in the payload, derived server-side from the machine state), guarded for reader-only and owner-scoped. `POST /api/v1/reader/history` upserts by (user, articleId) and applies actions `view` (read_today when last read today else read), `share` (shared), `toggle_save` (saved / revert to viewing state when unsaved), returning the refreshed list; validating articleId + action (400 otherwise). Model `ReadingHistoryEntry` (new migration `c1d2e3f4a5b6`), `user_id` Integer FK to `users.id`. `flask seed` restores the 4 pinned demo rows per reader (viewer + 4 demo readers incl. digital-only) idempotently. `backendReader.history()/recordHistoryEvent()` + `appClient.reader.history()` (fallback `getReadingHistoryRows()`) and `appClient.reader.recordHistoryEvent()` (fire-and-forget, swallowed outside the reader session). Article read/share/bookmark on `ArticleDetail` publish events to the backend while the local mock stays the offline-only source. No page keeps `reading-history.js` as its source of truth once the backend responds.`
+- **Runtime Verification:** `PASSED (35/35 + clean frontend gates). Smoke `%TEMP%/opencode/phase_h_reading_history_smoke.py`: reseed-first for determinism; guards (401 unauth GET/POST, 403 business), viewer list contract (4 rows, demo article ids, statuses Read today/Saved/Archive soon/Completed + tones info/success/warning/neutral, order by date desc), 400 (missing articleId, unsupported action), POST view -> Read today, toggle_save -> Saved and unsave -> viewing state, share on saved row keeps Saved, persistence across GET, owner scoping (amelie toggle does not leak into viewer rows; her own rows isolated), digital-only reader also serves its own 4 rows, reseed idempotent (4 rows, seed states restored). `npm run typecheck`, `npm run lint`, `npm run build` (1786 modules) all clean.`
+- **Blockers:** `None`
+- **Description:** `Wire the reader history surface (`ReaderHistoryPage` on `/dashboard/history`) to a real Flask endpoint instead of the client mock. The backend models `ReadingHistoryEntry`, serves list/record endpoints that keep presentation (status/tone/date) derived from machine state, and `ArticleDetail` view/share/bookmark events are POSTed fire-and-forget so the same interaction remains synchronous with the local mock and offline-friendly.`
+
+### TASK-H3: Reader Billing (Payment Events) Backend (Model, Migration, Routes, Seed) And Page Wiring
+
+- **Phase:** `Phase H - Reader Workspace Backend Wiring` (continuing the reader workspace backend migration)
+- **Owner:** `Both`
+- **Status:** `done`
+- **Implementation side:** `Both`
+- **Actor(s):** `Reader`
+- **Route(s) or endpoint(s):** `GET /api/v1/reader/billing`
+- **Files touched:** `backend/models/reader_billing.py`, `backend/models/__init__.py`, `backend/migrations/versions/d4e5f6a7b8c9_reader_billing.py`, `backend/routes/reader.py`, `backend/seed.py`, `frontend/src/api/backendClient.js`, `frontend/src/api/appClient.js`, `frontend/src/lib/reader-billing-store.js`, `frontend/src/lib/use-reader-billing.js`, `frontend/src/components/dashboard/ReaderWorkspacePages.jsx`
+- **Depends on:** `TASK-H2`
+- **Spec:** `frontend/src/lib/demoData.js` `readerBillingRows` contract (id, item, amount, status, tone, date) — entries blend paid invoices, an upcoming renewal reminder, and a payment-method check
+- **Setup reference:** `backend/README.md` (migrations), `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (`/api/v1` prefix, camelCase JSON, `role_required`, presentation derived from machine state, idempotent seed)
+- **Definition of Done:** `ReaderBillingPage sources its payment history table from `GET /api/v1/reader/billing` (per-user events ordered by event date desc; item label, amount rendering (currency for invoice/renewal, payment method for payment events), status label + tone delivered in the payload, derived server-side from entry_type/status), guarded for reader-only and owner-scoped; digital-only readers still get their own events. Model `ReaderBillingEntry` (new migration `d4e5f6a7b8c9`, `user_id` Integer FK to `users.id`). `flask seed` restores the 4 pinned demo events per reader (renewal reminder upcoming / INV-2026-08 paid / payment method check verified / INV-2026-07 paid, event dates 2026-09-11/08-11/08-10/07-11) idempotently. `backendReader.billing()` + `appClient.reader.billing()` (network-error fallback to `reader-billing-store` demo rows) + `useReaderBilling` hook. The renewal snapshot panel keeps sourcing `useReaderOverview` (unchanged). No page keeps `readerBillingRows` as its source of truth once the backend responds.`
+- **Runtime Verification:** `PASSED (31/31 + clean frontend gates). Smoke `%TEMP%/opencode/phase_h_reader_billing_smoke.py`: guards (401 unauth, 403 business), viewer list contract (4 events; date-desc order renewal -> INV-2026-08 -> payment check -> INV-2026-07; item/amount (`€24.99` + `PayPal`)/status/tone (Upcoming/warning, Paid/success, Verified/info)), non-empty formatted dates (September 11 / August 11 / August 10 / July 11 2026), owner-scoping (distinct row ids across marta/amelie), digital-only reader returns its own 4 events, reseed idempotent (4 events, pinned order restored). `npm run typecheck`, `npm run lint`, `npm run build` (1788 modules) all clean.`
+- **Blockers:** `None`
+- **Description:** `Move the payment-history rows that `ReaderBillingPage` previously read straight from the `readerBillingRows` demo array into per-user MySQL rows served by Flask, completing the reader workspace migration (overview/deliveries/history/billing all backend-backed; none of the reader workspace pages keep a client store as source of truth once the backend responds).`
+
+### TASK-H4: Reader Workspace Notification Badge Counts Backed By Reader Endpoints
+
+- **Phase:** `Phase H - Reader Workspace Backend Wiring` (follow-up close-out)
+- **Owner:** `Both`
+- **Status:** `done`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Reader`
+- **Route(s) or endpoint(s):** consumes `GET /api/v1/reader/deliveries` + `GET /api/v1/reader/billing`
+- **Files touched:** `frontend/src/lib/notifications.js`
+- **Depends on:** `TASK-H1`, `TASK-H3`
+- **Spec:** `frontend/src/lib/notifications.js` `readerBadges()` — the last client-mocked reader surface still feeding `ReaderOverviewPage` (shortcut chips) and `DashboardShell` (section badges / totals). Deliveries chip = current delivery not Delivered; billing chip = count of Upcoming/Overdue events.
+- **Setup reference:** `backend/README.md`, `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (reader-driven endpoints, graceful offline fallback, keep demo stores as fallback only)
+- **Definition of Done:** `Reader shortcut badges source their counts from the reader backend rows instead of demo arrays. `loadReaderBadges()` (module-scoped, deduped) fetches `appClient.reader.deliveries()` (current-row status -> deliveries chip 1/0, digital-only readers -> 0) and `appClient.reader.billing()` (Upcoming/Overdue rows -> billing chip) via a shared `readerCountsFrom` (now also the single implementation of the demo fallback, unchanged shape), then bumps the store so `useStoreVersion` consumers re-render. Loading is kicked off from the reader-workspace badge hooks (`useWorkspaceSectionBadges`/`useWorkspaceNotificationTotal` when `workspaceKey === "reader"`, `useSectionBadgeForPath` when the path maps to the reader workspace). Demo counts (`readerDeliveryCurrent`/`readerBillingRows`) remain the in-flight/offline fallback only; admin/business badges unchanged.`
+- **Runtime Verification:** `PASSED (frontend gates). `npm run typecheck`, `npm run lint`, `npm run build` (1788 modules) all clean. Backend counts verified live: current delivery `NQ-20260825` status "Route preparing" (`!= Delivered` -> deliveries chip 1) and billing renewal event status "Upcoming" (-> billing chip 1) — matching the previous demo chips for the primary reader. No HTTP/404 regressions (deliveries + billing endpoints already covered by TASK-H1/H3 smokes).`
+- **Blockers:** `None`
+- **Description:** `The overview/shell notification chips were the last reader surface still counting demo arrays. Now they compute from the reader deliveries + billing endpoints so a reader's chips reflect their own backend rows (including digital-only readers, whose deliveries chip correctly reads 0), while keeping the demo rows as the loading/offline fallback.`
+
+### TASK-H5: Reader Privacy Page Consents And Governance Requests Confirmed Backend-Wired
+
+- **Phase:** `Phase H - Reader Workspace Backend Wiring` (follow-up close-out)
+- **Owner:** `Both`
+- **Status:** `done` (verified 2026-09-20, two stale copy messages fixed)
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Reader`
+- **Route(s) or endpoint(s):** `GET`/`PUT /api/v1/account/consents`; `GET`/`POST /api/v1/account/governance-requests`
+- **Files touched:** `frontend/src/components/dashboard/ReaderWorkspacePages.jsx`
+- **Depends on:** Phase A consent/governance routes (`backend/routes/privacy.py`, migration `e4f7a2c9b610`), TASK-E1 (admin close-out)
+- **Spec:** `ReaderPrivacyPage` consent checklist + governance request panel; reader endpoints in `privacy.py` with admin review queue
+- **Setup reference:** `backend/README.md`, `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (reader-driven endpoints, camelCase JSON, graceful offline fallback via localStorage)
+- **Definition of Done:** `ReaderPrivacyPage consents come from `GET /api/v1/account/consents` (persisted by `PUT /api/v1/account/consents`), and the governance queue comes from `GET /api/v1/account/governance-requests` (export/deletion created via `POST /api/v1/account/governance-requests`, action mapped through `GOVERNANCE_ACTIONS["reader"]`). `appClient.account.getConsentSettings`/`saveConsentSettings`/`listGovernanceRequests`/`requestDataExport`/`requestDeletion` hit `backendConsents`/`backendGovernance` and keep localStorage only as an offline fallback. Success copy no longer references the "local governance queue".`
+- **Runtime Verification:** `PASSED (13/13 + clean frontend gates). Smoke `%TEMP%/opencode/privacy_review_smoke.py`: unauth GET /account/consents 401; viewer GET 200 with all three consent keys; PUT toggles + persists on re-read; GET /account/governance-requests 200 with the seeded reader row; POST export 201 returning id/type ("Data export")/status ("Queued")/date/createdAt/notes; re-list reflects the created row; business governance 403 for reader; unknown action 400; original consent values restored. `npm run typecheck`, `npm run lint`, `npm run build` all clean after the message copy fix.`
+- **Blockers:** `None`
+- **Description:** `Reconcile the stale inventory claim that ReaderPrivacyPage is still `appClient.account.*` localStorage with `no consent/governance routes` — the Phase A reader endpoints exist and the page already consumes them through `appClient.account.*` (backend-first, localStorage only offline). Only genuine gaps were fixed: two success messages that still said requests were "logged in the local governance queue" now say they are "submitted for the privacy review queue". Reader workspace now fully backend-served (overview, deliveries, history, billing, profile, privacy).`
+
+### TASK-H6: Public Delivery Tracking Page Backed By Reader Endpoints
+
+- **Phase:** `Phase H - Reader Workspace Backend Wiring` (follow-up close-out)
+- **Owner:** `Both`
+- **Status:** `done`
+- **Implementation side:** `Frontend`
+- **Actor(s):** `Reader` (public page keeps guest/demo lookup)
+- **Route(s) or endpoint(s):** consumes `GET /api/v1/reader/deliveries`, `GET /api/v1/reader/deliveries/<trackingId>`, `GET /api/v1/reader/overview`
+- **Files touched:** `frontend/src/pages/Delivery.jsx`
+- **Depends on:** `TASK-H1` (reader delivery model + list/detail routes), `TASK-G2` (overview snapshot), `TASK-G5`
+- **Spec:** `pages/Delivery.jsx` public `Track your delivery` page; hero + timeline driven by a tracking code (URL `?trackingId=` or current edition), personalized for a matched reader subscription (destination, print/subscription-aware notes)
+- **Setup reference:** `backend/README.md`, `AGENTS.md`
+- **Conventions:** `Follow AGENTS.md` (backend-first, demo store kept only as guest/in-flight/offline fallback, hooks established in TASK-H1/G6 reused rather than new transport)
+- **Definition of Done:** ``/delivery` stops reading `delivery-store` + `reader-subscription` synchronously. A logged-in reader's tracking lookup resolves against `GET /api/v1/reader/deliveries/<trackingId>` (delivery + timeline) and the subscription personalization comes from `useReaderOverview` (`GET /api/v1/reader/overview`, local snapshot only in-flight/offline); the current-edition comparison uses `useReaderDeliveries` (`GET /api/v1/reader/deliveries`). Guests and offline sessions keep the `delivery-store` sample lookup unchanged (sample codes, inline validation errors). Timeline icons fall back positionally (first Clock, last Truck) since backend activities carry no icon. Logged-in readers get real per-reader rows; unknown/non-owned tracking IDs resolve to `No shipment found` instead of leaking a demo row.`
+- **Runtime Verification:** `PASSED (9/9 HTTP + clean frontend gates). Smoke `%TEMP%/opencode/public_delivery_review_smoke.py`: unauth GET /reader/deliveries 401; viewer list 200 with 5 seeded rows carrying trackingId/edition/status/tone/eta/date/destination/note; GET detail by own tracking id 200 with `delivery` + `timeline` (activity items carry label/description/badge/status/tone/sortOrder); unknown tracking id 404; viewer overview isPrintSubscriber true. `npm run typecheck`, `npm run lint`, `npm run build` all clean (uses the existing `useReaderDeliveries`/`useReaderDeliveryDetail`/`useReaderOverview` hooks, no new transport code).`
+- **Blockers:** `None`
+- **Description:** `The public tracking page was the last reader surface still sourcing `delivery-store` + `reader-subscription` directly. It now uses the established backend-first hooks: authenticated readers get their own shipped deliveries + timelines and live subscription snapshot; guests/offline keep the demo sample lookup, so the public marketing flow still works without a backend. `reader-subscription.js` and `delivery-store.js` remain offline fallbacks only, completing the reader workspace migration.`

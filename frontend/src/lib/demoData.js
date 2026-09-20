@@ -442,51 +442,6 @@ export const subscriptionPlans = [
   },
 ];
 
-export const readerCheckoutPlans = subscriptionPlans.filter(
-  (plan) => plan.id !== "business",
-);
-
-export const readerCheckoutSteps = [
-  {
-    id: "plan",
-    label: "Plan",
-    detail: "Choose digital or print access and confirm the billing cycle.",
-  },
-  {
-    id: "delivery",
-    label: "Delivery",
-    detail: "Capture the address and contact details needed for routing.",
-  },
-  {
-    id: "payment",
-    label: "Payment",
-    detail: "Select a supported payment method and confirm recurring billing.",
-  },
-  {
-    id: "confirm",
-    label: "Confirm",
-    detail: "Review the quote and complete the mocked checkout return.",
-  },
-];
-
-export const readerPaymentMethods = [
-  {
-    id: "paypal",
-    label: "PayPal",
-    detail: "Redirect-style checkout for wallet approval and billing consent.",
-  },
-  {
-    id: "visa",
-    label: "Visa",
-    detail: "Card payment captured through a PCI-compliant processor reference.",
-  },
-  {
-    id: "mastercard",
-    label: "Mastercard",
-    detail: "Card payment captured through a PCI-compliant processor reference.",
-  },
-];
-
 export const readerDashboardFallbackOverview = {
   subscriptionStatus: "Trial-ready workspace",
   planName: "Print + Digital",

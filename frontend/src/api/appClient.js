@@ -1,14 +1,23 @@
 import {
+  backendAdminOverview,
   backendArticles,
   backendAuth,
+  backendBusinessOverview,
   backendCategories,
+  backendCheckout,
   backendCompanies,
+  backendConsents,
+  backendGovernance,
   backendInvoices,
   backendLocations,
   backendOrderPlans,
   backendOrders,
+  backendPaymentMethods,
   backendShipments,
+  backendSubscribers,
   backendSubscriptions,
+  backendReader,
+  backendTeam,
   cacheBackendUser,
   clearAccessToken,
   getAccessToken,
@@ -18,7 +27,9 @@ import {
 } from "@/api/backendClient";
 import { appParams } from "@/lib/app-params";
 import {
+  adminOverviewMetrics,
   adminShipmentActivityRows,
+  businessOverviewMetrics,
   businessShipmentActivityRows,
   companyOrderRequests as defaultCompanyOrders,
   subscriptionPlans as defaultSubscriptionPlans,
@@ -38,9 +49,12 @@ import {
   getBusinessLocationRows,
   getBusinessOrderById,
   getBusinessOrderRows,
+  getBusinessTeamRows,
   setBusinessInvoiceRows,
   setBusinessLocationRows,
   setBusinessOrderRows,
+  setBusinessTeamRows,
+  updateBusinessTeamMember,
 } from "@/lib/business-ops-store";
 import {
   getAdminShipmentRows,
@@ -49,6 +63,25 @@ import {
   setAdminShipmentRows,
   setBusinessShipmentRows,
 } from "@/lib/shipment-store";
+import {
+  getSubscriberById,
+  getSubscriberRows,
+  setSubscriberRows,
+  upsertSubscriber,
+} from "@/lib/subscriber-store";
+import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
+import {
+  getCurrentDelivery,
+  getDeliveryByTrackingCode,
+  getRecentDeliveries,
+} from "@/lib/delivery-store";
+import { getReadingHistoryRows } from "@/lib/reading-history";
+import { getReaderBillingRows } from "@/lib/reader-billing-store";
+import {
+  readCheckoutSessions,
+  saveCheckoutSession,
+} from "@/lib/checkout-store";
+import { DEFAULT_PAYMENT_METHODS } from "@/lib/payment-methods";
 
 const isBrowser = typeof window !== "undefined";
 const storage = isBrowser ? window.localStorage : null;
@@ -459,6 +492,31 @@ const writeGovernanceRequests = (requests) => {
   writeJson(governanceRequestsKey, requests);
 };
 
+// Persist governance rows into the local cache so `getGovernanceActionCount`
+// (used by the admin shell badge) reflects backend-synced data. Pass
+// `{ replace: true }` for the authoritative admin queue; scoped lists and
+// mutations merge by id so other scopes cached earlier are preserved.
+const cacheGovernanceRequests = (rows, { replace = false } = {}) => {
+  const incoming = Array.isArray(rows) ? rows.filter(Boolean) : [];
+
+  if (replace) {
+    writeGovernanceRequests(incoming);
+    return incoming;
+  }
+
+  const merged = readGovernanceRequests().map((row) => ({ ...row }));
+  incoming.forEach((row) => {
+    const index = merged.findIndex((item) => item.id === row.id);
+    if (index >= 0) {
+      merged[index] = { ...merged[index], ...row };
+    } else {
+      merged.push(row);
+    }
+  });
+  writeGovernanceRequests(merged);
+  return merged;
+};
+
 const formatRequestDate = (date) =>
   new Intl.DateTimeFormat("en-US", {
     month: "long",
@@ -570,6 +628,63 @@ const fallbackShipmentActivity = (shipmentId, owner) => {
   const source =
     owner === "admin" ? adminShipmentActivityRows : businessShipmentActivityRows;
   return source.filter((row) => row.shipment === shipmentId);
+};
+
+// Offline checkout fallback: shapes a plausible succeeded session in the same
+// contract as the backend so the success page + reader snapshot keep working
+// when the Flask API is unreachable.
+const buildOfflineCheckoutSession = ({
+  plan,
+  billingCycle = "monthly",
+  paymentMethod = "card",
+  customer,
+  consents,
+}) => {
+  const normalizedCycle = billingCycle === "yearly" ? "yearly" : "monthly";
+  const amount =
+    normalizedCycle === "yearly"
+      ? Number(plan?.yearlyPrice ?? Number(plan?.monthlyPrice || 0) * 12)
+      : Number(plan?.monthlyPrice || 0);
+  const formatQuoteDate = (date) =>
+    new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }).format(date);
+
+  const nextChargeDate = new Date();
+  nextChargeDate.setMonth(
+    nextChargeDate.getMonth() + (normalizedCycle === "yearly" ? 12 : 1),
+  );
+  const deliveryDate = new Date();
+  deliveryDate.setDate(deliveryDate.getDate() + 14);
+  const isPrint = plan?.id === "print-digital";
+
+  return {
+    id: `checkout-${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    status: "succeeded",
+    subscriptionStatus: "active",
+    statusMessage: "Payment confirmed and reader access activated.",
+    plan: { ...plan, features: [...(plan?.features || [])] },
+    quote: {
+      amount,
+      billingCycle: normalizedCycle,
+      deliveryMode: isPrint
+        ? "Biweekly print + digital"
+        : "Digital access only",
+      deliveryWindow: isPrint
+        ? `Next delivery window opens ${formatQuoteDate(deliveryDate)}`
+        : "No print shipment is scheduled for the digital-only plan.",
+      nextChargeDate: formatQuoteDate(nextChargeDate),
+    },
+    customer,
+    payment: {
+      method: paymentMethod === "paypal" ? "PayPal" : "Card",
+      reference: "",
+    },
+    consent: consents,
+  };
 };
 
 export const appClient = {
@@ -700,13 +815,96 @@ export const appClient = {
       }
     },
   },
+  businessTeam: {
+    async list() {
+      const currentUser = getCurrentSessionUser("business");
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const members = await backendTeam.businessList();
+        setBusinessTeamRows(members);
+        return members;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      return getBusinessTeamRows();
+    },
+
+    async activate(memberId) {
+      const currentUser = getCurrentSessionUser("business");
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const member = await backendTeam.businessActivate(memberId);
+        const rows = getBusinessTeamRows();
+        setBusinessTeamRows(
+          rows.some((row) => row.id === member.id)
+            ? rows.map((row) => (row.id === member.id ? member : row))
+            : [...rows, member],
+        );
+        return member;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      return updateBusinessTeamMember(memberId, {
+        status: "Active",
+        tone: "success",
+      });
+    },
+  },
   subscriptions: {
+    // Synchronous read from the local cache. The admin `refresh()` below keeps
+    // that cache in step with the backend catalog.
     list() {
+      return readSubscriptionPlans();
+    },
+
+    // Pulls the admin catalog (including business plans) into the cache so
+    // every `useSubscriptionPlans()` consumer re-renders from server truth.
+    async refresh() {
+      try {
+        const plans = await backendSubscriptions.adminList();
+        if (Array.isArray(plans) && plans.length) {
+          writeSubscriptionPlans(plans);
+        }
+        return plans;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
       return readSubscriptionPlans();
     },
 
     async update(planId, updates) {
       requireAdmin();
+
+      try {
+        const plan = await backendSubscriptions.adminUpdate(planId, updates);
+        const plans = readSubscriptionPlans();
+        writeSubscriptionPlans(
+          plans.some((row) => row.id === plan.id)
+            ? plans.map((row) => (row.id === plan.id ? plan : row))
+            : [...plans, plan],
+        );
+        return plan;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
       const plans = readSubscriptionPlans();
       const existingPlan = plans.find((plan) => plan.id === planId);
       if (!existingPlan) {
@@ -722,15 +920,30 @@ export const appClient = {
         throw createAuthError("Plan name and price are required", 400);
       }
 
-      const nextPlans = plans.map((plan) =>
-        plan.id === planId ? nextPlan : plan,
+      writeSubscriptionPlans(
+        plans.map((plan) => (plan.id === planId ? nextPlan : plan)),
       );
-      writeSubscriptionPlans(nextPlans);
       return nextPlan;
     },
 
     async create(plan) {
       requireAdmin();
+
+      try {
+        const created = await backendSubscriptions.adminCreate(plan);
+        const plans = readSubscriptionPlans();
+        writeSubscriptionPlans(
+          plans.some((row) => row.id === created.id)
+            ? plans.map((row) => (row.id === created.id ? created : row))
+            : [...plans, created],
+        );
+        return created;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
       const nextPlan = normalizeSubscriptionPlan({
         ...plan,
         id: plan.id || `plan-${Date.now()}`,
@@ -739,13 +952,23 @@ export const appClient = {
         throw createAuthError("Plan name and price are required", 400);
       }
 
-      const nextPlans = [...readSubscriptionPlans(), nextPlan];
-      writeSubscriptionPlans(nextPlans);
+      writeSubscriptionPlans([...readSubscriptionPlans(), nextPlan]);
       return nextPlan;
     },
 
     async remove(planId) {
       requireAdmin();
+
+      try {
+        const plans = await backendSubscriptions.adminRemove(planId);
+        writeSubscriptionPlans(plans);
+        return plans;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
       const plans = readSubscriptionPlans();
       if (plans.length <= 1) {
         throw createAuthError("At least one subscription plan is required", 400);
@@ -758,6 +981,17 @@ export const appClient = {
 
     async reset() {
       requireAdmin();
+
+      try {
+        const plans = await backendSubscriptions.adminReset();
+        writeSubscriptionPlans(plans);
+        return plans;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
       writeSubscriptionPlans(defaultSubscriptionPlans);
       return defaultSubscriptionPlans;
     },
@@ -1240,14 +1474,27 @@ export const appClient = {
         throw createAuthError("Authentication required", 401);
       }
 
-      const updatedUser = updateStoredUser(currentUser.id, {
+      const values = {
         name: name.trim(),
         contactPhone: contactPhone.trim() || null,
         deliveryAddress: deliveryAddress.trim() || null,
         city: city.trim() || null,
         postalCode: postalCode.trim() || null,
         country: country.trim() || null,
-      });
+      };
+
+      try {
+        const user = await backendAuth.updateProfile(values);
+        cacheBackendUser(user);
+        updateStoredUser(currentUser.id, values);
+        return user;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      const updatedUser = updateStoredUser(currentUser.id, values);
 
       return sanitizeUser(updatedUser);
     },
@@ -1281,6 +1528,25 @@ export const appClient = {
         throw createAuthError("Authentication required", 401);
       }
 
+      try {
+        const consents = await backendConsents.readerGet();
+        return {
+          newsletterOptIn: Boolean(consents.newsletterOptIn),
+          privacyUpdatesOptIn:
+            consents.privacyUpdatesOptIn === undefined
+              ? true
+              : Boolean(consents.privacyUpdatesOptIn),
+          deliveryDataConsent:
+            consents.deliveryDataConsent === undefined
+              ? true
+              : Boolean(consents.deliveryDataConsent),
+        };
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
       return {
         newsletterOptIn: Boolean(currentUser.newsletterOptIn),
         privacyUpdatesOptIn:
@@ -1305,17 +1571,34 @@ export const appClient = {
         throw createAuthError("Authentication required", 401);
       }
 
-      updateStoredUser(currentUser.id, {
-        newsletterOptIn: Boolean(newsletterOptIn),
-        privacyUpdatesOptIn: Boolean(privacyUpdatesOptIn),
-        deliveryDataConsent: Boolean(deliveryDataConsent),
-      });
-
-      return {
+      const values = {
         newsletterOptIn: Boolean(newsletterOptIn),
         privacyUpdatesOptIn: Boolean(privacyUpdatesOptIn),
         deliveryDataConsent: Boolean(deliveryDataConsent),
       };
+
+      try {
+        const consents = await backendConsents.readerSave(values);
+        return {
+          newsletterOptIn: Boolean(consents.newsletterOptIn),
+          privacyUpdatesOptIn:
+            consents.privacyUpdatesOptIn === undefined
+              ? values.privacyUpdatesOptIn
+              : Boolean(consents.privacyUpdatesOptIn),
+          deliveryDataConsent:
+            consents.deliveryDataConsent === undefined
+              ? values.deliveryDataConsent
+              : Boolean(consents.deliveryDataConsent),
+        };
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      updateStoredUser(currentUser.id, values);
+
+      return values;
     },
 
     async listGovernanceRequests() {
@@ -1323,6 +1606,16 @@ export const appClient = {
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const requests = await backendGovernance.readerList();
+        cacheGovernanceRequests(requests);
+        return requests;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
       }
 
       return readGovernanceRequests().filter(
@@ -1338,6 +1631,19 @@ export const appClient = {
         throw createAuthError("Authentication required", 401);
       }
 
+      try {
+        const request = await backendGovernance.readerCreate(
+          "export",
+          notes.trim(),
+        );
+        cacheGovernanceRequests([request]);
+        return request;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
       const request = {
         id: `export-${Date.now()}`,
         userId: currentUser.id,
@@ -1349,7 +1655,7 @@ export const appClient = {
         notes: notes.trim() || "Full account and subscription export requested.",
       };
 
-      writeGovernanceRequests([...readGovernanceRequests(), request]);
+      cacheGovernanceRequests([request]);
       return request;
     },
 
@@ -1358,6 +1664,19 @@ export const appClient = {
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const request = await backendGovernance.readerCreate(
+          "deletion",
+          reason.trim(),
+        );
+        cacheGovernanceRequests([request]);
+        return request;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
       }
 
       const request = {
@@ -1373,7 +1692,7 @@ export const appClient = {
           "Account deletion review requested under the privacy workflow.",
       };
 
-      writeGovernanceRequests([...readGovernanceRequests(), request]);
+      cacheGovernanceRequests([request]);
       return request;
     },
   },
@@ -1407,11 +1726,45 @@ export const appClient = {
       return refreshCompanyFromBackend();
     },
 
+    async overview() {
+      try {
+        const metrics = await backendBusinessOverview.get();
+        if (Array.isArray(metrics) && metrics.length) {
+          return metrics;
+        }
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      return businessOverviewMetrics;
+    },
+
     async getPrivacySettings() {
       const currentUser = getCurrentSessionUser("business");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const consents = await backendConsents.companyGet();
+        return {
+          commercialUpdatesOptIn: Boolean(consents.commercialUpdatesOptIn),
+          privacyUpdatesOptIn:
+            consents.privacyUpdatesOptIn === undefined
+              ? true
+              : Boolean(consents.privacyUpdatesOptIn),
+          deliveryDataConsent:
+            consents.deliveryDataConsent === undefined
+              ? true
+              : Boolean(consents.deliveryDataConsent),
+        };
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
       }
 
       return {
@@ -1438,17 +1791,34 @@ export const appClient = {
         throw createAuthError("Authentication required", 401);
       }
 
-      updateStoredUser(currentUser.id, {
-        commercialUpdatesOptIn: Boolean(commercialUpdatesOptIn),
-        privacyUpdatesOptIn: Boolean(privacyUpdatesOptIn),
-        deliveryDataConsent: Boolean(deliveryDataConsent),
-      });
-
-      return {
+      const values = {
         commercialUpdatesOptIn: Boolean(commercialUpdatesOptIn),
         privacyUpdatesOptIn: Boolean(privacyUpdatesOptIn),
         deliveryDataConsent: Boolean(deliveryDataConsent),
       };
+
+      try {
+        const consents = await backendConsents.companySave(values);
+        return {
+          commercialUpdatesOptIn: Boolean(consents.commercialUpdatesOptIn),
+          privacyUpdatesOptIn:
+            consents.privacyUpdatesOptIn === undefined
+              ? values.privacyUpdatesOptIn
+              : Boolean(consents.privacyUpdatesOptIn),
+          deliveryDataConsent:
+            consents.deliveryDataConsent === undefined
+              ? values.deliveryDataConsent
+              : Boolean(consents.deliveryDataConsent),
+        };
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      updateStoredUser(currentUser.id, values);
+
+      return values;
     },
 
     async listGovernanceRequests() {
@@ -1456,6 +1826,16 @@ export const appClient = {
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const requests = await backendGovernance.companyList();
+        cacheGovernanceRequests(requests);
+        return requests;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
       }
 
       return readGovernanceRequests().filter(
@@ -1471,6 +1851,19 @@ export const appClient = {
         throw createAuthError("Authentication required", 401);
       }
 
+      try {
+        const request = await backendGovernance.companyCreate(
+          "export",
+          notes.trim(),
+        );
+        cacheGovernanceRequests([request]);
+        return request;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
       const request = {
         id: `company-export-${Date.now()}`,
         userId: currentUser.id,
@@ -1484,7 +1877,7 @@ export const appClient = {
           "Business account export requested for contacts, locations, and invoice-linked records.",
       };
 
-      writeGovernanceRequests([...readGovernanceRequests(), request]);
+      cacheGovernanceRequests([request]);
       return request;
     },
 
@@ -1493,6 +1886,19 @@ export const appClient = {
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const request = await backendGovernance.companyCreate(
+          "deletion",
+          reason.trim(),
+        );
+        cacheGovernanceRequests([request]);
+        return request;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
       }
 
       const request = {
@@ -1508,16 +1914,272 @@ export const appClient = {
           "Business account deletion or retention review requested under the company privacy workflow.",
       };
 
-      writeGovernanceRequests([...readGovernanceRequests(), request]);
+      cacheGovernanceRequests([request]);
       return request;
     },
   },
+  reader: {
+    async overview() {
+      const currentUser = getCurrentSessionUser("reader");
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      const local = getReaderSubscriptionSnapshot(currentUser.email);
+      let snapshot = null;
+
+      try {
+        snapshot = await backendReader.overview();
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      if (!snapshot) {
+        return local;
+      }
+
+      // The backend is the source of truth for seeded readers. A new reader
+      // who checked out through the local mock has no subscription row yet
+      // (only "No subscription"), so their local checkout must win until the
+      // backend row exists.
+      const backendKnowsNoSubscription = snapshot.planName === "No active plan";
+      if (!backendKnowsNoSubscription || !local?.session) {
+        return snapshot;
+      }
+      return local;
+    },
+
+    async deliveries() {
+      const currentUser = getCurrentSessionUser("reader");
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const rows = await backendReader.deliveries();
+        if (Array.isArray(rows)) {
+          return { current: rows[0] || null, history: rows.slice(1) };
+        }
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      return { current: getCurrentDelivery() || null, history: getRecentDeliveries() };
+    },
+
+    async deliveryDetail(trackingCode) {
+      const currentUser = getCurrentSessionUser("reader");
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        return await backendReader.deliveryGet(trackingCode);
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      const record = getDeliveryByTrackingCode(trackingCode);
+      if (!record) {
+        return { delivery: null, timeline: [] };
+      }
+      return { delivery: record, timeline: record.timeline || [] };
+    },
+
+    async history() {
+      const currentUser = getCurrentSessionUser("reader");
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const rows = await backendReader.history();
+        if (Array.isArray(rows)) {
+          return rows;
+        }
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      return getReadingHistoryRows();
+    },
+
+    async recordHistoryEvent(event) {
+      const currentUser = getCurrentSessionUser("reader");
+      if (!currentUser) {
+        return;
+      }
+      try {
+        await backendReader.recordHistoryEvent(event);
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+    },
+
+    async billing() {
+      const currentUser = getCurrentSessionUser("reader");
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const rows = await backendReader.billing();
+        if (Array.isArray(rows)) {
+          return rows;
+        }
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      return getReaderBillingRows();
+    },
+  },
+  checkout: {
+    async availableMethods() {
+      try {
+        const methods = await backendPaymentMethods.list();
+        if (Array.isArray(methods) && methods.length) {
+          return methods;
+        }
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      return DEFAULT_PAYMENT_METHODS;
+    },
+
+    async create(data) {
+      try {
+        const session = await backendCheckout.create(data);
+        if (session?.id) {
+          saveCheckoutSession(session);
+        }
+        return session;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      const session = buildOfflineCheckoutSession(data);
+      saveCheckoutSession(session);
+      return session;
+    },
+
+    async get(sessionId) {
+      try {
+        const session = await backendCheckout.get(sessionId);
+        if (session?.id) {
+          saveCheckoutSession(session);
+        }
+        return session;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      const sessions = readCheckoutSessions();
+      return sessions[sessionId] || null;
+    },
+
+    async confirm(sessionId, details) {
+      try {
+        const session = await backendCheckout.confirm(sessionId, details);
+        if (session?.id) {
+          saveCheckoutSession(session);
+        }
+        return session;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      const sessions = readCheckoutSessions();
+      const existing = sessions[sessionId];
+      if (!existing) {
+        return null;
+      }
+
+      const payment = { ...(existing.payment || {}) };
+      if (details?.card?.number) {
+        const digits = String(details.card.number).replace(/\D/g, "");
+        payment.reference = digits.slice(-4);
+        payment.method = "Card";
+      }
+      if (details?.paypalEmail) {
+        payment.method = "PayPal";
+        payment.reference = details.paypalEmail;
+      }
+
+      const session = {
+        ...existing,
+        status: "succeeded",
+        subscriptionStatus: "active",
+        statusMessage: "Payment confirmed and reader access activated.",
+        payment,
+      };
+      saveCheckoutSession(session);
+      return session;
+    },
+  },
   admin: {
+    async overview() {
+      const currentUser = getCurrentSessionUser("admin");
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const metrics = await backendAdminOverview.get();
+        if (Array.isArray(metrics) && metrics.length) {
+          return metrics;
+        }
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      return adminOverviewMetrics;
+    },
+
     async listGovernanceRequests() {
       const currentUser = getCurrentSessionUser("admin");
 
       if (!currentUser) {
         throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const requests = await backendGovernance.adminList();
+        cacheGovernanceRequests(requests, { replace: true });
+        return requests;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
       }
 
       return readGovernanceRequests()
@@ -1536,6 +2198,19 @@ export const appClient = {
         throw createAuthError("Authentication required", 401);
       }
 
+      try {
+        const updated = await backendGovernance.updateStatus(
+          requestId,
+          nextStatus,
+        );
+        cacheGovernanceRequests([updated]);
+        return updated;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
       const requests = readGovernanceRequests();
       const index = requests.findIndex((request) => request.id === requestId);
 
@@ -1547,6 +2222,67 @@ export const appClient = {
       requests[index] = updated;
       writeGovernanceRequests(requests);
       return enrichGovernanceRequest(updated);
+    },
+
+    subscribers: {
+      async list() {
+        requireAdmin();
+
+        try {
+          const rows = await backendSubscribers.adminList();
+          setSubscriberRows(rows);
+          return rows;
+        } catch (error) {
+          if (!isNetworkError(error)) {
+            throw error;
+          }
+        }
+
+        return getSubscriberRows();
+      },
+
+      async get(id) {
+        requireAdmin();
+
+        try {
+          const row = await backendSubscribers.adminGet(id);
+          upsertSubscriber(row);
+          return row;
+        } catch (error) {
+          if (!isNetworkError(error)) {
+            throw error;
+          }
+        }
+
+        return getSubscriberById(id);
+      },
+
+      async activate(id) {
+        requireAdmin();
+
+        try {
+          const row = await backendSubscribers.adminActivate(id);
+          upsertSubscriber(row);
+          return row;
+        } catch (error) {
+          if (!isNetworkError(error)) {
+            throw error;
+          }
+        }
+
+        const existing = getSubscriberById(id);
+        if (!existing) {
+          throw createAuthError("Subscriber not found", 404);
+        }
+
+        const digitalOnly = existing.deliveryEligibility === "Digital only";
+        return upsertSubscriber({
+          ...existing,
+          status: "Active",
+          deliveryEligibility: digitalOnly ? "Digital only" : "Eligible",
+          tone: digitalOnly ? "info" : "success",
+        });
+      },
     },
   },
 };

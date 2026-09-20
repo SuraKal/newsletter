@@ -11,7 +11,11 @@ import {
   DashboardPanel,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useAuth } from "@/lib/AuthContext";
-import { getReaderSubscriptionSnapshot } from "@/lib/reader-subscription";
+import { useReaderOverview } from "@/lib/use-reader-overview";
+import {
+  useReaderDeliveries,
+  useReaderDeliveryDetail,
+} from "@/lib/use-reader-deliveries";
 import {
   DELIVERY_SAMPLE_CODES,
   getCurrentDelivery,
@@ -28,21 +32,35 @@ const deliveryIconMap = {
 
 export default function Delivery() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { current: currentDelivery } = useReaderDeliveries();
   const requestedCode =
-    searchParams.get("trackingId") || getCurrentDelivery().trackingId;
+    searchParams.get("trackingId") ||
+    currentDelivery?.trackingId ||
+    getCurrentDelivery().trackingId;
   const [inputValue, setInputValue] = useState(requestedCode);
   const [error, setError] = useState("");
 
   const { user } = useAuth();
-  const subscription = useMemo(
-    () => getReaderSubscriptionSnapshot(user?.email),
-    [user?.email],
-  );
+  const isReaderSession = Boolean(user && user.role === "reader");
+  const subscription = useReaderOverview(user?.email);
+  const deliveryDetail = useReaderDeliveryDetail(requestedCode);
 
-  const delivery = getDeliveryByTrackingCode(requestedCode);
-  const currentDelivery = getCurrentDelivery();
-  const isCurrentEdition = delivery?.trackingId === currentDelivery.trackingId;
-  const hasMatchedSession = Boolean(subscription?.session);
+  const delivery = useMemo(
+    () =>
+      isReaderSession
+        ? (deliveryDetail?.delivery || null)
+        : getDeliveryByTrackingCode(requestedCode),
+    [isReaderSession, deliveryDetail, requestedCode],
+  );
+  const timeline =
+    (isReaderSession
+      ? deliveryDetail?.timeline
+      : delivery?.timeline) || [];
+
+  const isCurrentEdition = Boolean(
+    delivery && currentDelivery && delivery.trackingId === currentDelivery.trackingId,
+  );
+  const hasMatchedSession = Boolean(subscription?.session) || isReaderSession;
   const isPrintSubscriber = hasMatchedSession && subscription?.isPrintSubscriber;
 
   const hero = delivery
@@ -70,9 +88,15 @@ export default function Delivery() {
       }
     : null;
 
-  const timelineItems = (delivery?.timeline || []).map((item) => ({
+  const timelineItems = timeline.map((item, index) => ({
     ...item,
-    icon: deliveryIconMap[item.icon] || Package,
+    icon:
+      deliveryIconMap[item.icon] ||
+      (index === 0
+        ? Package
+        : index === timeline.length - 1
+          ? Truck
+          : Package),
   }));
 
   const updateTracking = (nextCode) => {
@@ -89,7 +113,7 @@ export default function Delivery() {
       return;
     }
 
-    if (!getDeliveryByTrackingCode(cleanCode)) {
+    if (!isReaderSession && !getDeliveryByTrackingCode(cleanCode)) {
       setError(`No shipment found for ${cleanCode} yet. Please check the ID and try again.`);
       return;
     }
@@ -189,7 +213,10 @@ export default function Delivery() {
                     type="button"
                     onClick={() => {
                       setError("");
-                      setInputValue(getCurrentDelivery().trackingId);
+                      setInputValue(
+                        currentDelivery?.trackingId ||
+                          getCurrentDelivery().trackingId,
+                      );
                       setSearchParams({});
                     }}
                     className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-5 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-stone-700"
