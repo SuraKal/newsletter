@@ -51,6 +51,11 @@ export default function Register() {
     licenseFileName: "",
     contactPhone: "",
     deliveryAddress: "",
+    deliveryRegion: "",
+    deliveryLocationName: "",
+    geoapifyPlaceId: "",
+    deliveryLatitude: null,
+    deliveryLongitude: null,
     consent: false,
   });
   const [error, setError] = useState("");
@@ -95,7 +100,16 @@ export default function Register() {
 
   const handleAddressInput = (event) => {
     const value = event.target.value;
-    updateField("deliveryAddress")({ currentTarget: { value } });
+    setForm((current) => ({
+      ...current,
+      deliveryAddress: value,
+      deliveryRegion: "",
+      deliveryLocationName: "",
+      geoapifyPlaceId: "",
+      deliveryLatitude: null,
+      deliveryLongitude: null,
+    }));
+    if (error) setError("");
     if (value && value.length >= 2) {
       debouncedAddressSearch(value);
     } else {
@@ -106,18 +120,27 @@ export default function Register() {
 
   const selectAddress = (feature) => {
     const props = feature.properties || {};
-    const name = props.name || "";
+    const name = props.name || props.address_line1 || "";
     const street = props.street || "";
     const postcode = props.postcode || "";
     const city = props.city || props.state || "";
     const country = props.country || "";
 
-    // Build a nice formatted address from components
+    // Keep the human-readable address and the Geoapify delivery reference.
     const parts = [name, street, [postcode, city].filter(Boolean).join(" "), country]
       .filter(Boolean);
-    const formatted = parts.join(", ");
+    const formatted = props.formatted || parts.join(", ");
+    const [longitude, latitude] = feature.geometry?.coordinates || [];
 
-    setForm((current) => ({ ...current, deliveryAddress: formatted }));
+    setForm((current) => ({
+      ...current,
+      deliveryAddress: formatted,
+      deliveryRegion: [city, country].filter(Boolean).join(", "),
+      deliveryLocationName: name || city || current.companyName || "Primary delivery site",
+      geoapifyPlaceId: props.place_id || "",
+      deliveryLatitude: Number.isFinite(latitude) ? latitude : null,
+      deliveryLongitude: Number.isFinite(longitude) ? longitude : null,
+    }));
     setAddressSuggestions([]);
     setShowAddressSuggestions(false);
   };
@@ -216,6 +239,10 @@ export default function Register() {
       setError("Attach your business licence to continue.");
       return;
     }
+    if (isBusinessJourney && !form.deliveryAddress.trim()) {
+      setError("Add the delivery location for your company.");
+      return;
+    }
     if (!form.consent) {
       setError(
         "Please confirm how we can use your account and delivery information before continuing.",
@@ -241,6 +268,13 @@ export default function Register() {
         licenseDocument: isBusinessJourney ? form.licenseDocument : "",
         contactPhone: form.contactPhone.trim(),
         deliveryAddress: form.deliveryAddress.trim(),
+        deliveryRegion: isBusinessJourney ? form.deliveryRegion.trim() : "",
+        deliveryLocationName: isBusinessJourney
+          ? form.deliveryLocationName.trim()
+          : "",
+        geoapifyPlaceId: isBusinessJourney ? form.geoapifyPlaceId : "",
+        deliveryLatitude: isBusinessJourney ? form.deliveryLatitude : null,
+        deliveryLongitude: isBusinessJourney ? form.deliveryLongitude : null,
       });
 
       if ("pendingApproval" in registeredUser && registeredUser.pendingApproval) {
@@ -494,7 +528,7 @@ export default function Register() {
                         htmlFor="register-address"
                         className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.18em] text-[#4c392b]"
                       >
-                        Delivery context
+                        Delivery location
                       </label>
                       <div className="flex w-full items-center rounded-xl border border-[#cfc0af] bg-white transition-colors focus-within:border-[#4A2A08] focus-within:ring-2 focus-within:ring-[#4A2A08]/15">
                         <MapPin className="ml-4 h-4 w-4 shrink-0 text-[#8b5f32]" />
@@ -508,6 +542,7 @@ export default function Register() {
                           onFocus={() => addressSuggestions.length > 0 && setShowAddressSuggestions(true)}
                           placeholder="Search for a place..."
                           autoComplete="off"
+                          required
                           className="min-h-14 w-full rounded-xl bg-transparent pl-10 pr-4 py-3 text-base text-[#2a1b12] outline-none placeholder:text-[#9b8c7d]"
                         />
                       </div>

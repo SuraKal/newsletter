@@ -56,13 +56,42 @@ def business_create_location():
         return _bad_request("A location name is required")
 
     region = (data.get("region") or "").strip()
+    address = (data.get("address") or "").strip()
+    place_id = (data.get("placeId") or "").strip()
     copies = (data.get("copies") or "").strip()
     contact = (data.get("contact") or "").strip()
+
+    def optional_coordinate(key, minimum, maximum):
+        value = data.get(key)
+        if value in (None, ""):
+            return None
+        try:
+            coordinate = float(value)
+        except (TypeError, ValueError):
+            raise ValueError
+        if not minimum <= coordinate <= maximum:
+            raise ValueError
+        return coordinate
+
+    try:
+        latitude = optional_coordinate("latitude", -90, 90)
+        longitude = optional_coordinate("longitude", -180, 180)
+    except ValueError:
+        return _bad_request("Delivery coordinates are invalid")
+
+    if not address:
+        return _bad_request("A delivery address is required")
+    if len(address) > 255 or len(place_id) > 255:
+        return _bad_request("Delivery address is too long")
 
     location = BusinessLocation(
         company_account_id=entity.id,
         location=location_name,
         region=region,
+        address=address,
+        place_id=place_id or None,
+        latitude=latitude,
+        longitude=longitude,
         copies=copies,
         contact=contact,
         status="Review",

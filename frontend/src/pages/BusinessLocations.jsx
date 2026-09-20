@@ -66,13 +66,16 @@ export default function BusinessLocations() {
   const [createForm, setCreateForm] = useState({
     location: "",
     region: "",
+    address: "",
+    placeId: "",
+    latitude: null,
+    longitude: null,
     contact: "",
   });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
   const [placeSuggestions, setPlaceSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedPlaceId, setSelectedPlaceId] = useState("");
   const suggestionsRef = useRef(null);
   const inputRef = useRef(null);
   const { activeFilters, setFilter, clearFilters } = useTableFilters();
@@ -114,7 +117,15 @@ export default function BusinessLocations() {
   );
 
   const handleLocationInput = (value) => {
-    setCreateForm((prev) => ({ ...prev, location: value }));
+    setCreateForm((prev) => ({
+      ...prev,
+      location: value,
+      region: "",
+      address: value,
+      placeId: "",
+      latitude: null,
+      longitude: null,
+    }));
     if (value && value.length >= 2) {
       debouncedSearch(value);
     } else {
@@ -128,16 +139,19 @@ export default function BusinessLocations() {
     const name = feature.properties?.name || feature.properties?.formatted || "";
     const city = feature.properties?.city || feature.properties?.state || "";
     const country = feature.properties?.country || "";
-    const street = feature.properties?.street || "";
-    const postcode = feature.properties?.postcode || "";
+    const formatted = feature.properties?.formatted || name;
     const contact = feature.properties?.phone || feature.properties?.email || "";
+    const [longitude, latitude] = feature.geometry?.coordinates || [];
 
     setCreateForm({
       location: name,
       region: [city, country].filter(Boolean).join(", "),
+      address: formatted,
+      placeId: placeId || "",
+      latitude: Number.isFinite(latitude) ? latitude : null,
+      longitude: Number.isFinite(longitude) ? longitude : null,
       contact: contact || "",
     });
-    setSelectedPlaceId(placeId || "");
     setPlaceSuggestions([]);
     setShowSuggestions(false);
 
@@ -165,8 +179,15 @@ export default function BusinessLocations() {
     try {
       await appClient.locations.create(createForm);
       setShowCreateModal(false);
-      setCreateForm({ location: "", region: "", contact: "" });
-      setSelectedPlaceId("");
+      setCreateForm({
+        location: "",
+        region: "",
+        address: "",
+        placeId: "",
+        latitude: null,
+        longitude: null,
+        contact: "",
+      });
       await reloadLocations();
     } catch (error) {
       setCreateError(error?.message || "Failed to create location");
@@ -296,7 +317,7 @@ export default function BusinessLocations() {
                   htmlFor="create-location"
                   className="mb-1 block font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-700 dark:text-stone-300"
                 >
-                  Location name *
+                  Delivery address *
                 </label>
                 <div className="relative" ref={inputRef}>
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400" />
@@ -338,6 +359,11 @@ export default function BusinessLocations() {
                     </div>
                   )}
                 </div>
+                {createForm.address && createForm.address !== createForm.location ? (
+                  <p className="mt-2 font-sans text-xs text-stone-500 dark:text-stone-400">
+                    {createForm.address}
+                  </p>
+                ) : null}
               </div>
               <div>
                 <label
@@ -363,7 +389,15 @@ export default function BusinessLocations() {
                   type="button"
 onClick={() => {
                     setShowCreateModal(false);
-                    setCreateForm({ location: "", region: "", contact: "" });
+                    setCreateForm({
+                      location: "",
+                      region: "",
+                      address: "",
+                      placeId: "",
+                      latitude: null,
+                      longitude: null,
+                      contact: "",
+                    });
                     setCreateError("");
                   }}
                   disabled={creating}

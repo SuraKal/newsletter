@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from middleware.auth import role_required
-from models import CompanyAccount, User, db
+from models import BusinessLocation, CompanyAccount, User, db
 
 companies_bp = Blueprint("companies", __name__, url_prefix="/api/v1")
 
@@ -91,7 +91,17 @@ def admin_get_company(key):
     entity = _find_company(key)
     if entity is None:
         return jsonify({"error": "Company not found"}), 404
-    return jsonify({"companyAccount": entity.to_dict()}), 200
+    locations = (
+        BusinessLocation.query.filter_by(company_account_id=entity.id)
+        .order_by(BusinessLocation.created_at)
+        .all()
+    )
+    return jsonify(
+        {
+            "companyAccount": entity.to_dict(),
+            "locations": [location.to_dict() for location in locations],
+        }
+    ), 200
 
 
 @companies_bp.post("/admin/companies/<string:key>/approve-license")

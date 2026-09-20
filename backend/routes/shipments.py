@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from middleware.auth import role_required
-from models import CompanyAccount, Shipment, User, db
+from models import BusinessLocation, CompanyAccount, Shipment, User, db
 
 shipments_bp = Blueprint("shipments", __name__, url_prefix="/api/v1")
 
@@ -50,6 +50,28 @@ def _activity_payload(shipment):
     ]
 
 
+def _shipment_payload(shipment):
+    """Include exact company delivery destinations for dispatch reference.
+
+    Shipment runs are consolidated at the company level, so they do not yet
+    select a subset of locations. Returning the company's stored destinations
+    gives both workspaces the Geoapify address and coordinates used for routing.
+    """
+    payload = shipment.to_dict()
+    if shipment.company_account_id:
+        locations = (
+            BusinessLocation.query.filter_by(
+                company_account_id=shipment.company_account_id
+            )
+            .order_by(BusinessLocation.created_at)
+            .all()
+        )
+        payload["deliveryLocations"] = [location.to_dict() for location in locations]
+    else:
+        payload["deliveryLocations"] = []
+    return payload
+
+
 @shipments_bp.get("/business/shipments")
 @jwt_required()
 def business_list_shipments():
@@ -63,7 +85,7 @@ def business_list_shipments():
         .order_by(Shipment.created_at)
         .all()
     )
-    return jsonify({"shipments": [row.to_dict() for row in shipments]}), 200
+    return jsonify({"shipments": [_shipment_payload(row) for row in shipments]}), 200
 
 
 @shipments_bp.get("/business/shipments/<string:key>")
@@ -77,7 +99,7 @@ def business_get_shipment(key):
     return (
         jsonify(
             {
-                "shipment": shipment.to_dict(),
+                "shipment": _shipment_payload(shipment),
                 "activity": _activity_payload(shipment),
             }
         ),
@@ -103,7 +125,7 @@ def business_advance_shipment(key):
 
     shipment.status = next_status
     db.session.commit()
-    return jsonify({"shipment": shipment.to_dict()}), 200
+    return jsonify({"shipment": _shipment_payload(shipment)}), 200
 
 
 @shipments_bp.get("/admin/shipments")
@@ -111,7 +133,7 @@ def business_advance_shipment(key):
 @role_required("admin")
 def admin_list_shipments():
     shipments = Shipment.query.order_by(Shipment.created_at).all()
-    return jsonify({"shipments": [row.to_dict() for row in shipments]}), 200
+    return jsonify({"shipments": [_shipment_payload(row) for row in shipments]}), 200
 
 
 @shipments_bp.get("/admin/shipments/<string:key>")
@@ -124,7 +146,7 @@ def admin_get_shipment(key):
     return (
         jsonify(
             {
-                "shipment": shipment.to_dict(),
+                "shipment": _shipment_payload(shipment),
                 "activity": _activity_payload(shipment),
             }
         ),
@@ -149,4 +171,4 @@ def admin_advance_shipment(key):
 
     shipment.status = next_status
     db.session.commit()
-    return jsonify({"shipment": shipment.to_dict()}), 200
+    return jsonify({"shipment": _shipment_payload(shipment)}), 200

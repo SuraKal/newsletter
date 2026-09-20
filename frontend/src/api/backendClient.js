@@ -148,10 +148,40 @@ export const backendAuth = {
     return { accessToken: payload.accessToken, user: toAppUser(payload.user), pendingApproval: Boolean(payload.pendingApproval) };
   },
 
-  async register({ name, email, password, role, companyName, accountType, licenseDocument }) {
+  async register({
+    name,
+    email,
+    password,
+    role,
+    companyName,
+    accountType,
+    licenseDocument,
+    contactPhone,
+    deliveryAddress,
+    deliveryRegion,
+    deliveryLocationName,
+    geoapifyPlaceId,
+    deliveryLatitude,
+    deliveryLongitude,
+  }) {
     const payload = await request("/auth/register", {
       method: "POST",
-      body: { name, email, password, role, companyName, accountType, licenseDocument },
+      body: {
+        name,
+        email,
+        password,
+        role,
+        companyName,
+        accountType,
+        licenseDocument,
+        contactPhone,
+        deliveryAddress,
+        deliveryRegion,
+        deliveryLocationName,
+        geoapifyPlaceId,
+        deliveryLatitude,
+        deliveryLongitude,
+      },
       auth: false,
     });
     return { accessToken: payload.accessToken, user: toAppUser(payload.user), pendingApproval: Boolean(payload.pendingApproval) };
@@ -480,7 +510,10 @@ export const backendCompanies = {
 
   async adminGetCompany(id) {
     const payload = await request(`/admin/companies/${encodeURIComponent(id)}`);
-    return toAppCompany(payload.companyAccount);
+    return {
+      ...toAppCompany(payload.companyAccount),
+      locations: (payload.locations || []).map(toAppLocation),
+    };
   },
 
   async adminApproveLicense(id) {
@@ -507,6 +540,10 @@ export const toAppLocation = (location) => ({
   region: location.region || "",
   copies: location.copies || "",
   contact: location.contact || "",
+  address: location.address || "",
+  placeId: location.placeId || "",
+  latitude: location.latitude ?? null,
+  longitude: location.longitude ?? null,
   status: location.status || "Review",
   tone: location.tone || "warning",
   createdAt: location.createdAt || "",
@@ -563,6 +600,9 @@ export const toAppShipment = (shipment) => {
     eta: shipment.eta || "",
     owner: shipment.owner || (hasCompany ? "business" : "admin"),
     company: shipment.company || "",
+    deliveryLocations: Array.isArray(shipment.deliveryLocations)
+      ? shipment.deliveryLocations.map(toAppLocation)
+      : [],
     createdAt: shipment.createdAt || "",
     updatedAt: shipment.updatedAt || "",
   };

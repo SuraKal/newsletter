@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Check, FileBadge, X } from "lucide-react";
+import { ArrowLeft, Check, FileBadge, MapPin, X } from "lucide-react";
 import { appClient } from "@/api/appClient";
 import { backendCompanies, isNetworkError } from "@/api/backendClient";
 import { DashboardEmptyState, DashboardFactList, DashboardPageHeader, DashboardPanel, DashboardStatusBadge } from "@/components/dashboard/DashboardPrimitives";
@@ -39,6 +39,25 @@ export default function AdminCompanyDetail() {
   ];
   return <div className="space-y-6"><DashboardPageHeader eyebrow="Admin companies" title={entity.company} description="Review the submitted business licence and decide whether to enable company access." breadcrumbs={[{ label: "Admin workspace", to: "/admin/overview" }, { label: "Companies", to: "/admin/companies" }, { label: entity.company }]} action={<Link to="/admin/companies" className="inline-flex items-center gap-2 rounded-full border border-stone-300 px-4 py-2 text-xs font-semibold uppercase tracking-wider"><ArrowLeft className="h-4 w-4" /> All companies</Link>} />
     <DashboardPanel title="Company registration" className="p-5 sm:p-6"><DashboardFactList items={licenceFacts} /></DashboardPanel>
+    <DashboardPanel title="Delivery locations" className="p-5 sm:p-6">
+      {entity.locations?.length ? (
+        <div className="space-y-3">
+          {entity.locations.map((deliveryLocation) => (
+            <div key={deliveryLocation.id} className="rounded-xl border border-stone-200 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold text-stone-900">{deliveryLocation.location}</p>
+                  <p className="mt-1 flex items-start gap-2 text-sm text-stone-600"><MapPin className="mt-0.5 h-4 w-4 shrink-0" />{deliveryLocation.address || deliveryLocation.region || "Address not provided"}</p>
+                  {deliveryLocation.region && deliveryLocation.address ? <p className="mt-1 text-sm text-stone-500">{deliveryLocation.region}</p> : null}
+                  {deliveryLocation.contact ? <p className="mt-2 text-sm text-stone-600">Receiving contact: {deliveryLocation.contact}</p> : null}
+                </div>
+                <DashboardStatusBadge label={deliveryLocation.status} tone={deliveryLocation.tone} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : <DashboardEmptyState title="No delivery location recorded" description="This company was registered before delivery locations were collected." />}
+    </DashboardPanel>
     <DashboardPanel title="Business licence" className="p-5 sm:p-6">{entity.licenseDocument ? <a href={entity.licenseDocument} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white"><FileBadge className="h-4 w-4" /> Open uploaded licence</a> : <p className="text-sm text-stone-500">No licence document is available for this legacy company record.</p>}</DashboardPanel>
     {state === "License submitted" ? <div className="flex gap-3"><button type="button" onClick={() => decide(true)} className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white"><Check className="h-4 w-4" /> Approve licence</button><button type="button" onClick={() => decide(false)} className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-stone-700"><X className="h-4 w-4" /> Decline licence</button></div> : null}
   </div>;

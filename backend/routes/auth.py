@@ -7,7 +7,7 @@ from flask_jwt_extended import (
 )
 from sqlalchemy.exc import IntegrityError
 
-from models import CompanyAccount, db, User
+from models import BusinessLocation, CompanyAccount, db, User
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
 
@@ -25,6 +25,29 @@ def register():
     role = data.get("role") or "reader"
     company_name = (data.get("companyName") or "").strip()
     license_document = data.get("licenseDocument") or ""
+    contact_phone = (data.get("contactPhone") or "").strip()
+    delivery_address = (data.get("deliveryAddress") or "").strip()
+    delivery_region = (data.get("deliveryRegion") or "").strip()
+    delivery_location_name = (data.get("deliveryLocationName") or "").strip()
+    geoapify_place_id = (data.get("geoapifyPlaceId") or "").strip()
+
+    def optional_coordinate(key, minimum, maximum):
+        value = data.get(key)
+        if value in (None, ""):
+            return None
+        try:
+            coordinate = float(value)
+        except (TypeError, ValueError):
+            raise ValueError
+        if not minimum <= coordinate <= maximum:
+            raise ValueError
+        return coordinate
+
+    try:
+        delivery_latitude = optional_coordinate("deliveryLatitude", -90, 90)
+        delivery_longitude = optional_coordinate("deliveryLongitude", -180, 180)
+    except ValueError:
+        return jsonify({"error": "Delivery coordinates are invalid"}), 400
 
     if role not in ("reader", "business"):
         return jsonify({"error": "Invalid role"}), 400
@@ -39,6 +62,12 @@ def register():
             return jsonify({"error": "A business licence upload is required"}), 400
         if len(license_document) > 7_000_000:
             return jsonify({"error": "Business licence must be 5 MB or smaller"}), 400
+        if not delivery_address:
+            return jsonify({"error": "A delivery location is required"}), 400
+    if len(delivery_address) > 255 or len(delivery_region) > 80:
+        return jsonify({"error": "Delivery location is too long"}), 400
+    if len(contact_phone) > 40 or len(geoapify_place_id) > 255:
+        return jsonify({"error": "Delivery information is too long"}), 400
 
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "Email already registered"}), 409
@@ -50,28 +79,56 @@ def register():
         account_type="business" if role == "business" else "individual",
         company_name=company_name,
         business_access_approved=role != "business",
+        contact_phone=contact_phone or None,
+        delivery_address=delivery_address or None,
+        city=delivery_region or None,
     )
     user.set_password(password)
     db.session.add(user)
     try:
-        db.session.commit()
-    except IntegrityError:
-        db.session.rollback()
-        return jsonify({"error": "Email already registered"}), 409
-
-    if role == "business":
-        db.session.add(
-            CompanyAccount(
+        if role == "business":
+            db.session.flush()
+            company = CompanyAccount(
                 company=company_name,
                 status="License submitted",
                 owner_user_id=user.id,
                 owner_email=user.email,
                 work_email=user.email,
                 license_document=license_document,
-                lead={"primaryContact": name, "workEmail": email},
+                lead={
+                    "primaryContact": name,
+                    "workEmail": email,
+                    "contactPhone": contact_phone,
+                    "deliveryLocation": {
+                        "address": delivery_address,
+                        "region": delivery_region,
+                        "placeId": geoapify_place_id,
+                        "latitude": delivery_latitude,
+                        "longitude": delivery_longitude,
+                    },
+                },
             )
-        )
+            db.session.add(company)
+            db.session.flush()
+            db.session.add(
+                BusinessLocation(
+                    company_account_id=company.id,
+                    location=delivery_location_name or f"{company_name} delivery site",
+                    address=delivery_address,
+                    region=delivery_region,
+                    place_id=geoapify_place_id or None,
+                    latitude=delivery_latitude,
+                    longitude=delivery_longitude,
+                    contact=" · ".join(part for part in (name, contact_phone) if part),
+                    status="Review",
+                )
+            )
         db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "Email already registered"}), 409
+
+    if role == "business":
         return jsonify({"user": _public_user(user), "pendingApproval": True}), 201
 
     access_token = create_access_token(

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink, MapPin } from "lucide-react";
 import {
   DashboardEmptyState,
   DashboardFactList,
@@ -33,6 +33,13 @@ const actionForStatus = (status) => {
   }
 
   return null;
+};
+
+const directionsUrl = (location) => {
+  if (Number.isFinite(location.latitude) && Number.isFinite(location.longitude)) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
+  }
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address || location.location)}`;
 };
 
 export default function BusinessShipmentDetail() {
@@ -144,6 +151,7 @@ export default function BusinessShipmentDetail() {
             { label: "Account", value: shipment.label },
             { label: "Route cluster", value: shipment.route },
             { label: "Coverage", value: shipment.scope },
+            { label: "Saved destinations", value: shipment.deliveryLocations?.length || "—" },
             { label: "Delivery window", value: shipment.eta },
             {
               label: "Status",
@@ -153,6 +161,28 @@ export default function BusinessShipmentDetail() {
             },
           ]}
         />
+      </DashboardPanel>
+
+      <DashboardPanel
+        title="Delivery destinations"
+        description="Saved company locations used by dispatch for this consolidated run."
+        className="p-5 sm:p-6"
+      >
+        {shipment.deliveryLocations?.length ? (
+          <div className="space-y-3">
+            {shipment.deliveryLocations.map((location) => (
+              <div key={location.id} className="flex flex-col gap-3 rounded-xl border border-stone-200 p-4 sm:flex-row sm:items-start sm:justify-between dark:border-stone-700">
+                <div className="min-w-0">
+                  <p className="font-sans text-sm font-semibold text-stone-900 dark:text-stone-100">{location.location}</p>
+                  <p className="mt-1 flex items-start gap-2 font-sans text-sm text-stone-600 dark:text-stone-300"><MapPin className="mt-0.5 h-4 w-4 shrink-0" />{location.address || location.region}</p>
+                  {location.region && location.address ? <p className="mt-1 font-sans text-xs text-stone-500">{location.region}</p> : null}
+                  {location.contact ? <p className="mt-2 font-sans text-xs text-stone-500">Receiving contact: {location.contact}</p> : null}
+                </div>
+                <a href={directionsUrl(location)} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-stone-300 px-3 py-2 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-stone-700 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"><ExternalLink className="h-3.5 w-3.5" /> Directions</a>
+              </div>
+            ))}
+          </div>
+        ) : <DashboardEmptyState title="No saved destinations for this run" description="Add a delivery location before dispatching this company run." />}
       </DashboardPanel>
 
       <DashboardPanel

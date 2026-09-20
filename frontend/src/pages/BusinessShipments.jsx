@@ -30,6 +30,11 @@ const shipmentColumns = [
   },
   { key: "label", label: "Account" },
   { key: "route", label: "Route cluster" },
+  {
+    key: "deliveryLocations",
+    label: "Destinations",
+    render: (value) => value?.length ? `${value.length} saved` : "—",
+  },
   { key: "scope", label: "Scope" },
   {
     key: "status",
@@ -46,6 +51,11 @@ const matchesSearch = (row, query) =>
     row.shipmentId,
     row.label,
     row.route,
+    ...(row.deliveryLocations || []).flatMap((location) => [
+      location.location,
+      location.address,
+      location.region,
+    ]),
     row.scope,
     row.status,
     row.eta,
@@ -135,7 +145,7 @@ export default function BusinessShipments() {
           <DashboardDataTable
             columns={shipmentColumns}
             rows={table.rows}
-            minWidth={840}
+            minWidth={960}
           />
         ) : (
           <DashboardEmptyState

@@ -30,6 +30,11 @@ const shipmentColumns = [
   },
   { key: "label", label: "Label" },
   { key: "route", label: "Route" },
+  {
+    key: "deliveryLocations",
+    label: "Destinations",
+    render: (value) => value?.length ? `${value.length} saved` : "—",
+  },
   { key: "scope", label: "Scope" },
   {
     key: "status",
@@ -46,6 +51,11 @@ const matchesSearch = (row, query) =>
     row.shipmentId,
     row.label,
     row.route,
+    ...(row.deliveryLocations || []).flatMap((location) => [
+      location.location,
+      location.address,
+      location.region,
+    ]),
     row.scope,
     row.status,
     row.eta,
@@ -139,7 +149,7 @@ export default function AdminShipments() {
             <DashboardDataTable
               columns={shipmentColumns}
               rows={table.rows}
-              minWidth={720}
+              minWidth={840}
             />
             <DashboardPagination
               page={table.page}

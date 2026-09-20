@@ -1086,6 +1086,10 @@ export const appClient = {
           companyAccountId: snapshot?.id || null,
           location: data.location || "",
           region: data.region || "",
+          address: data.address || data.location || "",
+          placeId: data.placeId || "",
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
           copies: data.copies || "",
           contact: data.contact || "",
           status: "Review",
@@ -1380,6 +1384,11 @@ export const appClient = {
       licenseDocument = "",
       contactPhone = "",
       deliveryAddress = "",
+      deliveryRegion = "",
+      deliveryLocationName = "",
+      geoapifyPlaceId = "",
+      deliveryLatitude = null,
+      deliveryLongitude = null,
     }) {
       try {
         const { accessToken, user, pendingApproval } = await backendAuth.register({
@@ -1391,6 +1400,13 @@ export const appClient = {
             accountType || (role === "business" ? "business" : "individual"),
           companyName,
           licenseDocument,
+          contactPhone,
+          deliveryAddress,
+          deliveryRegion,
+          deliveryLocationName,
+          geoapifyPlaceId,
+          deliveryLatitude,
+          deliveryLongitude,
         });
         if (pendingApproval) {
           return { ...user, pendingApproval: true };
@@ -1427,6 +1443,7 @@ export const appClient = {
         companyName: companyName.trim() || null,
         contactPhone: contactPhone.trim() || null,
         deliveryAddress: deliveryAddress.trim() || null,
+        city: deliveryRegion.trim() || null,
       };
 
       writeUsers([...users, newUser]);

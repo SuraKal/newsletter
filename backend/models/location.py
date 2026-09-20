@@ -39,6 +39,10 @@ class BusinessLocation(db.Model):
 
     location = db.Column(db.String(120), nullable=False)
     region = db.Column(db.String(80), default="")
+    address = db.Column(db.String(255), default="")
+    place_id = db.Column(db.String(255))
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
     copies = db.Column(db.String(40), default="")
     contact = db.Column(db.String(120), default="")
     status = db.Column(db.String(50), default="Review")
@@ -65,6 +69,10 @@ class BusinessLocation(db.Model):
             "companyAccountId": self.company_account_id,
             "location": self.location,
             "region": self.region,
+            "address": self.address,
+            "placeId": self.place_id,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
             "copies": self.copies,
             "contact": self.contact,
             "status": self.status,
