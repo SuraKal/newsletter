@@ -85,7 +85,9 @@ export default function BusinessLocations() {
   const debouncedSearch = useCallback(
     (() => {
       let timeoutId;
+      let requestSequence = 0;
       return (text) => {
+        const sequence = ++requestSequence;
         clearTimeout(timeoutId);
         if (!text || text.length < 2) {
           setPlaceSuggestions([]);
@@ -95,11 +97,15 @@ export default function BusinessLocations() {
         timeoutId = setTimeout(async () => {
           try {
             const features = await backendPlaces.autocomplete(text);
-            setPlaceSuggestions(features);
-            setShowSuggestions(features.length > 0);
+            if (sequence === requestSequence) {
+              setPlaceSuggestions(features);
+              setShowSuggestions(features.length > 0);
+            }
           } catch {
-            setPlaceSuggestions([]);
-            setShowSuggestions(false);
+            if (sequence === requestSequence) {
+              setPlaceSuggestions([]);
+              setShowSuggestions(false);
+            }
           }
         }, 300);
       };

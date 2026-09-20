@@ -1,13 +1,11 @@
 import os
 import requests
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
 
 places_bp = Blueprint("places", __name__, url_prefix="/api/v1")
 
 
 @places_bp.get("/places/autocomplete")
-@jwt_required()
 def places_autocomplete():
     """Proxy Geoapify autocomplete to keep API key server-side."""
     query = (request.args.get("text") or "").strip()
@@ -36,7 +34,6 @@ def places_autocomplete():
 
 
 @places_bp.get("/places/detail")
-@jwt_required()
 def places_detail():
     """Proxy Geoapify place details."""
     place_id = (request.args.get("id") or "").strip()

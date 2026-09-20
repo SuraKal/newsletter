@@ -1017,13 +1017,17 @@ export const backendSubscribers = {
 export const backendPlaces = {
   async autocomplete(text) {
     const params = new URLSearchParams({ text });
-    const payload = await request(`/places/autocomplete?${params.toString()}`);
+    const payload = await request(`/places/autocomplete?${params.toString()}`, {
+      auth: false,
+    });
     return payload.features || [];
   },
 
   async detail(placeId) {
     const params = new URLSearchParams({ id: placeId });
-    const payload = await request(`/places/detail?${params.toString()}`);
+    const payload = await request(`/places/detail?${params.toString()}`, {
+      auth: false,
+    });
     return payload;
   },
 };

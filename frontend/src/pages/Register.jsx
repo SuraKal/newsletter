@@ -65,7 +65,9 @@ export default function Register() {
   const debouncedAddressSearch = useCallback(
     (() => {
       let timeoutId;
+      let requestSequence = 0;
       return (text) => {
+        const sequence = ++requestSequence;
         clearTimeout(timeoutId);
         if (!text || text.length < 2) {
           setAddressSuggestions([]);
@@ -75,11 +77,15 @@ export default function Register() {
         timeoutId = setTimeout(async () => {
           try {
             const features = await backendPlaces.autocomplete(text);
-            setAddressSuggestions(features);
-            setShowAddressSuggestions(features.length > 0);
+            if (sequence === requestSequence) {
+              setAddressSuggestions(features);
+              setShowAddressSuggestions(features.length > 0);
+            }
           } catch {
-            setAddressSuggestions([]);
-            setShowAddressSuggestions(false);
+            if (sequence === requestSequence) {
+              setAddressSuggestions([]);
+              setShowAddressSuggestions(false);
+            }
           }
         }, 300);
       };
