@@ -50,6 +50,7 @@ class CheckoutSession(db.Model):
     quote_next_charge = db.Column(db.String(80), default="")
 
     intent_id = db.Column(db.String(80), default="")
+    client_secret = db.Column(db.String(255), default="")
     card_brand = db.Column(db.String(30), default="")
     last4 = db.Column(db.String(4), default="")
     paypal_email = db.Column(db.String(200), default="")
@@ -64,7 +65,7 @@ class CheckoutSession(db.Model):
         reference = reference or datetime.utcnow()
         return self.expires_at is not None and reference > self.expires_at
 
-    def to_dict(self, date_formatter=None):
+    def to_dict(self, date_formatter=None, include_client_secret=False):
         quote = {
             "amount": float(self.amount or 0),
             "billingCycle": self.billing_cycle or "monthly",
@@ -72,7 +73,7 @@ class CheckoutSession(db.Model):
             "deliveryWindow": self.quote_window or "",
             "nextChargeDate": self.quote_next_charge or "",
         }
-        return {
+        data = {
             "id": self.id,
             "object": "checkout.session",
             "status": self.status,
@@ -102,6 +103,9 @@ class CheckoutSession(db.Model):
                 date_formatter(self.confirmed_at) if (self.confirmed_at and date_formatter) else ""
             ),
         }
+        if include_client_secret:
+            data["clientSecret"] = self.client_secret or ""
+        return data
 
     def __repr__(self):
         return f"<CheckoutSession {self.id} ({self.status})>"

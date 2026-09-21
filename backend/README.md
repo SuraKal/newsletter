@@ -45,6 +45,20 @@ flask db upgrade
 > Add SQLAlchemy models in `models/` (e.g. `models/user.py`), register them,
 > then run `flask db migrate`.
 
+## Stripe checkout
+
+The reader checkout uses Stripe.js and the Payment Element. Set these values in
+`backend/.env` and restart the Flask server:
+
+```dotenv
+SECRET_KEY=sk_test_...
+PUBLISHABLE_KEY=pk_test_...
+```
+
+`STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` are supported aliases. The
+backend sends only the publishable key to Stripe.js through `/api/v1/stripe/config`;
+the secret key remains server-side.
+
 ## Conventions
 
 - All API routes are prefixed with `/api/v1/`

@@ -25,6 +25,7 @@ from routes.admin_subscribers import admin_subscribers_bp
 from routes.reader import reader_bp
 from routes.privacy import privacy_bp
 from routes.checkout import checkout_bp
+from routes.stripe_webhooks import stripe_webhook_bp
 from routes.legal import admin_legal_bp, legal_bp
 from seed import seed_command
 
@@ -61,6 +62,7 @@ def create_app(config_name=None):
     app.register_blueprint(reader_bp)
     app.register_blueprint(privacy_bp)
     app.register_blueprint(checkout_bp)
+    app.register_blueprint(stripe_webhook_bp)
     app.register_blueprint(legal_bp)
     app.register_blueprint(admin_legal_bp)
     app.cli.add_command(seed_command)

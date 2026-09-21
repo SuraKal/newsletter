@@ -832,6 +832,14 @@ export const backendPaymentMethods = {
 };
 
 export const backendCheckout = {
+  async stripeConfig() {
+    const payload = await request("/stripe/config", { auth: false });
+    return {
+      enabled: Boolean(payload.enabled),
+      publishableKey: payload.publishableKey || "",
+    };
+  },
+
   async create(data) {
     const payload = await request("/subscriptions/checkout", {
       method: "POST",

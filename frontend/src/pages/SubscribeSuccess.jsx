@@ -65,6 +65,8 @@ export default function SubscribeSuccess() {
   const [searchParams] = useSearchParams();
   const { isAuthenticated } = useAuth();
   const sessionId = searchParams.get("session");
+  const intentId = searchParams.get("payment_intent");
+  const redirectSucceeded = searchParams.get("redirect_status") === "succeeded";
   const [session, setSession] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -75,6 +77,19 @@ export default function SubscribeSuccess() {
       if (!sessionId) {
         setIsLoading(false);
         return;
+      }
+
+      // Returning from a Stripe redirect after strong customer authentication:
+      // finalize the backend checkout with the confirmed PaymentIntent first.
+      if (intentId && redirectSucceeded) {
+        try {
+          await appClient.checkout.confirm(sessionId, {
+            paymentIntentId: intentId,
+          });
+        } catch {
+          // Fall through to the plain session read below; the status shown
+          // will reflect whatever the backend reports.
+        }
       }
 
       let loaded = null;
@@ -94,7 +109,7 @@ export default function SubscribeSuccess() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [sessionId, intentId, redirectSucceeded]);
 
   const paymentStatus = session?.status || "expired";
   const status = statusContent[paymentStatus] || statusContent.expired;

@@ -53,6 +53,7 @@ export const toCheckoutSession = (sessionPayload) => {
 
   return {
     id: sessionPayload.id,
+    clientSecret: sessionPayload.clientSecret || "",
     createdAt: sessionPayload.createdAt || "",
     status: paymentStatus,
     subscriptionStatus: succeeded

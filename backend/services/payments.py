@@ -1,127 +1,82 @@
-"""Payment gateway abstraction, prepared for a Stripe integration.
-
-The checkout flow never sees card details as raw values: the frontend formats
-the card on input, builds a simulated payment method on submit, and passes only
-a masked reference (brand + last 4) to the API. Full PAN/CVC never reach the
-server and are never persisted.
-
-When ``STRIPE_SECRET_KEY`` is set and the Stripe SDK is installed the gateway
-forwards intents to Stripe's API with the same objects (PaymentIntent ->
-checkout-session). Otherwise a simulated gateway runs with the same shape so the
-flow works end to end without external keys. All card validation lives in
-``routes/checkout.py``; this module only creates/confirms an intent.
-"""
+"""Stripe PaymentIntent gateway for secure reader checkout."""
 
 import os
-import re
-import uuid
-
 try:
     import stripe
 except ImportError:  # pragma: no cover - Stripe SDK is optional until enabled
     stripe = None  # type: ignore[assignment]
 
 
-def luhn_valid(digits):
-    """True when ``digits`` (digits only) passes the Luhn checksum."""
-    clean = re.sub(r"\D", "", str(digits or ""))
-    if len(clean) < 12:
-        return False
-    total = 0
-    parity = len(clean) % 2
-    for index, char in enumerate(clean):
-        value = int(char)
-        if index % 2 == parity:
-            value *= 2
-            if value > 9:
-                value -= 9
-        total += value
-    return total % 10 == 0
-
-
-def card_brand_for(number):
-    """Derive the network brand from the card number prefix."""
-    clean = re.sub(r"\D", "", str(number or ""))
-    if re.match(r"^4", clean):
-        return "Visa"
-    if re.match(r"^5[1-5]", clean) or re.match(r"^2[2-7]", clean):
-        return "Mastercard"
-    if re.match(r"^3[47]", clean):
-        return "American Express"
-    return "Card"
-
-
-def card_last4(number):
-    """Masked reference stored on the checkout/billing records."""
-    return re.sub(r"\D", "", str(number or ""))[-4:]
-
-
-# Simulated intents live only in memory; as soon as a Stripe key is configured
-# they are created against the Stripe API instead.
-_SIMULATED_INTENTS = {}
-
-
 class PaymentGateway:
-    """Creates and confirms payment intents.
-
-    ``enable_stripe`` is derived from the environment: the gateway forwards to
-    Stripe only when a secret key is configured and the SDK is importable.
-    """
+    """Creates and verifies PaymentIntents through Stripe's server SDK."""
 
     def __init__(self, api_key=None, currency="eur"):
         self.currency = (currency or "eur").lower()
-        self.api_key = api_key or os.getenv("STRIPE_SECRET_KEY")
+        # Accept the names already used in the local environment, while
+        # supporting explicit Stripe-prefixed names for deployments.
+        self.api_key = (
+            api_key
+            or os.getenv("STRIPE_SECRET_KEY")
+            or os.getenv("SECRET_KEY")
+        )
+        self.publishable_key = (
+            os.getenv("STRIPE_PUBLISHABLE_KEY")
+            or os.getenv("PUBLISHABLE_KEY")
+        )
         self.stripe_enabled = bool(self.api_key and stripe is not None)
 
-    def create_payment_intent(self, amount_cents, description):
-        if self.stripe_enabled:
-            intent = stripe.PaymentIntent.create(
-                api_key=self.api_key,
-                amount=amount_cents,
-                currency=self.currency,
-                payment_method_types=["card"],
-                description=description,
-            )
-            return {
-                "id": intent.id,
-                "amount": intent.amount,
-                "currency": intent.currency,
-                "status": intent.status,
-                "payment_method_types": list(intent.payment_method_types or []),
-            }
+    @property
+    def is_configured(self):
+        """True only when both the server and Stripe.js can be initialized."""
+        return bool(self.stripe_enabled and self.publishable_key)
 
-        intent_id = f"pi_sim_{uuid.uuid4().hex[:12]}"
-        intent = {
-            "id": intent_id,
-            "amount": amount_cents,
-            "currency": self.currency,
-            "status": "requires_confirmation",
-            "payment_method_types": ["card"],
-            "description": description,
+    def create_payment_intent(self, amount_cents, description, metadata=None, receipt_email=None):
+        if not self.is_configured:
+            raise RuntimeError("Stripe is not configured")
+        intent = stripe.PaymentIntent.create(
+            api_key=self.api_key,
+            amount=amount_cents,
+            currency=self.currency,
+            payment_method_types=["card"],
+            description=description,
+            metadata=metadata or {},
+            receipt_email=receipt_email or None,
+        )
+        return {
+            "id": intent.id,
+            "amount": intent.amount,
+            "currency": intent.currency,
+            "status": intent.status,
+            "client_secret": intent.client_secret,
         }
-        _SIMULATED_INTENTS[intent_id] = intent
-        return dict(intent)
 
-    def confirm_payment_intent(self, intent_id, payment_method=None):
-        if self.stripe_enabled:
-            intent = stripe.PaymentIntent.confirm(
-                api_key=self.api_key,
-                payment_intent=intent_id,
-                payment_method=payment_method,
-            )
-            return {
-                "id": intent.id,
-                "amount": intent.amount,
-                "currency": intent.currency,
-                "status": intent.status,
-            }
+    def retrieve_payment_intent(self, intent_id):
+        """Return the verified PaymentIntent details required by checkout."""
+        if not intent_id:
+            return None
+        if not self.is_configured:
+            return None
+        intent = stripe.PaymentIntent.retrieve(intent_id, api_key=self.api_key)
+        return {
+            "id": intent.id,
+            "amount": intent.amount,
+            "currency": intent.currency,
+            "status": intent.status,
+            "payment_method": intent.payment_method,
+        }
 
-        intent = _SIMULATED_INTENTS.get(intent_id)
-        if intent is None:
-            raise ValueError(intent_id)
-        intent["status"] = "succeeded"
-        intent["payment_method"] = payment_method
-        return dict(intent)
+    def card_details_from_payment_method(self, payment_method_id):
+        """Resolve (brand, last4) from a Stripe PaymentMethod id."""
+        if not self.is_configured or not payment_method_id:
+            return ("", "")
+        try:
+            method = stripe.PaymentMethod.retrieve(payment_method_id, api_key=self.api_key)
+        except Exception:  # pragma: no cover - network/API failures
+            return ("", "")
+        card = method.get("card") or {}
+        brand = str(card.get("brand") or "").capitalize()
+        last4 = str(card.get("last4") or "")
+        return (brand, last4)
 
 
 gateway = PaymentGateway()

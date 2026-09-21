@@ -1,5 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
 import {
   ArrowRight,
   CreditCard,
@@ -15,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { appClient } from "@/api/appClient";
+import { backendCheckout } from "@/api/backendClient";
 import { useAuth } from "@/lib/AuthContext";
 import {
   cardBrandFor,
@@ -31,6 +39,9 @@ import {
 } from "@/lib/subscription-catalog";
 
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+const ENV_STRIPE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
 
 const METHOD_ICONS = {
   card: CreditCard,
@@ -49,6 +60,41 @@ const fieldClass = (hasError) =>
   hasError
     ? "h-11 rounded-xl border-red-300 bg-red-50/40 focus-visible:ring-red-200"
     : "h-11 rounded-xl";
+
+function StripePaymentFieldset({ onReady }) {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  useEffect(() => {
+    if (stripe && elements) {
+      onReady({ stripe, elements });
+    }
+  }, [stripe, elements, onReady]);
+
+  if (!stripe || !elements) {
+    return (
+      <div className="flex items-center gap-3 py-4">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-heritage border-t-transparent" />
+        <p className="font-body text-sm text-redacted">
+          Loading the secure card form…
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <PaymentElement options={{ layout: { type: "tabs" } }} />
+      <div className="flex items-start gap-2.5 rounded-xl border border-stone-300/60 bg-paper px-4 py-3">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-heritage" />
+        <p className="font-body text-xs leading-5 text-redacted">
+          Your card is encrypted and tokenized by Stripe. We never store your
+          card number or CVC.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function SubscribeCheckout() {
   const navigate = useNavigate();
@@ -79,6 +125,14 @@ export default function SubscribeCheckout() {
   const [fieldErrors, setFieldErrors] = useState(
     /** @type {Record<string, boolean>} */ ({}),
   );
+  const [stripeSession, setStripeSession] = useState(null);
+  const [stripePreparing, setStripePreparing] = useState(false);
+  const [stripeError, setStripeError] = useState("");
+  const [stripePublishableKey, setStripePublishableKey] = useState(
+    ENV_STRIPE_PUBLISHABLE_KEY,
+  );
+  const stripeLinkRef = useRef(null);
+  const lastStripeSessionRef = useRef(null);
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -149,6 +203,26 @@ export default function SubscribeCheckout() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    backendCheckout
+      .stripeConfig()
+      .then((config) => {
+        if (!cancelled && config.enabled && config.publishableKey) {
+          setStripePublishableKey(config.publishableKey);
+        }
+      })
+      .catch(() => {
+        // A Vite environment key can still be used for deployments that
+        // intentionally keep the public key outside the API response.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!user) {
       return;
     }
@@ -170,10 +244,145 @@ export default function SubscribeCheckout() {
     }
   };
 
-  const paymentMethodLabel = selectedPaymentMethod?.label || "Card";
-  const showCard = paymentMethodId === "card" || !selectedPaymentMethod;
+  const paymentMethodLabel = "Stripe";
+  const showCard = true;
   const cardBrand = cardBrandFor(form.cardNumber);
   const hasCardDigits = String(form.cardNumber || "").replace(/\D/g, "").length > 0;
+
+  const stripePromise = useMemo(
+    () => (stripePublishableKey ? loadStripe(stripePublishableKey) : null),
+    [stripePublishableKey],
+  );
+
+  // Stripe Elements is the only card collection path. A server-created
+  // client secret and the browser-safe key must both be present before the
+  // embedded field is mounted.
+  const stripeMode = true;
+
+  const stripeCustomerComplete = Boolean(
+    form.fullName.trim() &&
+      EMAIL_PATTERN.test(form.email) &&
+      form.phone.trim() &&
+      form.streetAddress.trim() &&
+      form.city.trim() &&
+      form.postalCode.trim() &&
+      form.country.trim(),
+  );
+
+  const handleStripeReady = useCallback(({ stripe, elements }) => {
+    stripeLinkRef.current = { stripe, elements };
+  }, []);
+
+  useEffect(() => {
+    if (!stripeMode) {
+      stripeLinkRef.current = null;
+      lastStripeSessionRef.current = null;
+      setStripeSession(null);
+      setStripePreparing(false);
+      setStripeError("");
+      return undefined;
+    }
+
+    if (!stripeCustomerComplete) {
+      setStripeSession(null);
+      setStripePreparing(false);
+      return undefined;
+    }
+
+    const customer = {
+      fullName: form.fullName.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      streetAddress: form.streetAddress.trim(),
+      city: form.city.trim(),
+      postalCode: form.postalCode.trim(),
+      country: form.country.trim(),
+    };
+    const consents = {
+      recurringBilling: form.consentRecurring,
+      deliverySharing: form.consentDelivery,
+      newsletterOptIn: form.newsletterOptIn,
+    };
+    const payloadKey = JSON.stringify([
+      selectedPlan?.id,
+      billingCycle,
+      customer,
+      consents,
+    ]);
+
+    // The form only changed objects/strings the PaymentIntent does not care
+    // about: reuse the last session instead of minting a fresh PaymentIntent
+    // on every keystroke.
+    if (
+      lastStripeSessionRef.current &&
+      lastStripeSessionRef.current.key === payloadKey &&
+      lastStripeSessionRef.current.session
+    ) {
+      setStripeSession(lastStripeSessionRef.current.session);
+      return undefined;
+    }
+
+    // A different payload is about to mint a new session: detach the current
+    // Elements instance so a submitted form can never confirm the previous
+    // session's card details against this new one.
+    stripeLinkRef.current = null;
+    setStripePreparing(true);
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      try {
+        const session = await appClient.checkout.create({
+          planId: selectedPlan?.id,
+          billingCycle,
+          paymentMethod: "card",
+          plan: selectedPlan,
+          customer,
+          consents,
+        });
+        if (cancelled) {
+          return;
+        }
+        if (session?.clientSecret) {
+          lastStripeSessionRef.current = { key: payloadKey, session };
+          setStripeSession(session);
+        } else {
+          setStripeSession(null);
+          setStripeError("Stripe could not prepare a secure payment form.");
+        }
+      } catch (checkoutError) {
+        if (!cancelled) {
+          setStripeSession(null);
+          setStripeError(
+            checkoutError?.message || "Stripe checkout could not be prepared.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setStripePreparing(false);
+        }
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [
+    stripeMode,
+    stripeCustomerComplete,
+    selectedPlan,
+    billingCycle,
+    form.fullName,
+    form.email,
+    form.phone,
+    form.streetAddress,
+    form.city,
+    form.postalCode,
+    form.country,
+    form.consentRecurring,
+    form.consentDelivery,
+    form.newsletterOptIn,
+  ]);
 
   const validateContact = () => {
     if (!form.fullName) {
@@ -226,6 +435,73 @@ export default function SubscribeCheckout() {
     e.preventDefault();
     setError("");
     setFieldErrors({});
+
+    if (stripeMode) {
+      const validationMessage =
+        validateContact() || validateAddress() || validateConsents();
+      if (validationMessage) {
+        setError(validationMessage);
+        return;
+      }
+      if (
+        !stripeSession?.id ||
+        !stripeLinkRef.current?.stripe ||
+        !stripeLinkRef.current?.elements
+      ) {
+        setError("The secure card form is still loading. Please wait a moment and try again.");
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        const { stripe, elements } = stripeLinkRef.current;
+        const returnUrl = `${window.location.origin}/subscribe/success?session=${encodeURIComponent(
+          stripeSession.id,
+        )}`;
+
+        // Trigger field validation and wallet collection before confirming, as
+        // recommended by stripe.js for the Payment Element.
+        const submitResult = await elements.submit();
+        if (submitResult?.error) {
+          setError(submitResult.error.message || "Please complete the payment details above.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        const { error, paymentIntent } = await stripe.confirmPayment({
+          elements,
+          clientSecret: stripeSession.clientSecret,
+          confirmParams: { return_url: returnUrl },
+          redirect: "if_required",
+        });
+        if (error) {
+          setError(error.message || "The payment could not be completed.");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!paymentIntent || paymentIntent.status !== "succeeded") {
+          setError("The payment was not confirmed. Please try again.");
+          setIsSubmitting(false);
+          return;
+        }
+        await appClient.checkout.confirm(stripeSession.id, {
+          paymentIntentId: paymentIntent.id,
+        });
+        navigate(`/subscribe/success?session=${stripeSession.id}`, {
+          replace: true,
+        });
+      } catch (err) {
+        const message =
+          err?.message || "The checkout could not be completed. Please try again.";
+        if (message && !/authentication|401/i.test(message)) {
+          setError(message);
+        } else {
+          setError("The checkout could not be completed. Please try again.");
+        }
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     if (paymentMethodId === "paypal") {
       if (!EMAIL_PATTERN.test(form.paypalEmail)) {
@@ -367,6 +643,31 @@ export default function SubscribeCheckout() {
 
                 <div className="mt-6 rounded-2xl border border-stone-300/60 bg-vellum/40 p-5">
                   {showCard ? (
+                    stripeMode ? (
+                      stripeSession?.clientSecret ? (
+                        <Elements
+                          key={stripeSession.id}
+                          stripe={stripePromise}
+                          options={{ clientSecret: stripeSession.clientSecret }}
+                        >
+                          <StripePaymentFieldset onReady={handleStripeReady} />
+                        </Elements>
+                      ) : stripePreparing ? (
+                        <div className="flex items-center gap-3 py-4">
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-heritage border-t-transparent" />
+                          <p className="font-body text-sm text-redacted">
+                            Preparing the secure card form…
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="rounded-xl border border-stone-300/60 bg-paper px-4 py-4">
+                          <p className="font-body text-sm leading-6 text-redacted">
+                            {stripeError ||
+                              "Add your contact and delivery details above to unlock the secure card form."}
+                          </p>
+                        </div>
+                      )
+                    ) : (
                     <div className="grid gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="cardholderName">Cardholder name</Label>
@@ -448,6 +749,7 @@ export default function SubscribeCheckout() {
                         </p>
                       </div>
                     </div>
+                    )
                   ) : (
                     <div className="space-y-2">
                       <Label htmlFor="paypalEmail">PayPal account email</Label>
@@ -668,7 +970,7 @@ export default function SubscribeCheckout() {
               <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:flex-col">
                 <Button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || (stripeMode && !stripeSession?.clientSecret)}
                   className="h-12 w-full rounded-2xl bg-heritage px-6 font-sans text-xs font-bold uppercase tracking-[0.22em] text-paper hover:bg-ink"
                 >
                   {isSubmitting

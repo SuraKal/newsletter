@@ -2096,7 +2096,10 @@ export const appClient = {
       try {
         const session = await backendCheckout.create(data);
         if (session?.id) {
-          saveCheckoutSession(session);
+          // Stripe client secrets are used only by the mounted Payment Element;
+          // do not retain them in browser storage.
+          const { clientSecret: _clientSecret, ...sessionForCache } = session;
+          saveCheckoutSession(sessionForCache);
         }
         return session;
       } catch (error) {
