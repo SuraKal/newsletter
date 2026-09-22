@@ -11,9 +11,11 @@ import {
   backendInvoices,
   backendLegal,
   backendLocations,
+  backendMaps,
   backendOrderPlans,
   backendOrders,
   backendPaymentMethods,
+  backendPlaces,
   backendShipments,
   backendSubscribers,
   backendSubscriptions,
@@ -1104,6 +1106,48 @@ export const appClient = {
         const current = getBusinessLocationRows();
         setBusinessLocationRows([location, ...current]);
         return location;
+      }
+    },
+  },
+  maps: {
+    // Geoapify tile config for the dashboards. Falls back to null when the
+    // backend (or the map key) is unreachable so pages degrade to a text
+    // listing instead of a dead tile layer.
+    async config() {
+      try {
+        const config = await backendMaps.config();
+        if (config && config.apiKey) {
+          return config;
+        }
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+      return null;
+    },
+
+    // Forward-geocodes a free-text address (reader delivery profiles) through
+    // the backend Geoapify proxy. Returns [] while the backend is unreachable.
+    async geocode(text) {
+      try {
+        return await backendPlaces.geocode(text);
+      } catch (error) {
+        if (isNetworkError(error)) {
+          return [];
+        }
+        throw error;
+      }
+    },
+
+    async reverse(lat, lon) {
+      try {
+        return await backendPlaces.reverse(lat, lon);
+      } catch (error) {
+        if (isNetworkError(error)) {
+          return [];
+        }
+        throw error;
       }
     },
   },

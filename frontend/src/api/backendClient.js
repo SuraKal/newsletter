@@ -1112,4 +1112,27 @@ export const backendPlaces = {
     });
     return payload;
   },
+
+  async geocode(text) {
+    const params = new URLSearchParams({ text });
+    const payload = await request(`/places/geocode?${params.toString()}`, {
+      auth: false,
+    });
+    return payload.features || [];
+  },
+
+  async reverse(lat, lon) {
+    const params = new URLSearchParams({ lat: String(lat), lon: String(lon) });
+    const payload = await request(`/places/reverse?${params.toString()}`, {
+      auth: false,
+    });
+    return payload.features || [];
+  },
+};
+
+export const backendMaps = {
+  // Auth-required so the Geoapify tile key stays out of the public bundle.
+  async config() {
+    return request("/maps/config");
+  },
 };

@@ -2,7 +2,14 @@ from flask import Blueprint, jsonify
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from middleware.auth import role_required
-from models import BusinessLocation, CompanyAccount, Shipment, User, db
+from models import (
+    BusinessLocation,
+    CompanyAccount,
+    ReaderDelivery,
+    Shipment,
+    User,
+    db,
+)
 
 shipments_bp = Blueprint("shipments", __name__, url_prefix="/api/v1")
 
@@ -50,12 +57,46 @@ def _activity_payload(shipment):
     ]
 
 
+def _reader_destinations():
+    """Distinct subscriber delivery profiles behind active print deliveries.
+
+    Reader profiles only persist an address as free text (no coordinates), so
+    the admin shipment maps resolve the destination text to Geoapify
+    coordinates on the client. This keeps the "reader flow" visible on the
+    same route map as the company's saved business locations.
+    """
+    readers = (
+        db.session.query(User)
+        .join(ReaderDelivery, ReaderDelivery.user_id == User.id)
+        .distinct()
+        .all()
+    )
+    destinations = []
+    seen = set()
+    for user in readers:
+        city = (user.city or "").strip()
+        country = (user.country or "").strip()
+        destination = ", ".join(part for part in (city, country) if part)
+        if not destination or destination.lower() in seen:
+            continue
+        seen.add(destination.lower())
+        destinations.append(
+            {
+                "name": user.name or "",
+                "destination": destination,
+                "address": (user.delivery_address or "").strip(),
+            }
+        )
+    return destinations
+
+
 def _shipment_payload(shipment):
     """Include exact company delivery destinations for dispatch reference.
 
     Shipment runs are consolidated at the company level, so they do not yet
     select a subset of locations. Returning the company's stored destinations
-    gives both workspaces the Geoapify address and coordinates used for routing.
+    gives both workspaces the Geoapify address and coordinates used for routing,
+    and appends the distinct subscriber delivery profiles for the full flow.
     """
     payload = shipment.to_dict()
     if shipment.company_account_id:
@@ -69,6 +110,7 @@ def _shipment_payload(shipment):
         payload["deliveryLocations"] = [location.to_dict() for location in locations]
     else:
         payload["deliveryLocations"] = []
+    payload["readerDestinations"] = _reader_destinations()
     return payload
 
 

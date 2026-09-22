@@ -1,0 +1,140 @@
+name: Deploy to cPanel by FTP
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: sole-safe-v5-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and upload
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate required GitHub secrets
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
+        run: |
+          set -euo pipefail
+          required_values=(
+            FTP_SERVER
+            FTP_USERNAME
+            FTP_PASSWORD
+          )
+
+          for value_name in "${required_values[@]}"; do
+            if [ -z "${!value_name}" ]; then
+              echo "Missing required GitHub secret: ${value_name}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Prepare production frontend env
+        working-directory: frontend
+        run: cp .env.production.example .env.production
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Typecheck frontend
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Validate Python entry points
+        run: python -m py_compile backend/app.py backend/wsgi.py backend/passenger_wsgi.py frontend/passenger_wsgi.py
+
+      - name: Prepare Passenger restart marker
+        run: |
+          mkdir -p tmp
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > tmp/restart.txt
+
+      - name: Install FTP client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lftp
+
+      - name: Upload to cPanel app folder
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_PROTOCOL: ${{ secrets.FTP_PROTOCOL }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
+        run: |
+          set -euo pipefail
+
+          remote_dir="${FTP_SERVER_DIR:-/}"
+          case "$remote_dir" in
+            */) ;;
+            *) remote_dir="${remote_dir}/" ;;
+          esac
+
+          echo "Deploy target directory: $remote_dir"
+          if [ "$remote_dir" = "/" ]; then
+            echo "Using the FTP account root as the deployment target."
+          else
+            echo "Using a custom FTP target directory from FTP_SERVER_DIR."
+          fi
+
+          protocol="${FTP_PROTOCOL:-ftps}"
+          port="${FTP_PORT:-21}"
+          ssl_force="false"
+          ssl_protect_data="false"
+
+          if [ "$protocol" = "ftps" ]; then
+            ssl_force="true"
+            ssl_protect_data="true"
+            protocol="ftp"
+          fi
+
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" -p "$port" "$protocol://$FTP_SERVER" <<LFTP
+          set ftp:ssl-force $ssl_force
+          set ftp:ssl-protect-data $ssl_protect_data
+          set ssl:verify-certificate no
+          mkdir -p "$remote_dir"
+          mirror --reverse --verbose --only-newer \
+            --exclude-glob ".git*" \
+            --exclude-glob ".github/**" \
+            --exclude-glob "node_modules/**" \
+            --exclude-glob "backend/.venv/**" \
+            --exclude-glob "backend/storage/uploads/**" \
+            --exclude-glob "storage/uploads/**" \
+            --exclude-glob "__pycache__/**" \
+            --exclude-glob "**/__pycache__/**" \
+            --exclude-glob "*.pyc" \
+            --exclude-glob ".env" \
+            --exclude-glob ".env.*" \
+            --exclude-glob "*.log" \
+            --exclude-glob "dist-ssr/**" \
+            ./ "$remote_dir"
+          bye
+          LFTP

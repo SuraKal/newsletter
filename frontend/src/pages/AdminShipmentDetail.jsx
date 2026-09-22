@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Check, ExternalLink, MapPin } from "lucide-react";
 import {
@@ -9,6 +9,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import GeoapifyMap from "@/components/delivery/GeoapifyMap";
 import { appClient } from "@/api/appClient";
 
 const relatedLinks = [
@@ -36,11 +37,18 @@ const actionForStatus = (status) => {
   return null;
 };
 
-const directionsUrl = (location) => {
-  if (Number.isFinite(location.latitude) && Number.isFinite(location.longitude)) {
-    return `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
+// Builds a Geoapify interactive embed URL for a saved company stop. Requires
+// the tile key from the maps config, so it stays out of the public bundle.
+const geoapifyLocationUrl = (location, mapConfig) => {
+  if (
+    !mapConfig?.apiKey ||
+    !Number.isFinite(location.latitude) ||
+    !Number.isFinite(location.longitude)
+  ) {
+    return null;
   }
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address || location.location)}`;
+  const center = `lonlat:${location.longitude},${location.latitude}`;
+  return `https://maps.geoapify.com/v1/iframe/map?key=${encodeURIComponent(mapConfig.apiKey)}&center=${encodeURIComponent(center)}&zoom=15`;
 };
 
 export default function AdminShipmentDetail() {
@@ -50,6 +58,17 @@ export default function AdminShipmentDetail() {
   );
   const [activity, setActivity] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [mapConfig, setMapConfig] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    appClient.maps.config().then((value) => {
+      if (mounted) setMapConfig(value);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const loadShipment = async () => {
     const result = await appClient.shipments.getAdmin(shipmentId);
@@ -68,6 +87,43 @@ export default function AdminShipmentDetail() {
   }, [shipmentId]);
 
   const action = shipment ? actionForStatus(shipment.status) : null;
+
+  // Flattens the run's company stops and subscriber destinations into marker
+  // rows for the Geoapify route map.
+  const shipmentMarkers = useMemo(() => {
+    if (!shipment) {
+      return [];
+    }
+    const companyStops = (shipment.deliveryLocations || []).map((location) => ({
+      id: `company-${location.id}`,
+      kind: "company",
+      name: location.location || "Company stop",
+      address:
+        [location.address, location.region].filter(Boolean).join(", ") ||
+        location.location,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      geocodeText:
+        [location.address, location.region, location.location]
+          .filter(Boolean)
+          .join(", ") || undefined,
+      copies: location.copies,
+      contact: location.contact,
+      status: location.status,
+    }));
+    const readerStops = (shipment.readerDestinations || []).map(
+      (destination) => ({
+        id: `reader-${destination.destination}`,
+        kind: "reader",
+        name: destination.name || "Subscriber delivery",
+        address: destination.destination,
+        latitude: null,
+        longitude: null,
+        geocodeText: destination.destination,
+      }),
+    );
+    return [...companyStops, ...readerStops];
+  }, [shipment]);
 
   const handleAction = async () => {
     if (!shipment || !action) return;
@@ -164,25 +220,77 @@ export default function AdminShipmentDetail() {
       </DashboardPanel>
 
       <DashboardPanel
+        title="Route map"
+        description="Company stops and reader subscriber destinations for this run, plotted with Geoapify."
+        className="p-5 sm:p-6"
+      >
+        <GeoapifyMap locations={shipmentMarkers} height={380} />
+        <div className="mt-4 flex flex-wrap items-center gap-5">
+          <span className="inline-flex items-center gap-2 font-sans text-xs font-medium text-stone-500 dark:text-stone-400">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ background: "#44403c" }}
+            />
+            Company stops
+          </span>
+          <span className="inline-flex items-center gap-2 font-sans text-xs font-medium text-stone-500 dark:text-stone-400">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ background: "#059669" }}
+            />
+            Reader deliveries
+          </span>
+        </div>
+      </DashboardPanel>
+
+      <DashboardPanel
         title="Delivery destinations"
-        description="Saved company locations used by dispatch for this consolidated run."
+        description="Saved company locations and the reader delivery profiles covered by this consolidated run."
         className="p-5 sm:p-6"
       >
         {shipment.deliveryLocations?.length ? (
           <div className="space-y-3">
-            {shipment.deliveryLocations.map((location) => (
-              <div key={location.id} className="flex flex-col gap-3 rounded-xl border border-stone-200 p-4 sm:flex-row sm:items-start sm:justify-between dark:border-stone-700">
-                <div className="min-w-0">
-                  <p className="font-sans text-sm font-semibold text-stone-900 dark:text-stone-100">{location.location}</p>
-                  <p className="mt-1 flex items-start gap-2 font-sans text-sm text-stone-600 dark:text-stone-300"><MapPin className="mt-0.5 h-4 w-4 shrink-0" />{location.address || location.region}</p>
-                  {location.region && location.address ? <p className="mt-1 font-sans text-xs text-stone-500">{location.region}</p> : null}
-                  {location.contact ? <p className="mt-2 font-sans text-xs text-stone-500">Receiving contact: {location.contact}</p> : null}
+            {shipment.deliveryLocations.map((location) => {
+              const mapUrl = geoapifyLocationUrl(location, mapConfig);
+              return (
+                <div key={location.id} className="flex flex-col gap-3 rounded-xl border border-stone-200 p-4 sm:flex-row sm:items-start sm:justify-between dark:border-stone-700">
+                  <div className="min-w-0">
+                    <p className="font-sans text-sm font-semibold text-stone-900 dark:text-stone-100">{location.location}</p>
+                    <p className="mt-1 flex items-start gap-2 font-sans text-sm text-stone-600 dark:text-stone-300"><MapPin className="mt-0.5 h-4 w-4 shrink-0" />{location.address || location.region}</p>
+                    {location.region && location.address ? <p className="mt-1 font-sans text-xs text-stone-500">{location.region}</p> : null}
+                    {location.contact ? <p className="mt-2 font-sans text-xs text-stone-500">Receiving contact: {location.contact}</p> : null}
+                  </div>
+                  {mapUrl ? (
+                    <a href={mapUrl} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-stone-300 px-3 py-2 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-stone-700 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800">
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Open in Geoapify
+                    </a>
+                  ) : null}
                 </div>
-                <a href={directionsUrl(location)} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-stone-300 px-3 py-2 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-stone-700 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"><ExternalLink className="h-3.5 w-3.5" /> Directions</a>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : <DashboardEmptyState title="No saved destinations for this run" description="This is a platform-wide run or the company has not saved a delivery address." />}
+
+        {shipment.readerDestinations?.length ? (
+          <div className="mt-6 border-t border-stone-200/80 pt-5 dark:border-stone-700/80">
+            <p className="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
+              Reader delivery profiles
+            </p>
+            <ul className="mt-3 space-y-2">
+              {shipment.readerDestinations.map((destination) => (
+                <li key={destination.destination} className="flex items-start gap-2 font-sans text-sm text-stone-700 dark:text-stone-200">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400" />
+                  <span className="min-w-0">
+                    <span className="font-medium">{destination.name || "Subscriber delivery"}</span>
+                    <span className="text-stone-500 dark:text-stone-400"> · {destination.destination}</span>
+                    {destination.address ? <span className="block text-xs text-stone-500 dark:text-stone-400">{destination.address}</span> : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </DashboardPanel>
 
       <DashboardPanel

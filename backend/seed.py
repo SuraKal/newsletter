@@ -11,6 +11,7 @@ from models import (
     BusinessOrder,
     BusinessTeamMember,
     Category,
+    CheckoutSession,
     CompanyAccount,
     CompanyOrder,
     GovernanceRequest,
@@ -21,6 +22,7 @@ from models import (
     ReaderBillingEntry,
     Shipment,
     ShipmentActivity,
+    SiteSetting,
     SubscriptionPlan,
     Subcategory,
     User,
@@ -125,6 +127,15 @@ SEEDED_USERS = [
         "subscription": None,
     },
     {
+        "name": "Sofia Lindqvist",
+        "email": "admin2@nekedem.local",
+        "password": "admin12345",
+        "role": "admin",
+        "account_type": "admin",
+        "company_name": None,
+        "subscription": None,
+    },
+    {
         "name": "Elena Tewelde",
         "email": "viewer@nekedem.local",
         "password": "viewer12345",
@@ -145,6 +156,7 @@ SEEDED_USERS = [
         "role": "business",
         "account_type": "business",
         "company_name": "Massawa Trading Group",
+        "business_access_approved": True,
         "subscription": {"plan_id": "business-regional", "billing_cycle": "yearly"},
     },
     {
@@ -154,7 +166,18 @@ SEEDED_USERS = [
         "role": "business",
         "account_type": "business",
         "company_name": "Red Sea Hospitality Co.",
+        "business_access_approved": True,
         "subscription": {"plan_id": "business-enterprise", "billing_cycle": "yearly"},
+    },
+    {
+        "name": "Horn of Africa Logistics",
+        "email": "org3@nekedem.local",
+        "password": "org312345",
+        "role": "business",
+        "account_type": "business",
+        "company_name": "Horn of Africa Logistics",
+        "business_access_approved": False,
+        "subscription": {"plan_id": "business-regional", "billing_cycle": "yearly"},
     },
 ]
 
@@ -222,6 +245,36 @@ SEEDED_SUBSCRIBERS = [
         "city": "Ghent",
         "postal_code": "9000",
         "country": "Belgium",
+    },
+    {
+        "name": "Petra Holst",
+        "email": "petra.holst@nekedem.local",
+        "password": "reader12345",
+        "plan_id": "digital",
+        "billing_cycle": "monthly",
+        "status": "cancelled",
+        "renewal_offset_days": -40,
+        "delivery_data_consent": False,
+        "contact_phone": "+45 60 11 22 33",
+        "delivery_address": "Strøget 100",
+        "city": "Copenhagen",
+        "postal_code": "1000",
+        "country": "Denmark",
+    },
+    {
+        "name": "Lucas Mertens",
+        "email": "lucas.mertens@nekedem.local",
+        "password": "reader12345",
+        "plan_id": "print-digital",
+        "billing_cycle": "yearly",
+        "status": "expired",
+        "renewal_offset_days": -80,
+        "delivery_data_consent": True,
+        "contact_phone": "+31 6 1234 5678",
+        "delivery_address": "Kalverstraat 15",
+        "city": "Amsterdam",
+        "postal_code": "1012",
+        "country": "Netherlands",
     },
 ]
 
@@ -569,6 +622,7 @@ READER_DELIVERY_EMAILS = [
     "amelie.laurent@nekedem.local",
     "jonas.stein@nekedem.local",
     "niels.verbruggen@nekedem.local",
+    "lucas.mertens@nekedem.local",
 ]
 
 READER_DELIVERY_DELIVERED_NOTE = (
@@ -665,6 +719,8 @@ READING_HISTORY_EMAILS = [
     "marta.kovacs@nekedem.local",
     "jonas.stein@nekedem.local",
     "niels.verbruggen@nekedem.local",
+    "petra.holst@nekedem.local",
+    "lucas.mertens@nekedem.local",
 ]
 
 
@@ -749,6 +805,8 @@ READER_BILLING_EMAILS = [
     "marta.kovacs@nekedem.local",
     "jonas.stein@nekedem.local",
     "niels.verbruggen@nekedem.local",
+    "petra.holst@nekedem.local",
+    "lucas.mertens@nekedem.local",
 ]
 
 
@@ -873,6 +931,177 @@ SEEDED_ARTICLES = [
         "clicks": 0,
         "meta": {"eventDate": "Sep 19-20, 2026", "location": "City centre"},
     },
+    {
+        "headline": "Local bakery wins the national sourdough challenge",
+        "summary": "A family-run bakery topped a field of forty bakers in the national sourdough challenge.",
+        "body": "Judges praised the loaf's crust and crumb after a blind tasting held at the regional hall.",
+        "author": "Nael Desk",
+        "editor": "Editorial desk",
+        "status": "Published",
+        "tone": "neutral",
+        "access_label": "Public",
+        "read_time": "2 min",
+        "source": "sidebar",
+        "category_label": "Community",
+        "date": "",
+        "public_access_date": "September 20, 2026",
+        "publish_date": "September 5, 2026",
+        "publish_time": "7:45 AM",
+        "clicks": 64,
+        "meta": {"authors": ["Nael Desk", "Copy desk"]},
+    },
+    {
+        "headline": "Interview: the data journalist behind the harbour series",
+        "summary": "The reporter discusses scraping city records and the tools used to visualise freight flows.",
+        "body": "In this interview the reporter walks through the steps that turned open data into a front-page series.",
+        "author": "Nael Desk",
+        "editor": "Editorial desk",
+        "status": "Published",
+        "tone": "info",
+        "access_label": "Subscriber-only",
+        "read_time": "11 min",
+        "source": "editorial",
+        "category_label": "Technology",
+        "date": "",
+        "public_access_date": "October 18, 2026",
+        "publish_date": "September 5, 2026",
+        "publish_time": "6:00 PM",
+        "clicks": 158,
+        "meta": {"series": "Data journalism deep dive"},
+    },
+    {
+        "headline": "Readers vote on the next long-form investigation",
+        "summary": "The newsroom opened a vote on which topic should anchor the next subscriber long-form.",
+        "body": "Finalists include public transport funding, fishing quotas, and heritage building reuse.",
+        "author": "Nael Desk",
+        "editor": "Editorial desk",
+        "status": "Draft",
+        "tone": "neutral",
+        "access_label": "Public",
+        "read_time": "5 min",
+        "source": "admin",
+        "category_label": "Other",
+        "date": "",
+        "public_access_date": "",
+        "publish_date": "",
+        "publish_time": "",
+        "clicks": 0,
+        "meta": {"voting": "Open until October 1, 2026"},
+    },
+    {
+        "headline": "Advice corner: when parents disagree on schooling",
+        "summary": "Our expert panel answers reader letters about schooling choices after a family move.",
+        "body": "The panel weighs structure, cost, and family routine before suggesting next steps.",
+        "author": "Nael Desk",
+        "editor": "Editorial desk",
+        "status": "Draft",
+        "tone": "warning",
+        "access_label": "Public",
+        "read_time": "4 min",
+        "source": "latest",
+        "category_label": "Advice Corner",
+        "date": "",
+        "public_access_date": "",
+        "publish_date": "",
+        "publish_time": "",
+        "clicks": 0,
+        "meta": {"column": "Advice Corner"},
+    },
+    {
+        "headline": "Serial novel, chapter twelve: the flood",
+        "summary": "Chapter twelve of the serialised mystery brings the harbour flood to a turning point.",
+        "body": "The detective reviews the recovered ledger as rain lifts across the old quarter.",
+        "author": "Nael Desk",
+        "editor": "Editorial desk",
+        "status": "Scheduled",
+        "tone": "info",
+        "access_label": "Subscriber-only",
+        "read_time": "14 min",
+        "source": "featured",
+        "category_label": "Serial Novels",
+        "date": "",
+        "public_access_date": "",
+        "publish_date": "October 2, 2026",
+        "publish_time": "8:00 AM",
+        "clicks": 0,
+        "meta": {"chapterIndex": 12, "story": "The flood"},
+    },
+    {
+        "headline": "New tram line approval moves to public consultation",
+        "summary": "The proposed north-south tram line cleared early planning and enters consultation.",
+        "body": "Residents and businesses along the corridor are invited to comment over the next month.",
+        "author": "Nael Desk",
+        "editor": "Editorial desk",
+        "status": "Published",
+        "tone": "success",
+        "access_label": "Public",
+        "read_time": "3 min",
+        "source": "hero",
+        "category_label": "News",
+        "date": "September 15, 2026",
+        "public_access_date": "",
+        "publish_date": "September 15, 2026",
+        "publish_time": "12:30 PM",
+        "clicks": 96,
+        "meta": {"location": "Transport corridor"},
+    },
+    {
+        "headline": "Young founders open a makers' market in the old depot",
+        "summary": "Weekend stalls for ceramics, textiles, and electronics open in the repurposed depot.",
+        "body": "Organisers expect about thirty makers at the opening weekend market.",
+        "author": "Nael Desk",
+        "editor": "Editorial desk",
+        "status": "Scheduled",
+        "tone": "success",
+        "access_label": "Public",
+        "read_time": "4 min",
+        "source": "sidebar",
+        "category_label": "Jobs & Marketplace",
+        "date": "",
+        "public_access_date": "",
+        "publish_date": "September 21, 2026",
+        "publish_time": "9:00 AM",
+        "clicks": 0,
+        "meta": {"openingDate": "Sep 26-27, 2026"},
+    },
+    {
+        "headline": "Culture desk picks: five films worth a second watch",
+        "summary": "The culture desk curates five neglected films available in the local archive.",
+        "body": "Each pick comes with a short note on why it deserves revisiting this month.",
+        "author": "Nael Desk",
+        "editor": "Editorial desk",
+        "status": "Published",
+        "tone": "neutral",
+        "access_label": "Public",
+        "read_time": "7 min",
+        "source": "editorial",
+        "category_label": "Culture & Lifestyle",
+        "date": "",
+        "public_access_date": "September 28, 2026",
+        "publish_date": "September 1, 2026",
+        "publish_time": "11:00 AM",
+        "clicks": 41,
+        "meta": {"editors": ["Culture desk"]},
+    },
+    {
+        "headline": "Harbour market relocation: timeline for stallholders",
+        "summary": "Operators received the phased relocation plan for the harbour market quarter.",
+        "body": "Stallholder meetings are scheduled for the coming weeks before the first phase starts.",
+        "author": "Nael Desk",
+        "editor": "Editorial desk",
+        "status": "Draft",
+        "tone": "warning",
+        "access_label": "Public",
+        "read_time": "3 min",
+        "source": "admin",
+        "category_label": "News",
+        "date": "",
+        "public_access_date": "",
+        "publish_date": "",
+        "publish_time": "",
+        "clicks": 0,
+        "meta": {"documents": ["Relocation plan v2"]},
+    },
 ]
 
 # --------------------------------------------------------------------------- #
@@ -938,6 +1167,58 @@ SEEDED_COMPANY_LEAD = {
     },
 }
 
+# Not-yet-approved company applications that populate the admin review queue.
+# One stays pending for admin review (License submitted) and one maps to an
+# unapproved business user whose access is still blocked (License declined).
+SEEDED_COMPANY_PENDING = [
+    {
+        "company": "Delta European Distribution",
+        "volume": "—",
+        "billing": "Contract billing",
+        "status": "License submitted",
+        "region": "Netherlands + Germany",
+        "owner_email": None,
+        "lead": {
+            "primaryContact": "Fleet and logistics lead",
+            "workPhone": "+310000000000",
+            "organizationName": "Delta European Distribution",
+            "requestType": "Business Subscription",
+            "companySize": "201-500",
+            "countryScope": "Netherlands and Germany",
+            "expectedCopies": "620 copies across two depots",
+            "deliveryLocations": "Rotterdam, Düsseldorf",
+            "billingPreference": "Contract billing",
+            "launchTimeline": "Within 2 months",
+            "operationalNotes": (
+                "Cross-border depot distribution pending licence review."
+            ),
+        },
+    },
+    {
+        "company": "Horn of Africa Logistics",
+        "volume": "—",
+        "billing": "Monthly invoice",
+        "status": "License declined",
+        "region": "Belgium",
+        "owner_email": "org3@nekedem.local",
+        "lead": {
+            "primaryContact": "Finance and operations lead",
+            "workPhone": "+320000000000",
+            "organizationName": "Horn of Africa Logistics",
+            "requestType": "Business Subscription",
+            "companySize": "1-50",
+            "countryScope": "Belgium",
+            "expectedCopies": "120 copies / cycle",
+            "deliveryLocations": "Brussels",
+            "billingPreference": "Monthly invoice",
+            "launchTimeline": "Within 2 months",
+            "operationalNotes": (
+                "Application declined at licence review; owner access stays blocked."
+            ),
+        },
+    },
+]
+
 
 def _upsert_articles():
     for article_seed in SEEDED_ARTICLES:
@@ -961,16 +1242,17 @@ def _upsert_articles():
 
 
 def _upsert_companies():
-    """Seed active company accounts linked to demo business users.
+    """Seed company accounts including pending and declined licence states.
 
-    The four accounts mirror ``adminCompanyRows`` from ``demoData.js``.  Legacy
-    mock statuses ("Active", "Invoice review", "Onboarding") are normalised to
-    the canonical ``COMPANY_WORKFLOW_STATES`` so the admin pages can classify
-    rows purely by the canonical status. The account linked to the first
-    seeded business user so
-    the business dashboard works out of the box after login.
+    The four approved accounts mirror ``adminCompanyRows`` from ``demoData.js``.
+    The lead account is linked to the first seeded business user so the
+    business dashboard works out of the box after login. Pending and declined
+    applications keep the admin review queue populated and, for the declined
+    one, map to the blocked (``business_access_approved=False``) business user.
     """
-    business_user = User.query.filter_by(role="business").first()
+    business_users = {
+        user.email: user for user in User.query.filter_by(role="business").all()
+    }
 
     for seed in SEEDED_COMPANY_ACCOUNTS:
         existing = CompanyAccount.query.filter_by(company=seed["company"]).first()
@@ -995,9 +1277,10 @@ def _upsert_companies():
     lead_org = SEEDED_COMPANY_LEAD["company"]
     existing_lead = CompanyAccount.query.filter_by(company=lead_org).first()
     lead_data = dict(SEEDED_COMPANY_LEAD)
-    lead_data["owner_user_id"] = business_user.id if business_user else None
-    lead_data["owner_email"] = business_user.email if business_user else None
-    lead_data["work_email"] = business_user.email if business_user else None
+    lead_user = business_users.get("org1@nekedem.local")
+    lead_data["owner_user_id"] = lead_user.id if lead_user else None
+    lead_data["owner_email"] = "org1@nekedem.local"
+    lead_data["work_email"] = "org1@nekedem.local"
     if existing_lead is None:
         db.session.add(
             CompanyAccount(
@@ -1014,6 +1297,35 @@ def _upsert_companies():
     else:
         for key, value in lead_data.items():
             setattr(existing_lead, key, value)
+
+    # Pending and declined applications. The declined one is owned by the
+    # unapproved business user so the login block and admin queue match.
+    for seed in SEEDED_COMPANY_PENDING:
+        owner = (
+            business_users.get(seed["owner_email"]) if seed["owner_email"] else None
+        )
+        seed_data = dict(seed)
+        seed_data["owner_user_id"] = owner.id if owner else None
+        existing = CompanyAccount.query.filter_by(company=seed["company"]).first()
+        if existing is None:
+            db.session.add(
+                CompanyAccount(
+                    company=seed_data["company"],
+                    volume=seed_data["volume"],
+                    billing=seed_data["billing"],
+                    status=seed_data["status"],
+                    region=seed_data["region"],
+                    owner_user_id=seed_data["owner_user_id"],
+                    owner_email=seed_data.get("owner_email"),
+                    work_email=seed_data.get("owner_email"),
+                    lead=seed_data["lead"],
+                )
+            )
+        else:
+            for key, value in seed_data.items():
+                if key == "company":
+                    continue
+                setattr(existing, key, value)
 
 
 def _upsert_company_orders():
@@ -1052,6 +1364,15 @@ def _upsert_company_orders():
             "article": "A weekend guide to the autumn festival opening",
             "status": "Pending approval",
         },
+        {
+            "company": "Horn of Africa Logistics",
+            "copies": 120,
+            "needed_by": "2026-09-01",
+            "locations": ["Brussels depot"],
+            "article": "Local bakery wins the national sourdough challenge",
+            "status": "Declined",
+            "reviewed_at": SEED_COMPANY_REVIEWED_AT,
+        },
     ]
 
     for order_seed in seeded_orders:
@@ -1089,7 +1410,9 @@ def _upsert_company_orders():
                 status=order_seed["status"],
                 final_price=order_seed.get("final_price"),
                 reviewed_by_user_id=(
-                    admin.id if admin and order_seed["status"] == "Approved" else None
+                    admin.id
+                    if admin and order_seed["status"] in ("Approved", "Declined")
+                    else None
                 ),
                 reviewed_at=order_seed.get("reviewed_at"),
                 created_at=created_at,
@@ -1469,12 +1792,21 @@ def _upsert_governance_requests():
 
     Mirrors the demo rows created by ``ensureSeedData`` in ``appClient.js`` so
     the privacy panels and the admin governance queue are populated after a
-    fresh seed. Idempotent per (user, scope, type).
+    fresh seed. Idempotent per (user, scope, type). Extra rows exercise all
+    queue statuses (Queued, In progress, Under review, Review required,
+    Completed).
     """
-    reader = User.query.filter_by(email="viewer@nekedem.local").first()
-    business = User.query.filter_by(role="business").first()
+    by_email = {}
+    for user in User.query.all():
+        by_email[user.email] = user
+    reader = by_email.get("viewer@nekedem.local")
+    reader2 = by_email.get("amelie.laurent@nekedem.local")
+    business = by_email.get("org1@nekedem.local")
     account = CompanyAccount.query.filter_by(
         company=SEEDED_COMPANY_LEAD["company"]
+    ).first()
+    declined_account = CompanyAccount.query.filter_by(
+        company="Horn of Africa Logistics"
     ).first()
 
     seeded = [
@@ -1490,6 +1822,27 @@ def _upsert_governance_requests():
             ),
         },
         {
+            "user": reader,
+            "account": None,
+            "scope": "reader",
+            "type": "Deletion review",
+            "status": "Review required",
+            "notes": (
+                "Reader deletion request flagged because billing obligations "
+                "are still open."
+            ),
+        },
+        {
+            "user": reader2,
+            "account": None,
+            "scope": "reader",
+            "type": "Data export",
+            "status": "In progress",
+            "notes": (
+                "Export assembled; awaiting the reader's email confirmation."
+            ),
+        },
+        {
             "user": business,
             "account": account,
             "scope": "company",
@@ -1499,6 +1852,37 @@ def _upsert_governance_requests():
                 "Business account retention review requested under the "
                 "company privacy workflow."
             ),
+        },
+        {
+            "user": business,
+            "account": account,
+            "scope": "company",
+            "type": "Company data export",
+            "status": "Queued",
+            "notes": (
+                "Ordering and shipment history export requested by the "
+                "account owner."
+            ),
+        },
+        {
+            "user": by_email.get("org3@nekedem.local"),
+            "account": declined_account,
+            "scope": "company",
+            "type": "Company deletion review",
+            "status": "Completed",
+            "notes": (
+                "Account archived after the licence decline was confirmed."
+            ),
+            "resolved": True,
+        },
+        {
+            "user": by_email.get("petra.holst@nekedem.local"),
+            "account": None,
+            "scope": "reader",
+            "type": "Deletion review",
+            "status": "Completed",
+            "notes": "Subscription closed and reader data scheduled for erasure.",
+            "resolved": True,
         },
     ]
 
@@ -1513,6 +1897,9 @@ def _upsert_governance_requests():
             scope=seed["scope"],
             type=seed["type"],
         ).first()
+        resolved_at = (
+            SEED_COMPANY_REVIEWED_AT if seed.get("resolved") else None
+        )
         if existing is None:
             db.session.add(
                 GovernanceRequest(
@@ -1522,6 +1909,7 @@ def _upsert_governance_requests():
                     type=seed["type"],
                     status=seed["status"],
                     notes=seed["notes"],
+                    resolved_at=resolved_at,
                     created_at=SEED_COMPANY_BASE_CREATED,
                 )
             )
@@ -1529,6 +1917,7 @@ def _upsert_governance_requests():
             existing.company_account_id = company_account_id
             existing.status = seed["status"]
             existing.notes = seed["notes"]
+            existing.resolved_at = resolved_at
 
 
 # Admin-customizable legal page content. Each entry is the seed specification
@@ -1742,6 +2131,175 @@ def _upsert_legal_pages():
                 setattr(page, key, value)
 
 
+def _upsert_site_settings():
+    """Seed the admin-customizable site settings with their defaults.
+
+    The user-guide video falls back server-side to the same hard-coded default
+    when no row exists, so a clean reseed keeps behaviour identical while still
+    giving the admin editor a row to reset against.
+    """
+    default_video = "https://www.youtube.com/watch?v=maxhtw0ncsc"
+    key = "user_guide_video"
+    row = db.session.get(SiteSetting, key)
+    if row is None:
+        db.session.add(SiteSetting(key=key, value=default_video))
+    else:
+        row.value = default_video
+        row.updated_at = datetime.now()
+
+
+SEEDED_CHECKOUT_SESSIONS = [
+    {
+        "email": "viewer@nekedem.local",
+        "plan_id": "print-digital",
+        "billing_cycle": "monthly",
+        "amount": 24.99,
+        "status": "succeeded",
+        "payment_status": "succeeded",
+        "customer_name": "Elena Tewelde",
+        "customer_email": "viewer@nekedem.local",
+        "payment_method": "card",
+        "card_brand": "visa",
+        "last4": "4242",
+        "delivery": {
+            "street": "Rue de la Presse 12",
+            "city": "Brussels",
+            "postal_code": "1000",
+            "country": "Belgium",
+        },
+        "consents": {"delivery": True, "newsletter": True},
+        "days_ago": 45,
+    },
+    {
+        "email": "viewer@nekedem.local",
+        "plan_id": "print-digital",
+        "billing_cycle": "yearly",
+        "amount": 299.88,
+        "status": "open",
+        "payment_status": "requires_confirmation",
+        "customer_name": "Elena Tewelde",
+        "customer_email": "viewer@nekedem.local",
+        "payment_method": "paypal",
+        "paypal_email": "elena.t@example.com",
+        "delivery": {
+            "street": "Rue de la Presse 12",
+            "city": "Brussels",
+            "postal_code": "1000",
+            "country": "Belgium",
+        },
+        "consents": {"delivery": True, "newsletter": True},
+        "days_ago": 2,
+    },
+    {
+        "email": "marta.kovacs@nekedem.local",
+        "plan_id": "digital",
+        "billing_cycle": "monthly",
+        "amount": 9.99,
+        "status": "succeeded",
+        "payment_status": "succeeded",
+        "customer_name": "Marta Kovacs",
+        "customer_email": "marta.kovacs@nekedem.local",
+        "payment_method": "card",
+        "card_brand": "mastercard",
+        "last4": "5555",
+        "delivery": {},
+        "consents": {"delivery": False, "newsletter": True},
+        "days_ago": 60,
+    },
+    {
+        "email": "petra.holst@nekedem.local",
+        "plan_id": "digital",
+        "billing_cycle": "monthly",
+        "amount": 9.99,
+        "status": "cancelled",
+        "payment_status": "cancelled",
+        "customer_name": "Petra Holst",
+        "customer_email": "petra.holst@nekedem.local",
+        "payment_method": "card",
+        "card_brand": "visa",
+        "last4": "1111",
+        "delivery": {},
+        "consents": {"delivery": False, "newsletter": False},
+        "days_ago": 120,
+    },
+    {
+        "email": "lucas.mertens@nekedem.local",
+        "plan_id": "digital",
+        "billing_cycle": "monthly",
+        "amount": 9.99,
+        "status": "expired",
+        "payment_status": "requires_payment_method",
+        "customer_name": "Lucas Mertens",
+        "customer_email": "lucas.mertens@nekedem.local",
+        "payment_method": "card",
+        "card_brand": "",
+        "last4": "",
+        "delivery": {},
+        "consents": {"delivery": False, "newsletter": False},
+        "days_ago": 180,
+    },
+]
+
+
+def _upsert_checkout_sessions():
+    """Seed reader checkout sessions across every session status.
+
+    Succeeded, open, cancelled, and expired rows give the checkout history a
+    realistic spread. Idempotent per (user, status, plan, amount): rows are
+    recreated to the spec each seed so a reset returns the exact demo set.
+    """
+    from datetime import timezone
+
+    now = datetime.now(timezone.utc)
+    for seed in SEEDED_CHECKOUT_SESSIONS:
+        user = User.query.filter_by(email=seed["email"]).first()
+        if user is None:
+            continue
+        created_at = now - timedelta(days=seed["days_ago"])
+        expires_at = (
+            created_at + timedelta(minutes=120) if seed["status"] == "open" else created_at
+        )
+        confirmed_at = created_at if seed["status"] == "succeeded" else None
+        session_row = CheckoutSession.query.filter_by(
+            user_id=user.id,
+            plan_id=seed["plan_id"],
+            status=seed["status"],
+            billing_cycle=seed["billing_cycle"],
+            amount=seed["amount"],
+        ).first()
+        values = {
+            "user_id": user.id,
+            "plan_id": seed["plan_id"],
+            "billing_cycle": seed["billing_cycle"],
+            "amount": seed["amount"],
+            "status": seed["status"],
+            "payment_status": seed["payment_status"],
+            "customer_name": seed["customer_name"],
+            "customer_email": seed["customer_email"],
+            "payment_method": seed["payment_method"],
+            "card_brand": seed.get("card_brand", ""),
+            "last4": seed.get("last4", ""),
+            "paypal_email": seed.get("paypal_email", ""),
+            "delivery": seed["delivery"],
+            "consents": seed["consents"],
+        }
+        if session_row is None:
+            db.session.add(
+                CheckoutSession(
+                    **values,
+                    created_at=created_at,
+                    expires_at=expires_at,
+                    confirmed_at=confirmed_at,
+                )
+            )
+        else:
+            for key, value in values.items():
+                setattr(session_row, key, value)
+            session_row.created_at = created_at
+            session_row.expires_at = expires_at
+            session_row.confirmed_at = confirmed_at
+
+
 def seed_data():
     _upsert_plans()
     _upsert_users()
@@ -1761,13 +2319,22 @@ def seed_data():
     _upsert_business_team_members()
     _upsert_governance_requests()
     _upsert_legal_pages()
+    _upsert_site_settings()
+    _upsert_checkout_sessions()
     db.session.commit()
 
 
 @click.command("seed")
+@click.option(
+    "--reset",
+    is_flag=True,
+    help="Delete all application data first, then reseed from scratch.",
+)
 @with_appcontext
-def seed_command():
-    """Seed demo plans, users, and subscriptions (1 reader, 2 orgs, 1 admin)."""
+def seed_command(reset):
+    """Seed demo plans, users, articles, companies, and business data."""
+    if reset:
+        _reset_data()
     seed_data()
     print("Seed complete. Demo accounts:")
     for user_data in SEEDED_USERS:
@@ -1800,7 +2367,7 @@ def seed_command():
     for article_data in SEEDED_ARTICLES:
         print(
             f"  - {article_data['status']:<10} {article_data['source']:<9} "
-            f"{article_data['headline']}"
+            f"clicks={article_data['clicks']:<4} {article_data['headline']}"
         )
     print("Seeded company accounts:")
     for company_data in SEEDED_COMPANY_ACCOUNTS:
@@ -1812,6 +2379,11 @@ def seed_command():
         f"  - {'License approved':<24} {'--':<22} "
         f"{SEEDED_COMPANY_LEAD['company']} (lead)"
     )
+    for company_data in SEEDED_COMPANY_PENDING:
+        print(
+            f"  - {company_data['status']:<24} {company_data['volume']:<22} "
+            f"{company_data['company']}"
+        )
     print("Seeded shipment runs and activity:")
     print(
         f"  - {len(SEEDED_ADMIN_SHIPMENTS)} admin runs, "
@@ -1839,7 +2411,7 @@ def seed_command():
     print("Seeded business team roster:")
     print("  - 4 seats (3 active, 1 pending) for the lead org account")
     print("Seeded governance requests:")
-    print("  - 1 reader data export, 1 company deletion review")
+    print("  - reader + company requests across the admin queue")
     print("Seeded legal pages:")
     for page_key in sorted(SEEDED_LEGAL_PAGES):
         seed = SEEDED_LEGAL_PAGES[page_key]
@@ -1847,3 +2419,44 @@ def seed_command():
             f"  - {page_key:<10} published={seed['published']} "
             f"sections={len(seed['sections'])} clauses={len(seed['clauses'])}"
         )
+    print("Seeded admin site settings:")
+    print("  - user_guide_video (default YouTube guide)")
+    print("Seeded checkout sessions:")
+    print(f"  - {len(SEEDED_CHECKOUT_SESSIONS)} sessions across all statuses")
+
+
+def _reset_data():
+    """Drop every seeded row in dependency-safe order for a clean reseed.
+
+    Child rows (history, activities, subscriptions) are removed before their
+    parents (users, companies, articles) so the wipe respects any foreign keys.
+    """
+    ordered = [
+        ReadingHistoryEntry,
+        ReaderBillingEntry,
+        ReaderDeliveryActivity,
+        ReaderDelivery,
+        ShipmentActivity,
+        Shipment,
+        BusinessTeamMember,
+        BusinessInvoice,
+        BusinessOrder,
+        BusinessLocation,
+        CompanyOrder,
+        GovernanceRequest,
+        CheckoutSession,
+        UserSubscription,
+        CompanyAccount,
+        User,
+        Article,
+        Subcategory,
+        Category,
+        LegalPage,
+        ArticleTemplate,
+        SubscriptionPlan,
+        SiteSetting,
+    ]
+    for model in ordered:
+        db.session.query(model).delete()
+    db.session.commit()
+    print("Existing application data cleared.")

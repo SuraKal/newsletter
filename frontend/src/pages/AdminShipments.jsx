@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Users } from "lucide-react";
 import {
@@ -11,6 +11,7 @@ import {
   DashboardRelatedLinks,
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
+import GeoapifyMap from "@/components/delivery/GeoapifyMap";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import { appClient } from "@/api/appClient";
 
@@ -92,6 +93,47 @@ export default function AdminShipments() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Flattens every run's saved company stops and subscriber destinations into
+  // marker rows for the Geoapify network map.
+  const networkLocations = useMemo(() => {
+    if (!Array.isArray(shipments)) {
+      return [];
+    }
+    return shipments.flatMap((row) => {
+      const companyStops = (row.deliveryLocations || []).map((location) => ({
+        id: `company-${row.id}-${location.id}`,
+        kind: "company",
+        name: location.location || "Company stop",
+        address:
+          [location.address, location.region].filter(Boolean).join(", ") ||
+          location.location,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        geocodeText:
+          [location.address, location.region, location.location]
+            .filter(Boolean)
+            .join(", ") || undefined,
+        copies: location.copies,
+        contact: location.contact,
+        status: location.status,
+        link: {
+          to: `/admin/shipments/${row.id}`,
+          label: `Run ${row.shipmentId}`,
+        },
+      }));
+      const readerStops = (row.readerDestinations || []).map((destination) => ({
+        id: `reader-${row.id}-${destination.destination}`,
+        kind: "reader",
+        name: destination.name || "Subscriber delivery",
+        address: destination.destination,
+        latitude: null,
+        longitude: null,
+        geocodeText: destination.destination,
+      }));
+      return [...companyStops, ...readerStops];
+    });
+  }, [shipments]);
+
   const table = useTableQuery({
     rows: shipments,
     query,
@@ -142,6 +184,30 @@ export default function AdminShipments() {
           </Link>
         }
       />
+
+      <DashboardPanel
+        title="Delivery network"
+        description="Company stops and subscriber destinations across the consolidated runs, plotted with Geoapify."
+        className="p-5 sm:p-6"
+      >
+        <GeoapifyMap locations={networkLocations} height={360} />
+        <div className="mt-4 flex flex-wrap items-center gap-5">
+          <span className="inline-flex items-center gap-2 font-sans text-xs font-medium text-stone-500 dark:text-stone-400">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ background: "#44403c" }}
+            />
+            Company stops
+          </span>
+          <span className="inline-flex items-center gap-2 font-sans text-xs font-medium text-stone-500 dark:text-stone-400">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ background: "#059669" }}
+            />
+            Reader deliveries
+          </span>
+        </div>
+      </DashboardPanel>
 
       <DashboardPanel title="Consolidated shipment runs" className="p-5 sm:p-6">
         {table.total ? (
