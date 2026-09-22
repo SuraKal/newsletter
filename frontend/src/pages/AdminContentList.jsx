@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, CirclePlus } from "lucide-react";
+import { CalendarDays, CirclePlus, Save } from "lucide-react";
 import {
   DashboardDataTable,
   DashboardEmptyState,
@@ -12,6 +12,7 @@ import {
   DashboardStatusBadge,
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
+import { appClient } from "@/api/appClient";
 import { backendArticles, isNetworkError } from "@/api/backendClient";
 import { getAdminContentRows, getPlacementLabel } from "@/lib/content-store";
 
@@ -98,6 +99,153 @@ function toAdminContentRow(article) {
     source: article.source || "admin",
     clicks: Number(article.clicks) || 0,
   };
+}
+
+const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
+
+function extractYoutubeId(value) {
+  const text = String(value || "").trim();
+  if (!text) {
+    return null;
+  }
+  const watchMatch = text.match(
+    /(?:youtube\.com\/(?:watch\?(?:[^"'\s]*&)?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/,
+  );
+  if (watchMatch) {
+    return watchMatch[1];
+  }
+  const iframeMatch = text.match(/iframe[^>]*\bsrc=["']([^"']+)["']/i);
+  if (iframeMatch) {
+    return extractYoutubeId(iframeMatch[1]);
+  }
+  return YOUTUBE_ID_PATTERN.test(text) ? text : null;
+}
+
+function AdminGuideVideoPanel() {
+  const [raw, setRaw] = useState("");
+  const [videoId, setVideoId] = useState("");
+  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    appClient.siteSettings
+      .getUserGuideVideo()
+      .then((video) => {
+        if (!active) return;
+        setRaw(video?.raw || "");
+        setLoaded(true);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLoaded(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const detected = extractYoutubeId(raw);
+
+  const handleSave = async () => {
+    if (!detected) {
+      setMessage("No YouTube video detected in that link or embed.");
+      return;
+    }
+    setSaving(true);
+    setMessage("");
+    try {
+      const video = await appClient.siteSettings.updateUserGuideVideo(raw.trim());
+      if (video?.embedSrc) {
+        setVideoId(video.videoId);
+        setMessage("Guide video updated for the public website.");
+      } else {
+        setMessage("Saved, but the backend could not confirm the video.");
+      }
+    } catch (error) {
+      setMessage(error?.message || "Could not save the guide video.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <DashboardPanel
+      title="User guide video"
+      description="Paste a YouTube share link or the full embed code. The home-page guide section plays the detected video."
+      className="p-5 sm:p-6"
+    >
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div>
+          <label
+            htmlFor="guide-video-raw"
+            className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400"
+          >
+            YouTube link or embed code
+          </label>
+          <textarea
+            id="guide-video-raw"
+            value={raw}
+            disabled={!loaded}
+            onChange={(event) => setRaw(event.target.value)}
+            rows={4}
+            placeholder="https://www.youtube.com/watch?v=Dscc0ILZwfo or paste an <iframe ...></iframe> snippet"
+            className="mt-2 w-full resize-y rounded-lg border border-stone-300 bg-white px-3 py-2.5 font-sans text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-heritage/40 disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
+          />
+          {detected ? (
+            <p className="mt-2 font-sans text-xs text-emerald-700 dark:text-emerald-400">
+              Video detected: {detected}
+            </p>
+          ) : raw.trim() ? (
+            <p className="mt-2 font-sans text-xs text-amber-700 dark:text-amber-400">
+              No YouTube video detected yet — paste a watch link or embed code.
+            </p>
+          ) : null}
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || !loaded || !detected}
+              className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? "Saving…" : "Save guide video"}
+            </button>
+            {message ? (
+              <span className="font-sans text-xs text-stone-600 dark:text-stone-300">
+                {message}
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-lg border border-stone-200 bg-ink dark:border-stone-700">
+          {detected ? (
+            <iframe
+              src={`https://www.youtube.com/embed/${detected}`}
+              title="User guide video preview"
+              className="aspect-video w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          ) : videoId ? (
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}`}
+              title="User guide video preview"
+              className="aspect-video w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          ) : (
+            <div className="flex aspect-video w-full items-center justify-center bg-stone-900 px-4 text-center font-sans text-xs uppercase tracking-[0.18em] text-stone-400 dark:bg-stone-800">
+              Preview appears here
+            </div>
+          )}
+        </div>
+      </div>
+    </DashboardPanel>
+  );
 }
 
 export default function AdminContentList() {
@@ -192,6 +340,8 @@ export default function AdminContentList() {
           </Link>
         }
       />
+
+      <AdminGuideVideoPanel />
 
       <DashboardPanel title="Article queue" className="p-5 sm:p-6">
         {table.total ? (

@@ -21,6 +21,7 @@ from .business_invoice import BusinessInvoice
 from .business_team import BusinessTeamMember
 from .governance_request import GovernanceRequest
 from .legal_page import LegalPage
+from .site_setting import SiteSetting
 
 __all__ = [
     "db",
@@ -46,4 +47,5 @@ __all__ = [
     "BusinessTeamMember",
     "GovernanceRequest",
     "LegalPage",
+    "SiteSetting",
 ]

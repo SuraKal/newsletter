@@ -1,6 +1,29 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { appClient } from "@/api/appClient";
+
+const DEFAULT_EMBED_SRC = "https://www.youtube.com/embed/maxhtw0ncsc";
 
 export default function UserGuideVideoSection() {
+  const [embedSrc, setEmbedSrc] = useState(DEFAULT_EMBED_SRC);
+
+  useEffect(() => {
+    let active = true;
+    appClient.siteSettings
+      .getUserGuideVideo()
+      .then((video) => {
+        if (!active) return;
+        if (video?.embedSrc) {
+          setEmbedSrc(video.embedSrc);
+        }
+      })
+      .catch(() => {
+        if (!active) return;
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <section className="bg-paper py-16">
       <div className="mx-auto max-w-7xl px-4">
@@ -49,7 +72,7 @@ export default function UserGuideVideoSection() {
           </div>
           <div className="relative aspect-video w-full bg-ink">
             <iframe
-              src="https://www.youtube.com/embed/maxhtw0ncsc"
+              src={embedSrc}
               title="User guide video"
               className="h-full w-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

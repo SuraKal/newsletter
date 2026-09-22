@@ -18,6 +18,7 @@ import {
   backendSubscribers,
   backendSubscriptions,
   backendReader,
+  backendSiteSettings,
   backendTeam,
   cacheBackendUser,
   clearAccessToken,
@@ -2414,6 +2415,36 @@ export const appClient = {
           tone: digitalOnly ? "info" : "success",
         });
       },
+    },
+  },
+  siteSettings: {
+    DEFAULT_GUIDE_VIDEO_ID: "maxhtw0ncsc",
+
+    async getUserGuideVideo() {
+      try {
+        const video = await backendSiteSettings.getUserGuideVideo();
+        if (video) {
+          return video;
+        }
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+      return null;
+    },
+
+    async updateUserGuideVideo(raw) {
+      requireAdmin();
+      try {
+        const video = await backendSiteSettings.updateUserGuideVideo(raw);
+        return video;
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+      return null;
     },
   },
 };

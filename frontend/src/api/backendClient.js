@@ -776,6 +776,23 @@ export const backendAdminOverview = {
   },
 };
 
+// Site settings. The public getter is unauthenticated (the home-page guide
+// section reads it on load); the admin save is a guarded write.
+export const backendSiteSettings = {
+  async getUserGuideVideo() {
+    const payload = await request("/settings/user-guide-video", { auth: false });
+    return payload.video || null;
+  },
+
+  async updateUserGuideVideo(raw) {
+    const payload = await request("/admin/settings/user-guide-video", {
+      method: "PUT",
+      body: { raw },
+    });
+    return payload.video || null;
+  },
+};
+
 // Reader subscription snapshot. The backend derives every value from the
 // caller's latest UserSubscription + plan + profile; the frontend passes the
 // shape through untouched (mirrors `getReaderSubscriptionSnapshot`).
