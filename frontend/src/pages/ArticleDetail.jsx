@@ -68,6 +68,7 @@ export default function ArticleDetail() {
       trackedArticleId.current = article?.id;
       recordArticleView(article);
       registerArticleClick(article.id);
+      appClient.articles.recordView(article.id);
       appClient.reader
         .recordHistoryEvent({
           articleId: article.id,

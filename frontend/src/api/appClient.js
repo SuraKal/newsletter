@@ -37,7 +37,7 @@ import {
 } from "@/lib/demoData";
 import { getCategories, syncCategoriesFromBackend } from "@/lib/category-store";
 import { notifyStoreChange } from "@/lib/store-bus";
-import { syncArticlesFromBackend, getAllArticles } from "@/lib/content-store";
+import { syncArticlesFromBackend, getAllArticles, getAdminContentRows } from "@/lib/content-store";
 import {
   getBusinessCompanySnapshot,
   getCompanyLeads,
@@ -1022,6 +1022,10 @@ export const appClient = {
     },
     refresh() {
       return refreshArticlesFromBackend();
+    },
+    recordView(id) {
+      if (!id) return Promise.resolve();
+      return backendArticles.recordView(id).catch(() => {});
     },
   },
   locations: {
@@ -2207,6 +2211,32 @@ export const appClient = {
       }
 
       return adminOverviewMetrics;
+    },
+
+    async overviewVisibility() {
+      const currentUser = getCurrentSessionUser("admin");
+
+      if (!currentUser) {
+        throw createAuthError("Authentication required", 401);
+      }
+
+      try {
+        const rows = await backendAdminOverview.visibility();
+        if (Array.isArray(rows)) {
+          return rows;
+        }
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+      }
+
+      return getAdminContentRows().map((row) => ({
+        id: row.id,
+        headline: row.headline,
+        clicks: Number(row.clicks) || 0,
+        status: row.status,
+      }));
     },
 
     async listGovernanceRequests() {

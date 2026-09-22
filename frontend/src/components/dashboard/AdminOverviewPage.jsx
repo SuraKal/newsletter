@@ -14,12 +14,15 @@ import {
 import { Link } from "react-router-dom";
 import { appClient } from "@/api/appClient";
 import {
+  DashboardChartPanel,
   DashboardPageHeader,
   DashboardPanel,
   DashboardShortcuts,
   DashboardRelatedLinks,
 } from "@/components/dashboard/DashboardPrimitives";
 import { adminOverviewMetrics } from "@/lib/demoData";
+import { getAdminContentRows } from "@/lib/content-store";
+import { useStoreVersion } from "@/lib/store-bus";
 import { useWorkspaceSectionBadges } from "@/lib/notifications";
 
 const sectionIconMap = {
@@ -35,8 +38,41 @@ const sectionIconMap = {
 };
 
 export default function AdminOverviewPage() {
+  useStoreVersion();
   const [metrics, setMetrics] = useState(() => adminOverviewMetrics);
+  const [visibility, setVisibility] = useState(() =>
+    getAdminContentRows().map((row) => ({
+      id: row.id,
+      headline: row.headline,
+      clicks: Number(row.clicks) || 0,
+      status: row.status,
+    })),
+  );
+  const [selectedArticleId, setSelectedArticleId] = useState("");
   const sectionBadges = useWorkspaceSectionBadges("admin");
+
+  const selectedArticle =
+    visibility.find((row) => row.id === selectedArticleId) || null;
+
+  const truncateHeadline = (headline) =>
+    headline.length > 20 ? `${headline.slice(0, 20)}…` : headline;
+
+  const chartData = selectedArticle
+    ? [
+        {
+          label: truncateHeadline(selectedArticle.headline),
+          value: selectedArticle.clicks || 0,
+          tone: "accent",
+        },
+      ]
+    : [...visibility]
+        .sort((a, b) => (b.clicks || 0) - (a.clicks || 0))
+        .slice(0, 6)
+        .map((row, index) => ({
+          label: truncateHeadline(row.headline),
+          value: row.clicks || 0,
+          tone: index === 0 ? "accent" : undefined,
+        }));
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +85,23 @@ export default function AdminOverviewPage() {
       })
       .catch(() => {
         // Keep the fallback metrics if the aggregate endpoint is unavailable.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    appClient.admin
+      .overviewVisibility()
+      .then((rows) => {
+        if (!cancelled && Array.isArray(rows)) {
+          setVisibility(rows);
+        }
+      })
+      .catch(() => {
+        // Keep the store-derived rows if the visibility endpoint is unavailable.
       });
     return () => {
       cancelled = true;
@@ -114,6 +167,41 @@ export default function AdminOverviewPage() {
           ))}
         </div>
       </DashboardPanel>
+
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <label className="dashboard-filter-pill inline-flex items-center gap-1.5 px-2.5 py-2">
+            <span className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.16em] text-stone-400">
+              Article
+            </span>
+            <select
+              value={selectedArticleId}
+              onChange={(event) => setSelectedArticleId(event.target.value)}
+              className="max-w-[16rem] bg-transparent font-sans text-xs font-semibold text-stone-700 focus:outline-none dark:text-stone-200"
+            >
+              <option value="">All articles</option>
+              {visibility.map((row) => (
+                <option key={row.id} value={row.id}>
+                  {row.headline}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <DashboardChartPanel
+          title="Article visibility"
+          description={
+            selectedArticle
+              ? `Visibility for "${selectedArticle.headline}" measured in clicks.`
+              : "Top articles by click count across all desks."
+          }
+          data={
+            chartData.length
+              ? chartData
+              : [{ label: "No data", value: 1, tone: "neutral" }]
+          }
+        />
+      </div>
 
       <DashboardRelatedLinks
         title="Related links"

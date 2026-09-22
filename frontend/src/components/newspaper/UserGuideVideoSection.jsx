@@ -34,7 +34,7 @@ export default function UserGuideVideoSection() {
           <div className="flex items-center justify-between border-b border-stone-300/60 bg-paper px-4 py-3">
             <div>
               <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.2em] text-heritage">
-                Vimeo Guide
+                YouTube Guide
               </p>
               <p className="mt-1 font-body text-sm text-redacted">
                 Quick overview for readers and partners
@@ -49,10 +49,10 @@ export default function UserGuideVideoSection() {
           </div>
           <div className="relative aspect-video w-full bg-ink">
             <iframe
-              src="https://player.vimeo.com/video/76979871?h=bf6a2e8f3f&title=0&byline=0&portrait=0"
+              src="https://www.youtube.com/embed/maxhtw0ncsc"
               title="User guide video"
               className="h-full w-full"
-              allow="autoplay; fullscreen; picture-in-picture"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
               loading="lazy"
             />

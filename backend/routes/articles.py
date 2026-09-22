@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 
 from flask import Blueprint, jsonify, request
@@ -117,6 +118,37 @@ def get_article(key):
     article = _find_article(key)
     if article is None or article.status != "Published":
         return jsonify({"error": "Article not found"}), 404
+    return jsonify({"article": article.to_dict()}), 200
+
+
+# Cooldown so rapid refreshes by the same visitor do not inflate the article
+# visibility count. Keyed on client identity + article id.
+_VIEW_COOLDOWN_SECONDS = 60 * 15
+_recent_views = {}
+
+
+def _counts_as_new_visit(key, now=None):
+    now = now if now is not None else time.time()
+    cutoff = now - _VIEW_COOLDOWN_SECONDS
+    for existing in tuple(_recent_views.keys()):
+        if _recent_views[existing] < cutoff:
+            del _recent_views[existing]
+    if key in _recent_views:
+        return False
+    _recent_views[key] = now
+    return True
+
+
+@articles_bp.post("/articles/<string:key>/view")
+def register_article_view(key):
+    article = _find_article(key)
+    if article is None or article.status != "Published":
+        return jsonify({"error": "Article not found"}), 404
+
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    if _counts_as_new_visit((client_ip, article.id)):
+        article.clicks = (article.clicks or 0) + 1
+        db.session.commit()
     return jsonify({"article": article.to_dict()}), 200
 
 

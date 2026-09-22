@@ -424,6 +424,13 @@ export const backendArticles = {
     return payload.article ? toAppArticle(payload.article) : null;
   },
 
+  async recordView(id) {
+    await request(`/articles/${encodeURIComponent(id)}/view`, {
+      method: "POST",
+      auth: false,
+    });
+  },
+
   async adminList() {
     const payload = await request("/admin/articles");
     return (payload.articles || []).map(toAppArticle);
@@ -756,6 +763,16 @@ export const backendAdminOverview = {
   async get() {
     const payload = await request("/admin/overview");
     return (payload.metrics || []).map(toAppOverviewMetric);
+  },
+
+  async visibility() {
+    const payload = await request("/admin/overview/visibility");
+    return (payload.articles || []).map((row) => ({
+      id: row.id,
+      headline: row.headline || "",
+      clicks: Number(row.clicks) || 0,
+      status: row.status || "Draft",
+    }));
   },
 };
 

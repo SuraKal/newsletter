@@ -105,66 +105,99 @@ export default function Subscriptions() {
 
         <section className="mx-auto max-w-7xl px-4 pb-16">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {readerPlans.map((plan) => (
-              <article
+            {readerPlans.map((plan) => {
+              const highlighted = Boolean(plan.highlighted);
+              return (
+                <article
                   key={plan.id}
-                className={`rounded-[1.35rem] border p-8 shadow-[0_16px_38px_rgba(0,0,0,0.05)] ${
-                  plan.highlighted
-                    ? "border-heritage/25 bg-paper"
-                    : "border-stone-300/60 bg-vellum"
-                }`}
-              >
-                {plan.highlighted ? (
-                  <span className="mb-4 inline-block bg-heritage/10 px-3 py-1 font-sans text-[0.6rem] font-bold uppercase tracking-widest text-heritage">
-                    Reader favorite
-                  </span>
-                ) : null}
-                <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-redacted">
-                  {plan.audience}
-                </p>
-                <h3 className="mt-2 font-display text-2xl font-bold text-ink">
-                  {plan.name}
-                </h3>
-                <p className="mt-1 font-body text-sm text-redacted">
-                  {plan.description}
-                </p>
-
-                <div className="mb-6 mt-6">
-                  <span className="font-display text-5xl font-black text-ink">
-                    {plan.price === "Custom" ? "" : "€"}
-                    {getDisplayPrice(plan)}
-                  </span>
-                  <span className="ml-2 font-sans text-sm text-redacted">
-                    {getDisplayPeriod(plan)}
-                  </span>
-                </div>
-
-                <ul className="mb-8 space-y-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2.5">
-                      <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-heritage" />
-                      <span className="font-body text-sm text-ink">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  to={
-                    plan.id === "business"
-                      ? "/business"
-                      : `/subscribe/checkout?plan=${plan.id}&billing=${billing}`
-                  }
-                  className={`flex w-full items-center justify-center gap-2 px-6 py-3.5 font-sans text-xs font-bold uppercase tracking-wider transition-colors ${
-                    plan.highlighted
-                      ? "bg-heritage text-paper hover:bg-ink"
-                      : "border-2 border-ink text-ink hover:bg-ink hover:text-paper"
+                  className={`rounded-[1.35rem] border p-8 shadow-[0_16px_38px_rgba(0,0,0,0.05)] ${
+                    highlighted
+                      ? "border-heritage/25 bg-heritage text-cream"
+                      : "border-stone-300/60 bg-vellum"
                   }`}
                 >
-                  {plan.name === "Business" ? "Request business plan" : "Continue to checkout"}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </article>
-            ))}
+                  {highlighted ? (
+                    <span className="mb-4 inline-block border border-cream/25 bg-cream/10 px-3 py-1 font-sans text-[0.6rem] font-bold uppercase tracking-widest text-cream">
+                      Reader favorite
+                    </span>
+                  ) : null}
+                  <p
+                    className={`font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] ${
+                      highlighted ? "text-cream/60" : "text-redacted"
+                    }`}
+                  >
+                    {plan.audience}
+                  </p>
+                  <h3
+                    className={`mt-2 font-display text-2xl font-bold ${
+                      highlighted ? "text-cream" : "text-ink"
+                    }`}
+                  >
+                    {plan.name}
+                  </h3>
+                  <p
+                    className={`mt-1 font-body text-sm ${
+                      highlighted ? "text-cream/75" : "text-redacted"
+                    }`}
+                  >
+                    {plan.description}
+                  </p>
+
+                  <div className="mb-6 mt-6">
+                    <span
+                      className={`font-display text-5xl font-black ${
+                        highlighted ? "text-cream" : "text-ink"
+                      }`}
+                    >
+                      {plan.price === "Custom" ? "" : "€"}
+                      {getDisplayPrice(plan)}
+                    </span>
+                    <span
+                      className={`ml-2 font-sans text-sm ${
+                        highlighted ? "text-cream/65" : "text-redacted"
+                      }`}
+                    >
+                      {getDisplayPeriod(plan)}
+                    </span>
+                  </div>
+
+                  <ul className="mb-8 space-y-3">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2.5">
+                        <Check
+                          className={`mt-0.5 h-4 w-4 flex-shrink-0 ${
+                            highlighted ? "text-cream" : "text-heritage"
+                          }`}
+                        />
+                        <span
+                          className={`font-body text-sm ${
+                            highlighted ? "text-cream/90" : "text-ink"
+                          }`}
+                        >
+                          {feature}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Link
+                    to={
+                      plan.id === "business"
+                        ? "/business"
+                        : `/subscribe/checkout?plan=${plan.id}&billing=${billing}`
+                    }
+                    className={`flex w-full items-center justify-center gap-2 px-6 py-3.5 font-sans text-xs font-bold uppercase tracking-wider transition-colors ${
+                      highlighted
+                        ? "bg-cream text-heritage hover:bg-white"
+                        : "border-2 border-ink text-ink hover:bg-ink hover:text-paper"
+                    }`}
+                  >
+                    {plan.name === "Business" ? "Request business plan" : "Continue to checkout"}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </article>
+              );
+            })}
           </div>
         </section>
 

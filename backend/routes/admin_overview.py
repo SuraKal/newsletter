@@ -168,3 +168,35 @@ def admin_overview():
         _routes_delayed_metric(),
     ]
     return jsonify({"metrics": metrics}), 200
+
+
+@admin_overview_bp.get("/admin/overview/visibility")
+@jwt_required()
+@role_required("admin")
+def admin_overview_visibility():
+    """Article visibility feed for the overview chart.
+
+    Returns every article with its click count so the chart can render an
+    all-articles ranking or a single-article drill-down from real DB data.
+    """
+    articles = (
+        Article.query.order_by(
+            Article.clicks.desc(), Article.publish_date.desc()
+        ).all()
+    )
+    return (
+        jsonify(
+            {
+                "articles": [
+                    {
+                        "id": article.id,
+                        "headline": article.headline,
+                        "clicks": article.clicks or 0,
+                        "status": article.status,
+                    }
+                    for article in articles
+                ]
+            }
+        ),
+        200,
+    )

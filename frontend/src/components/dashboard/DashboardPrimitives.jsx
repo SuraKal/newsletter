@@ -429,35 +429,56 @@ export function DashboardChartPanel({
   data = [],
 }) {
   const maxValue = Math.max(...data.map((item) => item.value), 1);
+  const totalValue = data.reduce((sum, item) => sum + item.value, 0);
 
   return (
     <DashboardPanel title={title} description={description} className="h-full">
-      <div className="flex min-h-[220px] items-end gap-3">
-        {data.map((item) => (
-          <div
-            key={item.label}
-            className="flex flex-1 flex-col items-center gap-3"
-          >
-            <div className="dashboard-chart-shell flex h-40 w-full items-end justify-center p-2">
-              <div
-                className={`w-full ${
-                  item.tone === "accent"
-                    ? "dashboard-chart-bar-accent"
-                    : "dashboard-chart-bar"
-                }`}
-                style={{ height: `${Math.max((item.value / maxValue) * 100, 12)}%` }}
-              />
-            </div>
-            <div className="text-center">
-              <p className="font-sans text-xs font-semibold text-stone-900 dark:text-stone-100">
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
+          {data.length} {data.length === 1 ? "entry" : "entries"}
+        </p>
+        <p className="font-sans text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-stone-400 dark:text-stone-500">
+          Total {totalValue.toLocaleString()}
+        </p>
+      </div>
+
+      <div className="flex min-h-[240px] items-end gap-3 sm:gap-4">
+        {data.map((item, index) => {
+          const height = Math.max((item.value / maxValue) * 100, 3);
+          return (
+            <div
+              key={`${item.label}-${index}`}
+              className="group flex min-w-0 flex-1 flex-col items-center gap-2"
+            >
+              <span className="font-sans text-xs font-bold tabular-nums text-stone-800 dark:text-stone-100">
+                {item.value.toLocaleString()}
+              </span>
+              <div className="flex h-40 w-full items-end justify-center px-1.5">
+                <div
+                  className={`w-full rounded-t-[0.45rem] transition-[height] duration-500 ${
+                    item.tone === "accent"
+                      ? "dashboard-chart-bar-accent"
+                      : "dashboard-chart-bar"
+                  }`}
+                  style={{ height: `${height}%` }}
+                  role="img"
+                  aria-label={`${item.label}: ${item.value}`}
+                />
+              </div>
+              <p
+                className="max-w-full truncate px-0.5 text-center font-sans text-xs font-medium text-stone-700 dark:text-stone-300"
+                title={item.label}
+              >
                 {item.label}
               </p>
-              <p className="dashboard-page-description font-sans text-[0.7rem]">
-                {item.value}
-              </p>
             </div>
-          </div>
-        ))}
+          );
+        })}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-4 border-t border-stone-200/80 pt-2 font-sans text-[0.6rem] font-medium uppercase tracking-[0.14em] text-stone-400 dark:border-stone-700/80 dark:text-stone-500">
+        <span>0</span>
+        <span className="max-w-[70%] truncate">Peak {maxValue.toLocaleString()}</span>
       </div>
     </DashboardPanel>
   );

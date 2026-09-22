@@ -131,6 +131,7 @@ export default function SubscribeCheckout() {
   const [stripePublishableKey, setStripePublishableKey] = useState(
     ENV_STRIPE_PUBLISHABLE_KEY,
   );
+  const [stripeUnavailable, setStripeUnavailable] = useState(false);
   const stripeLinkRef = useRef(null);
   const lastStripeSessionRef = useRef(null);
   const [form, setForm] = useState({
@@ -257,7 +258,7 @@ export default function SubscribeCheckout() {
   // Stripe Elements is the only card collection path. A server-created
   // client secret and the browser-safe key must both be present before the
   // embedded field is mounted.
-  const stripeMode = true;
+  const stripeMode = Boolean(stripePublishableKey && !stripeUnavailable);
 
   const stripeCustomerComplete = Boolean(
     form.fullName.trim() &&
@@ -274,6 +275,11 @@ export default function SubscribeCheckout() {
   }, []);
 
   useEffect(() => {
+    // If we already have a valid Stripe session, don't re-create it.
+    if (stripeSession?.clientSecret) {
+      return undefined;
+    }
+
     if (!stripeMode) {
       stripeLinkRef.current = null;
       lastStripeSessionRef.current = null;

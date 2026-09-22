@@ -3,6 +3,7 @@ import Masthead from "@/components/newspaper/Masthead";
 import TopSlider from "@/components/newspaper/TopSlider";
 import HeroSection from "@/components/newspaper/HeroSection";
 import LatestNewsSection from "@/components/newspaper/LatestNewsSection";
+import UserGuideVideoSection from "@/components/newspaper/UserGuideVideoSection";
 import FeaturedStorySection from "@/components/newspaper/FeaturedStorySection";
 import CategoriesSection from "@/components/newspaper/CategoriesSection";
 import SubscriptionSection from "@/components/newspaper/SubscriptionSection";
@@ -27,10 +28,11 @@ export default function Home() {
 <ScrollReveal effect="float" delay={40} className="section-spark">
           <LatestNewsSection />
         </ScrollReveal>
-        <FeaturedStorySection />
         <ScrollReveal effect="fade" delay={35} className="section-panel">
           <SubscriptionSection />
         </ScrollReveal>
+        <UserGuideVideoSection />
+        <FeaturedStorySection />
         <div className="newspaper-rule max-w-7xl mx-auto" />
         <ScrollReveal effect="wipe" delay={35} className="section-trace">
           <DeliverySection />
