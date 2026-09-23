@@ -655,22 +655,65 @@ export default function AdminContentEditor() {
                   </>
                 ) : null}
               </div>
-              <div className="dashboard-panel-soft p-4">
-                <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500">
-                  Publish window
-                </p>
-                <p className="mt-2 font-sans text-lg font-semibold text-stone-900 dark:text-stone-100">
-                  {form.publishDate} · {form.publishTime}
-                </p>
-              </div>
-              <div className="dashboard-panel-soft p-4">
-                <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500">
-                  Public archive date
-                </p>
-                <p className="mt-2 font-sans text-lg font-semibold text-stone-900 dark:text-stone-100">
-                  {form.publicAccessDate}
-                </p>
-              </div>
+<div className="dashboard-panel-soft p-4">
+            <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500">
+              Publish window
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="date"
+                value={form.publishDate || ""}
+                onChange={(e) =>
+                  handleChange(
+                    "publishDate",
+                    e.target.value === "" ? "" : (e.target.value),
+                  )
+                }
+                className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 font-sans text-base text-stone-900 outline-none transition-colors focus:border-[#4A2A08] focus:ring-2 focus:ring-[#4A2A08]/15"
+                disabled={isSaving}
+                title="Select the date this article should go live"
+              />
+              <span className="font-sans text-sm text-stone-500">
+                {form.publishDate || "Not set"}
+              </span>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="time"
+                value={form.publishTime || ""}
+                onChange={(e) => handleChange("publishTime", e.target.value || "")}
+                className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 font-sans text-base text-stone-900 outline-none transition-colors focus:border-[#4A2A08] focus:ring-2 focus:ring-[#4A2A08]/15"
+                disabled={isSaving}
+                title="Select the time this article should go live"
+              />
+              <span className="font-sans text-sm text-stone-500">
+                {form.publishTime || "Not set"}
+              </span>
+            </div>
+          </div>
+          <div className="dashboard-panel-soft p-4">
+            <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500">
+              Public archive date
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="date"
+                value={form.publicAccessDate || ""}
+                onChange={(e) =>
+                  handleChange(
+                    "publicAccessDate",
+                    e.target.value === "" ? "" : (e.target.value),
+                  )
+                }
+                className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 font-sans text-base text-stone-900 outline-none transition-colors focus:border-[#4A2A08] focus:ring-2 focus:ring-[#4A2A08]/15"
+                disabled={isSaving}
+                title="Select the date this article should become publicly accessible"
+              />
+              <span className="font-sans text-sm text-stone-500">
+                {form.publicAccessDate || "Not set"}
+              </span>
+            </div>
+          </div>
             </div>
           </DashboardPanel>
 

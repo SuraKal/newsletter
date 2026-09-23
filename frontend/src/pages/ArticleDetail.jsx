@@ -12,7 +12,7 @@ import {
 import { useAuth } from "@/lib/AuthContext";
 import { appClient } from "@/api/appClient";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
-import { getArticleById, getHeroArticle, getPublicListingArticles, registerArticleClick } from "@/lib/content-store";
+import { getHeroArticle, getPublicListingArticles, registerArticleClick } from "@/lib/content-store";
 import {
   isArticleSaved,
   recordArticleShare,
@@ -29,7 +29,8 @@ export default function ArticleDetail() {
   const { id } = useParams();
   const location = useLocation();
   const { user } = useAuth();
-  const article = getArticleById(id) || getHeroArticle();
+
+  const [article, setArticle] = useState(() => getHeroArticle());
   const layout = new URLSearchParams(location.search).get("layout");
   const categoryTemplate = getCategoryTemplate(article?.category);
   const layoutKey = isValidArticleTemplate(layout) ? layout : categoryTemplate;
@@ -49,11 +50,23 @@ export default function ArticleDetail() {
     { key: "newsletter", label: "Newsletter", path: `/article/${id}?layout=newsletter` },
   ];
 
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const payload = await appClient.articles.get(id);
+        setArticle(payload.article);
+      } catch (error) {
+        // Fall back to hero article on error
+        setArticle(getHeroArticle());
+      }
+    })();
+  }, [id]);
+
   const related = getPublicListingArticles()
-    .filter((item) => item.id !== id)
+    .filter((item) => item.id !== article?.id)
     .slice(0, 3);
   const access = getArticleAccessState(
-    article,
+    article || getHeroArticle(),
     hasActiveReaderSubscription(user),
   );
 
