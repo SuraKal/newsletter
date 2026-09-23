@@ -29,6 +29,30 @@ const invoiceColumns = [
     ),
   },
   { key: "scope", label: "Scope" },
+  {
+    key: "sourceType",
+    label: "Source",
+    render: (value, row) => {
+      if (row.sourceType === "bulk_order") {
+        return (
+          <Link
+            to={`/business-dashboard/orders/${row.sourceId}`}
+            className="font-sans text-xs font-semibold text-heritage transition-colors hover:text-stone-900 dark:hover:text-stone-100"
+          >
+            Bulk order
+          </Link>
+        );
+      }
+      if (row.sourceType === "subscription") {
+        return (
+          <span className="font-sans text-xs font-semibold text-stone-500">
+            Subscription
+          </span>
+        );
+      }
+      return <span className="font-sans text-xs text-stone-400">—</span>;
+    },
+  },
   { key: "amount", label: "Amount" },
   {
     key: "status",
@@ -40,7 +64,7 @@ const invoiceColumns = [
 ];
 
 const matchesSearch = (row, query) =>
-  [row.invoice, row.scope, row.amount, row.status].some((value) =>
+  [row.invoice, row.scope, row.amount, row.status, row.date].some((value) =>
     String(value ?? "").toLowerCase().includes(query),
   );
 
@@ -54,11 +78,36 @@ const relatedLinks = [
   { label: "Settings", to: "/business-dashboard/settings" },
 ];
 
-const snapshotRows = [
-  { label: "Next invoice", value: "September 1, 2026" },
-  { label: "Expected amount", value: "EUR 8,950" },
-  { label: "Billing model", value: "Monthly consolidated" },
-];
+const buildSnapshot = (rows) => {
+  const billable = rows.filter((row) =>
+    ["Upcoming", "Review"].includes(row.status),
+  );
+  const next = billable.length
+    ? billable
+        .slice()
+        .sort((a, b) => (a.date || "").localeCompare(b.date || ""))[0]
+    : null;
+  const hasContract = rows.some((row) => row.sourceType === "subscription");
+  return [
+    {
+      label: "Next invoice",
+      value: next?.date || "Awaiting billing cycle",
+    },
+    {
+      label: "Expected amount",
+      value: (next && next.amount !== "Contract billing") ? next.amount : "Contract billing",
+    },
+    {
+      label: "Billing model",
+      value: hasContract ? "Contract + order billing" : "Consolidated order billing",
+    },
+  ];
+};
+
+const hasContractLabel = (rows) =>
+  rows.some((row) => row.sourceType === "subscription")
+    ? "Contract billing active"
+    : "Order-scope billing";
 
 export default function BusinessInvoices() {
   const [query, setQuery] = useState("");
@@ -83,12 +132,17 @@ export default function BusinessInvoices() {
     filterGroups: invoiceFilterGroups,
   });
 
+  const snapshotRows = buildSnapshot(invoices);
+  const reviewCount = invoices.filter(
+    (row) => row.status === "Review",
+  ).length;
+
   return (
     <div className="space-y-6">
       <DashboardPageHeader
         eyebrow="Business invoices"
         title="Invoice records"
-        description="Review invoice status and billing follow-up."
+        description="Invoices are generated from approved bulk orders and your active subscription contract."
         breadcrumbs={[
           { label: "Business workspace", to: "/business-dashboard/overview" },
           { label: "Invoices" },
@@ -114,7 +168,11 @@ export default function BusinessInvoices() {
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         filterOptions={table.filterOptions}
-        filters={["Monthly consolidated invoice", "VAT-aware billing", "1 follow-up note"]}
+        filters={[
+          "Linked to approved orders",
+          hasContractLabel(invoices),
+          reviewCount ? `${reviewCount} review note${reviewCount > 1 ? "s" : ""}` : "No review follow-ups",
+        ]}
         action={
           <Link
             to="/business-dashboard/team"

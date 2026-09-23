@@ -44,6 +44,7 @@ const createDefaultArticle = () => ({
   source: "latest",
   category: "News",
   image: "",
+  video: "",
   readTime: "",
   accessLabel: "",
   date: "",
@@ -85,6 +86,7 @@ function toEditorForm(source, fallback = createDefaultArticle) {
     source: source.source || "latest",
     category: source.categoryLabel || source.category || "News",
     image: source.image || "",
+    video: source.video || meta.video || "",
     readTime: source.readTime || "",
     accessLabel: source.accessLabel || "",
     date: source.date || "",
@@ -110,6 +112,8 @@ function toArticlePayload(form) {
     const value = String(form[key] || "").trim();
     if (value) meta[key] = value;
   });
+  const videoValue = String(form.video || "").trim();
+  if (videoValue) meta.video = videoValue;
   return {
     headline: form.headline,
     summary: form.summary,

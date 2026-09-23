@@ -49,27 +49,43 @@ const adminBadges = () => {
   return counts;
 };
 
-const businessBadges = () => {
+// Returns true when a business row belongs to the current logged-in company.
+// Rows returned by the backend carry `companyAccountId`; the legacy demo seed
+// rows do not, so they only count for the seeded demo company (`business-account-1`).
+const belongsToCurrentCompany = (companyId) => (row) => {
+  if (!row || !companyId) return false;
+  if (row.companyAccountId) return row.companyAccountId === companyId;
+  return companyId === "business-account-1";
+};
+
+const businessCounts = () => {
   const entity = appClient.company.snapshot();
+  const owned = belongsToCurrentCompany(entity?.id);
   const counts = {
     overview: 0,
-    team: countWhere(getBusinessTeamRows(), (row) => row.status === "Pending"),
-    orders: countWhere(getBusinessOrderRows(), (row) =>
-      ["Review", "Queued"].includes(row.status),
+    team: countWhere(
+      getBusinessTeamRows().filter(owned),
+      (row) => row.status === "Pending",
+    ),
+    orders: countWhere(
+      getBusinessOrderRows().filter(owned),
+      (row) => ["Review", "Queued"].includes(row.status),
     ),
     "order-requests": countWhere(
-      appClient.companyOrders.list(),
+      appClient.companyOrders.list().filter(owned),
       (row) => row.status === "Pending approval",
     ),
-    invoices: countWhere(getBusinessInvoiceRows(), (row) =>
-      ["Review", "Overdue", "Upcoming"].includes(row.status),
+    invoices: countWhere(
+      getBusinessInvoiceRows().filter(owned),
+      (row) => ["Review", "Overdue", "Upcoming"].includes(row.status),
     ),
     locations: countWhere(
-      getBusinessLocationRows(),
+      getBusinessLocationRows().filter(owned),
       (row) => row.status === "Review",
     ),
-    shipments: countWhere(getBusinessShipmentRows(), (row) =>
-      row.status !== "Delivered",
+    shipments: countWhere(
+      getBusinessShipmentRows().filter(owned),
+      (row) => row.status !== "Delivered",
     ),
     settings:
       !entity || getCompanyWorkflowState(entity) !== "License approved"
@@ -97,6 +113,34 @@ const readerCountsFrom = ({ current, billingRows }) => {
 
 const demoReaderCounts = () =>
   readerCountsFrom({ current: readerDeliveryCurrent, billingRows: readerBillingRows });
+
+// Backend-fed counts for the company workspace chips. The refresh calls push
+// backend rows (filtered by the authenticated company) into the business
+// stores, so `businessCounts` reflects the real per-company data instead of
+// the shared seeded rows. Counts are always computed live from the stores so
+// badges update as the user navigates; `notifyStoreChange` fires the re-render.
+let businessBadgeLoadStarted = false;
+
+async function loadBusinessBadges() {
+  if (businessBadgeLoadStarted) {
+    return;
+  }
+  businessBadgeLoadStarted = true;
+  try {
+    await Promise.allSettled([
+      appClient.businessTeam.list(),
+      appClient.orderPlans.refresh(),
+      appClient.companyOrders.businessList(),
+      appClient.invoices.refresh(),
+      appClient.locations.refresh(),
+      appClient.shipments.refresh(),
+      appClient.company.refresh(),
+    ]);
+  } finally {
+    businessBadgeLoadStarted = false;
+    notifyStoreChange("business-badges");
+  }
+}
 
 // Backend-fed counts for the reader workspace chips. Loaded once per page
 // visit; the demo rows stand in while loading and offline. `notifyStoreChange`
@@ -132,7 +176,7 @@ const readerBadges = () => readerBadgeCounts || demoReaderCounts();
 
 const badgeComputers = {
   admin: adminBadges,
-  business: businessBadges,
+  business: businessCounts,
   reader: readerBadges,
 };
 
@@ -163,6 +207,9 @@ export function useWorkspaceSectionBadges(workspaceKey) {
     if (workspaceKey === "reader") {
       loadReaderBadges();
     }
+    if (workspaceKey === "business") {
+      loadBusinessBadges();
+    }
   }, [workspaceKey]);
   return getWorkspaceSectionBadges(workspaceKey);
 }
@@ -176,6 +223,9 @@ export function useWorkspaceNotificationTotal(workspaceKey) {
   useEffect(() => {
     if (workspaceKey === "reader") {
       loadReaderBadges();
+    }
+    if (workspaceKey === "business") {
+      loadBusinessBadges();
     }
   }, [workspaceKey]);
   return getWorkspaceNotificationTotal(workspaceKey);
@@ -196,8 +246,12 @@ export function getSectionBadgeForPath(path) {
 export function useSectionBadgeForPath(path) {
   useStoreVersion();
   useEffect(() => {
-    if (workspaceKeyForPath(path) === "reader") {
+    const key = workspaceKeyForPath(path);
+    if (key === "reader") {
       loadReaderBadges();
+    }
+    if (key === "business") {
+      loadBusinessBadges();
     }
   }, [path]);
   return getSectionBadgeForPath(path);

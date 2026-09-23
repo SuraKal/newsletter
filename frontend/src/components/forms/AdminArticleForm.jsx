@@ -205,6 +205,21 @@ export default function AdminArticleForm({
           </div>
         </div>
 
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="article-video">Video (optional)</Label>
+          <Input
+            id="article-video"
+            value={form.video || ""}
+            onChange={(e) => onChange("video", e.target.value)}
+            placeholder="Paste a YouTube link or direct video URL"
+          />
+          <p className="text-xs leading-5 text-stone-500">
+            When set, article cards play this video inline instead of showing
+            the cover image. YouTube links and direct .mp4/.webm/.ogg URLs are
+            supported.
+          </p>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="article-author">Author</Label>
           <Input

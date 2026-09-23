@@ -120,13 +120,31 @@ export default function BusinessInvoiceDetail() {
           items={[
             { label: "Scope", value: invoice.scope },
             { label: "Amount", value: invoice.amount },
-            { label: "Date", value: invoice.date },
+            {
+              label: "Source",
+              value:
+                invoice.sourceType === "bulk_order" ? (
+                  <Link
+                    to={`/business-dashboard/orders/${invoice.sourceId}`}
+                    className="font-sans text-sm font-semibold text-heritage transition-colors hover:text-stone-900 dark:hover:text-stone-100"
+                  >
+                    Linked bulk order
+                  </Link>
+                ) : invoice.sourceType === "subscription" ? (
+                  <span className="font-sans text-sm font-semibold text-stone-700">
+                    Business subscription contract
+                  </span>
+                ) : (
+                  <span className="font-sans text-sm text-stone-500">—</span>
+                ),
+            },
             {
               label: "Status",
               value: (
                 <DashboardStatusBadge label={invoice.status} tone={invoice.tone} />
               ),
             },
+            { label: "Date", value: invoice.date },
           ]}
         />
       </DashboardPanel>

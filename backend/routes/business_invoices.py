@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from models import BusinessInvoice, CompanyAccount, User, db
+from services.invoicing import reconcile_account_invoices
 
 invoices_bp = Blueprint("business_invoices", __name__, url_prefix="/api/v1")
 
@@ -36,11 +37,7 @@ def business_list_invoices():
     if user is None or entity is None:
         return jsonify({"invoices": []}), 200
 
-    invoices = (
-        BusinessInvoice.query.filter_by(company_account_id=entity.id)
-        .order_by(BusinessInvoice.created_at)
-        .all()
-    )
+    invoices = reconcile_account_invoices(entity)
     return jsonify({"invoices": [row.to_dict() for row in invoices]}), 200
 
 
@@ -48,9 +45,13 @@ def business_list_invoices():
 @jwt_required()
 def business_get_invoice(key):
     user = db.session.get(User, _current_user_id())
-    invoice = db.session.get(BusinessInvoice, key)
     entity = _account_for_user(user) if user else None
-    if invoice is None or entity is None or invoice.company_account_id != entity.id:
+    if entity is None:
+        return jsonify({"error": "Invoice not found"}), 404
+
+    reconcile_account_invoices(entity)
+    invoice = db.session.get(BusinessInvoice, key)
+    if invoice is None or invoice.company_account_id != entity.id:
         return jsonify({"error": "Invoice not found"}), 404
     return jsonify({"invoice": invoice.to_dict()}), 200
 

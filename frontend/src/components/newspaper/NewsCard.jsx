@@ -4,6 +4,8 @@ import { useLanguage } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { getArticleAccessState } from "@/lib/demoData";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
+import { toVideoEmbed } from "@/lib/article-video";
+import InlineVideo from "@/components/newspaper/InlineVideo";
 
 const accessToneClassMap = {
   subscriber: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -25,6 +27,7 @@ export default function NewsCard({
   );
   const accessToneClass =
     accessToneClassMap[access.key] || accessToneClassMap.public;
+  const video = toVideoEmbed(article.video);
 
   if (variant === "compact") {
     return (
@@ -51,13 +54,19 @@ export default function NewsCard({
               </p>
             ) : null}
           </div>
-          {image && (
+          {video ? (
+            <InlineVideo
+              video={article.video}
+              className="h-14 w-14 flex-shrink-0 sm:h-16 sm:w-16"
+              label={t(headline)}
+            />
+          ) : image ? (
             <img
               src={image}
               alt={t(headline)}
               className="editorial-image h-14 w-14 flex-shrink-0 object-cover sm:h-16 sm:w-16"
             />
-          )}
+          ) : null}
         </article>
       </Link>
     );
@@ -66,7 +75,15 @@ export default function NewsCard({
   return (
     <Link to={`/article/${id}`} className="group block">
       <article className="hover-lift border border-stone-400/60 bg-paper p-4">
-        {image && (
+        {video ? (
+          <div className="mb-4 overflow-hidden">
+            <InlineVideo
+              video={article.video}
+              className="aspect-[4/3] w-full"
+              label={headline}
+            />
+          </div>
+        ) : image ? (
           <div className="mb-4 overflow-hidden">
             <img
               src={image}
@@ -74,7 +91,7 @@ export default function NewsCard({
               className="editorial-image aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             />
           </div>
-        )}
+        ) : null}
         <div className="flex flex-wrap items-center gap-2">
           <span className="category-label">{t(category)}</span>
           {showAccessState ? (

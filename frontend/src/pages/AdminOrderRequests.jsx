@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Check, ExternalLink, X } from "lucide-react";
+import { Check, ExternalLink, Truck, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   DashboardDataTable,
   DashboardEmptyState,
@@ -282,9 +283,29 @@ export default function AdminOrderRequests() {
       >
         {closed.length ? (
           <DashboardDataTable
-            columns={requestColumns}
+            columns={[
+              ...requestColumns,
+              {
+                key: "createRun",
+                label: "Dispatch",
+                render: (value, row) =>
+                  row.status === "Approved" ? (
+                    <Link
+                      to={`/admin/shipments/new?order=${encodeURIComponent(row.id)}`}
+                      className="inline-flex items-center gap-1 rounded-full bg-stone-900 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-emerald-700"
+                    >
+                      <Truck className="h-3.5 w-3.5" />
+                      Create run
+                    </Link>
+                  ) : (
+                    <span className="font-sans text-xs text-stone-400">
+                      —
+                    </span>
+                  ),
+              },
+            ]}
             rows={closed}
-            minWidth={720}
+            minWidth={780}
           />
         ) : (
           <DashboardEmptyState

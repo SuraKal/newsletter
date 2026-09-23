@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Users } from "lucide-react";
+import { CirclePlus, MapPin, Users } from "lucide-react";
 import {
   DashboardDataTable,
   DashboardEmptyState,
@@ -153,13 +153,22 @@ export default function AdminShipments() {
           { label: "Shipments" },
         ]}
         action={
-          <Link
-            to="/admin/schedule"
-            className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-stone-700"
-          >
-            Coordinated releases
-            <Users className="h-4 w-4" />
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/admin/shipments/new"
+              className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-700"
+            >
+              New shipment run
+              <CirclePlus className="h-4 w-4" />
+            </Link>
+            <Link
+              to="/admin/schedule"
+              className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition-colors hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+            >
+              Coordinated releases
+              <Users className="h-4 w-4" />
+            </Link>
+          </div>
         }
       />
 

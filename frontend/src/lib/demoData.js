@@ -15,15 +15,16 @@ export const heroArticle = {
 };
 
 export const sidebarArticles = [
-  {
+{
     id: "side-1",
     image: IMAGES.politics,
     category: "Politics",
     date: "August 10, 2026",
     headline:
       "Regional Editors Prepare Tonight's Politics Brief Ahead of Council and Parliament Sessions",
-    summary:
+summary:
       "Subscriber editions package the decisions shaping transport, public spending, and local business confidence.",
+    video: "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
   },
   {
     id: "side-2",
@@ -83,7 +84,7 @@ export const latestNews = [
     publicAccessDate: "September 10, 2026",
     sector: "Policy desk",
   },
-  {
+{
     id: "ln-2",
     image: IMAGES.sports,
     category: "Sports",
@@ -92,6 +93,7 @@ export const latestNews = [
       "Weekend fixtures move from live alerts to the next print run with match tables and analysis intact",
     summary:
       "Subscriber coverage is already live, while public readers unlock this edition on September 9, 2026.",
+    video: "https://youtu.be/jNQXAC9IVRw",
     author: "Maria Santos",
     accessLabel: "Archive opens September 9, 2026",
     publicAccessDate: "September 9, 2026",

@@ -22,7 +22,7 @@ function readAll() {
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) return parsed;
+      if (Array.isArray(parsed)) return parsed;
     } catch {
       // fall through to reseed
     }

@@ -6,6 +6,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from middleware.auth import role_required
 from models import Article, CompanyAccount, CompanyOrder, User, db
 from models.company_order import estimate_order_price
+from services.invoicing import sync_invoice_for_order
 
 orders_bp = Blueprint("orders", __name__, url_prefix="/api/v1")
 
@@ -177,6 +178,10 @@ def admin_approve_order(key):
     # in sync with the live order book.
     if order.company_account is not None:
         order.company_account.volume = f"{order.copies} copies / cycle"
+
+    # An approved order with a confirmed final price becomes a real billing
+    # source: reconcile its invoice in the same transaction.
+    sync_invoice_for_order(order)
 
     db.session.commit()
     return jsonify({"order": order.to_dict()}), 200

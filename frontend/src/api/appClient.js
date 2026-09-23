@@ -579,6 +579,7 @@ const BUSINESS_SHIPMENT_ADVANCES = {
 };
 
 const ADMIN_SHIPMENT_ADVANCES = {
+  "Address review": { status: "Preparing", tone: "neutral" },
   "Delay flagged": { status: "In dispatch", tone: "info" },
   Preparing: { status: "In dispatch", tone: "info" },
   "In dispatch": { status: "Delivered", tone: "success" },
@@ -639,6 +640,55 @@ const fallbackShipmentActivity = (shipmentId, owner) => {
   const source =
     owner === "admin" ? adminShipmentActivityRows : businessShipmentActivityRows;
   return source.filter((row) => row.shipment === shipmentId);
+};
+
+const buildOfflineShipment = (data, owner) => {
+  const company = getBusinessCompanySnapshot(resolveCompanyUserEmail());
+  const prefix = owner === "admin" ? "OPS" : "BIZ";
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const existing =
+    owner === "admin" ? getAdminShipmentRows() : getBusinessShipmentRows();
+  const seq = existing.filter((row) =>
+    (row.shipmentId || "").startsWith(`${prefix}-${today}`),
+  ).length;
+
+  const deliveryLocations = Array.isArray(data.deliveryLocations)
+    ? data.deliveryLocations.map((location, index) => ({
+        id: `dest-${index}`,
+        location: typeof location === "string" ? location : location?.location || "",
+        address: "",
+        region: "",
+        copies: "",
+        status: "Approved",
+        tone: "success",
+      }))
+    : [];
+
+  return {
+    id: `shipment-${Date.now()}`,
+    companyAccountId:
+      owner === "business"
+        ? company?.id || null
+        : data.companyAccountId || null,
+    shipmentId: `${prefix}-${today}-${
+      owner === "admin" ? String(seq + 1).padStart(2, "0") : String.fromCharCode(65 + seq)
+    }`,
+    label: data.label || "",
+    route: data.route || "",
+    scope: data.scope || "",
+    status: "Preparing",
+    tone: "neutral",
+    eta: data.eta || "Awaiting dispatch window",
+    sourceType: data.sourceType || "manual",
+    orderRequestId: data.orderRequestId || null,
+    notes: data.notes || "",
+    owner,
+    company:
+      owner === "business" ? company?.company || "" : data.company || "",
+    deliveryLocations,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 };
 
 // Offline checkout fallback: shapes a plausible succeeded session in the same
@@ -1209,6 +1259,19 @@ export const appClient = {
       }
     },
 
+    async create(data) {
+      try {
+        const row = await backendShipments.businessCreate(data);
+        return cacheBusinessShipment(row);
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+        const row = buildOfflineShipment(data, "business");
+        return cacheBusinessShipment(row);
+      }
+    },
+
     listAdmin() {
       return getAdminShipmentRows();
     },
@@ -1242,6 +1305,19 @@ export const appClient = {
               activity: fallbackShipmentActivity(shipment.shipmentId, "admin"),
             }
           : null;
+      }
+    },
+
+    async createAdmin(data) {
+      try {
+        const row = await backendShipments.adminCreate(data);
+        return cacheAdminShipment(row);
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          throw error;
+        }
+        const row = buildOfflineShipment(data, "admin");
+        return cacheAdminShipment(row);
       }
     },
 

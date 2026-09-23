@@ -605,10 +605,25 @@ export const toAppShipment = (shipment) => {
     status: shipment.status || "Preparing",
     tone: SHIPMENT_TONES[shipment.status] || shipment.tone || "neutral",
     eta: shipment.eta || "",
+    sourceType: shipment.sourceType || "manual",
+    orderRequestId: shipment.orderRequestId || null,
+    notes: shipment.notes || "",
     owner: shipment.owner || (hasCompany ? "business" : "admin"),
     company: shipment.company || "",
     deliveryLocations: Array.isArray(shipment.deliveryLocations)
-      ? shipment.deliveryLocations.map(toAppLocation)
+      ? shipment.deliveryLocations.map((location, index) =>
+          typeof location === "string"
+            ? {
+                id: `dest-${index}`,
+                location,
+                address: "",
+                region: "",
+                copies: "",
+                status: "Approved",
+                tone: "success",
+              }
+            : toAppLocation(location),
+        )
       : [],
     createdAt: shipment.createdAt || "",
     updatedAt: shipment.updatedAt || "",
@@ -668,6 +683,22 @@ export const backendShipments = {
     );
     return toAppShipment(payload.shipment);
   },
+
+  async businessCreate(data) {
+    const payload = await request("/business/shipments", {
+      method: "POST",
+      body: data,
+    });
+    return toAppShipment(payload.shipment);
+  },
+
+  async adminCreate(data) {
+    const payload = await request("/admin/shipments", {
+      method: "POST",
+      body: data,
+    });
+    return toAppShipment(payload.shipment);
+  },
 };
 
 export const toAppOrderPlan = (plan) => ({
@@ -712,6 +743,11 @@ export const toAppInvoice = (invoice) => ({
   invoice: invoice.invoice || "",
   scope: invoice.scope || "",
   amount: invoice.amount || "",
+  sourceType: invoice.sourceType || "",
+  sourceId: invoice.sourceId || "",
+  amountValue:
+    invoice.amountValue != null ? Number(invoice.amountValue) : null,
+  currency: invoice.currency || "EUR",
   status: invoice.status || "Upcoming",
   tone: invoice.tone || "neutral",
   date: invoice.date || "",

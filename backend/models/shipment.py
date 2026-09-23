@@ -47,6 +47,24 @@ class Shipment(db.Model):
     status = db.Column(db.String(50), default="Preparing")
     eta = db.Column(db.String(120), default="")
 
+    # How a run was started. `manual` covers ad-hoc/platform runs started
+    # from scratch; `bulk_order` means it was initiated from an approved
+    # bulk-order request and keeps a link back to that request.
+    source_type = db.Column(db.String(30), default="manual")
+    order_request_id = db.Column(
+        db.String(UUID_LEN),
+        db.ForeignKey("company_orders.id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
+    notes = db.Column(db.String(500), default="")
+
+    # Destination names captured when a run is started from a bulk order.
+    # When present they take precedence over the company's saved business
+    # locations; otherwise the payload falls back to those saved locations.
+    delivery_locations = db.Column(db.JSON, default=list)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
@@ -85,6 +103,10 @@ class Shipment(db.Model):
             "status": self.status,
             "tone": self.tone,
             "eta": self.eta,
+            "sourceType": self.source_type or "manual",
+            "orderRequestId": self.order_request_id,
+            "notes": self.notes or "",
+            "deliveryLocations": self.delivery_locations or [],
             "owner": self.owner,
             "company": company,
             "createdAt": self.created_at.isoformat() if self.created_at else None,

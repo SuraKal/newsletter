@@ -22,6 +22,10 @@ const relatedLinks = [
 ];
 
 const actionForStatus = (status) => {
+  if (status === "Address review") {
+    return { label: "Approve address", next: { status: "Preparing", tone: "neutral" } };
+  }
+
   if (status === "Delay flagged") {
     return { label: "Resolve delay", next: { status: "In dispatch", tone: "info" } };
   }

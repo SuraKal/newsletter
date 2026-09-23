@@ -31,6 +31,7 @@ from models import (
 )
 from models.category import slugify
 from models.company_order import estimate_order_price
+from services.invoicing import reconcile_account_invoices
 
 SEEDED_PLANS = [
     {
@@ -1705,44 +1706,19 @@ def _upsert_business_orders():
 
 
 def _upsert_business_invoices():
-    """Seed consolidated invoice records for the demo lead org account.
+    """Seed the demo lead org account invoices from real billing sources.
 
-    Mirrors ``businessInvoiceRows`` from ``demoData.js``. Idempotent per
-    (account, invoice code).
+    Instead of static demo rows, invoices are reconciled from the account's
+    approved bulk orders (confirmed final price) and the owner's active
+    business subscription, so the invoices surface is a projection of the live
+    order book and contract. Idempotent via the source link.
     """
     account = CompanyAccount.query.filter_by(
         company=SEEDED_COMPANY_LEAD["company"]
     ).first()
     if account is None:
         return
-
-    seeded = [
-        ("INV-BIZ-2026-08", "August business circulation", "EUR 8,950", "Paid", "August 11, 2026"),
-        ("INV-BIZ-2026-07", "July business circulation", "EUR 8,630", "Paid", "July 11, 2026"),
-        ("VAT note review", "Germany branch allocation", "Pending", "Review", "August 8, 2026"),
-        ("INV-BIZ-2026-09", "Projected September cycle", "EUR 9,120", "Upcoming", "September 1, 2026"),
-    ]
-    for invoice, scope, amount, status, date in seeded:
-        existing = BusinessInvoice.query.filter_by(
-            company_account_id=account.id, invoice=invoice
-        ).first()
-        if existing is None:
-            db.session.add(
-                BusinessInvoice(
-                    company_account_id=account.id,
-                    invoice=invoice,
-                    scope=scope,
-                    amount=amount,
-                    status=status,
-                    date=date,
-                    created_at=SEED_COMPANY_BASE_CREATED,
-                )
-            )
-        else:
-            existing.scope = scope
-            existing.amount = amount
-            existing.status = status
-            existing.date = date
+    reconcile_account_invoices(account)
 
 
 def _upsert_business_team_members():

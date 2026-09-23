@@ -39,6 +39,8 @@ const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const BusinessShipments = lazy(() => import("@/pages/BusinessShipments"));
 const AdminShipments = lazy(() => import("@/pages/AdminShipments"));
 const AdminShipmentDetail = lazy(() => import("@/pages/AdminShipmentDetail"));
+const AdminShipmentNew = lazy(() => import("@/pages/AdminShipmentNew"));
+const BusinessShipmentNew = lazy(() => import("@/pages/BusinessShipmentNew"));
 const BusinessTeam = lazy(() => import("@/pages/BusinessTeam"));
 const BusinessOrders = lazy(() => import("@/pages/BusinessOrders"));
 const BusinessInvoices = lazy(() => import("@/pages/BusinessInvoices"));
@@ -263,6 +265,7 @@ const AuthenticatedApp = () => {
             element={<BusinessLocationDetail />}
           />
           <Route path="shipments" element={<BusinessShipments />} />
+          <Route path="shipments/new" element={<BusinessShipmentNew />} />
           <Route
             path="shipments/:shipmentId"
             element={<BusinessShipmentDetail />}
@@ -300,6 +303,7 @@ const AuthenticatedApp = () => {
             element={<AdminCategoryDetail />}
           />
           <Route path="shipments" element={<AdminShipments />} />
+          <Route path="shipments/new" element={<AdminShipmentNew />} />
           <Route
             path="shipments/:shipmentId"
             element={<AdminShipmentDetail />}

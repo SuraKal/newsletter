@@ -44,6 +44,14 @@ class BusinessInvoice(db.Model):
     status = db.Column(db.String(50), default="Upcoming")
     date = db.Column(db.String(80), default="")
 
+    # Linking fields: "bulk_order" or "subscription" with the source row id so
+    # the invoice is a projection of real billing, not a static demo record.
+    source_type = db.Column(db.String(30), default="", index=True)
+    source_id = db.Column(db.String(36), default="", index=True)
+    # Numeric amount + currency backing the display `amount` string.
+    amount_value = db.Column(db.Numeric(12, 2), nullable=True)
+    currency = db.Column(db.String(8), default="EUR")
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
@@ -67,6 +75,12 @@ class BusinessInvoice(db.Model):
             "invoice": self.invoice,
             "scope": self.scope,
             "amount": self.amount,
+            "sourceType": self.source_type or "",
+            "sourceId": self.source_id or "",
+            "amountValue": (
+                float(self.amount_value) if self.amount_value is not None else None
+            ),
+            "currency": self.currency or "EUR",
             "status": self.status,
             "tone": self.tone,
             "date": self.date,

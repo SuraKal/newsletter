@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { CirclePlus, Send } from "lucide-react";
+import { CirclePlus, MapPin, Send } from "lucide-react";
 import {
   DashboardDataTable,
   DashboardEmptyState,
@@ -66,11 +66,16 @@ export default function BusinessOrderRequests() {
   useStoreVersion();
   const [entity, setEntity] = useState(() => appClient.company.snapshot());
   const [orders, setOrders] = useState(() => appClient.companyOrders.list());
-  const [articles, setArticles] = useState(() => appClient.articles.list());
+  const [articles, setArticles] = useState(() =>
+    appClient.articles.list().filter((item) => item.status === "Published"),
+  );
   const [copies, setCopies] = useState("");
   const [neededBy, setNeededBy] = useState("");
   const [articleId, setArticleId] = useState("");
   const [locationsInput, setLocationsInput] = useState("");
+  const [savedLocations, setSavedLocations] = useState(() =>
+    appClient.locations.list(),
+  );
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -82,12 +87,37 @@ export default function BusinessOrderRequests() {
   const reloadArticles = async () => {
     await appClient.articles.refresh();
     const next = appClient.articles.list();
-    if (Array.isArray(next)) setArticles(next);
+    if (Array.isArray(next)) {
+      setArticles(next.filter((item) => item.status === "Published"));
+    }
+  };
+
+  const reloadLocations = async () => {
+    const rows = await appClient.locations.refresh();
+    if (Array.isArray(rows)) setSavedLocations(rows);
+  };
+
+  const fillLocationsFromSaved = () => {
+    const labels = savedLocations
+      .map((row) => {
+        const parts = [row.location, row.address || row.region].filter(Boolean);
+        return parts.length ? parts.join(", ") : "";
+      })
+      .filter(Boolean);
+    if (labels.length) {
+      setLocationsInput(labels.join("\n"));
+      setMessage("");
+    } else {
+      setMessage(
+        "No saved delivery locations yet. Add receiving sites under Locations first.",
+      );
+    }
   };
 
   useEffect(() => {
     reloadOrders();
     reloadArticles();
+    reloadLocations();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -217,12 +247,25 @@ export default function BusinessOrderRequests() {
               </div>
 
               <div>
-                <label
-                  htmlFor="order-locations"
-                  className="mb-2 block font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-700"
-                >
-                  Delivery locations
-                </label>
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <label
+                    htmlFor="order-locations"
+                    className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-stone-700"
+                  >
+                    Delivery locations
+                  </label>
+                  <button
+                    type="button"
+                    onClick={fillLocationsFromSaved}
+                    disabled={!savedLocations.length}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-1.5 font-sans text-[0.65rem] font-bold uppercase tracking-[0.14em] text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <MapPin className="h-3.5 w-3.5" />
+                    {savedLocations.length
+                      ? "Auto-fill from saved locations"
+                      : "No saved locations"}
+                  </button>
+                </div>
                 <textarea
                   id="order-locations"
                   value={locationsInput}
@@ -231,6 +274,12 @@ export default function BusinessOrderRequests() {
                   rows={3}
                   className="w-full resize-none rounded-xl border border-stone-200 bg-white px-4 py-3 font-sans text-base text-stone-900 outline-none transition-colors focus:border-[#4A2A08] focus:ring-2 focus:ring-[#4A2A08]/15"
                 />
+                {savedLocations.length ? (
+                  <p className="mt-1.5 font-sans text-xs text-stone-500">
+                    Auto-fills your {savedLocations.length} saved receiving{" "}
+                    {savedLocations.length === 1 ? "site" : "sites"} from the Locations page.
+                  </p>
+                ) : null}
               </div>
 
               <div className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-stone-50 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -305,7 +354,7 @@ export default function BusinessOrderRequests() {
                 <DashboardDataTable
                   columns={orderColumns}
                   rows={orders}
-                  minWidth={720}
+                  minWidth={780}
                 />
               </div>
             ) : (
