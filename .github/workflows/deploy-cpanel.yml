@@ -26,12 +26,17 @@ jobs:
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
           FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
+          FTP_PROTOCOL: ${{ secrets.FTP_PROTOCOL }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
         run: |
           set -euo pipefail
           required_values=(
             FTP_SERVER
             FTP_USERNAME
             FTP_PASSWORD
+            FTP_SERVER_DIR
+            FTP_PROTOCOL
+            FTP_PORT
           )
 
           for value_name in "${required_values[@]}"; do
@@ -41,20 +46,31 @@ jobs:
             fi
           done
 
+          case "$FTP_PROTOCOL" in
+            ftp|ftps) ;;
+            *)
+              echo "FTP_PROTOCOL must be either ftp or ftps." >&2
+              exit 1
+              ;;
+          esac
+
+          case "$FTP_PORT" in
+            *[!0-9]*|"")
+              echo "FTP_PORT must be a numeric port." >&2
+              exit 1
+              ;;
+          esac
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
-
-      - name: Prepare production frontend env
-        working-directory: frontend
-        run: cp .env.production.example .env.production
 
       - name: Lint frontend
         working-directory: frontend
@@ -69,7 +85,7 @@ jobs:
         run: npm run build
 
       - name: Validate Python entry points
-        run: python -m py_compile backend/app.py backend/wsgi.py backend/passenger_wsgi.py frontend/passenger_wsgi.py
+        run: python -m py_compile passenger_wsgi.py backend/app.py backend/config.py backend/wsgi.py backend/passenger_wsgi.py
 
       - name: Prepare Passenger restart marker
         run: |
@@ -92,7 +108,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          remote_dir="${FTP_SERVER_DIR:-/}"
+          remote_dir="$FTP_SERVER_DIR"
           case "$remote_dir" in
             */) ;;
             *) remote_dir="${remote_dir}/" ;;
@@ -105,8 +121,8 @@ jobs:
             echo "Using a custom FTP target directory from FTP_SERVER_DIR."
           fi
 
-          protocol="${FTP_PROTOCOL:-ftps}"
-          port="${FTP_PORT:-21}"
+          protocol="$FTP_PROTOCOL"
+          port="$FTP_PORT"
           ssl_force="false"
           ssl_protect_data="false"
 
@@ -119,22 +135,27 @@ jobs:
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" -p "$port" "$protocol://$FTP_SERVER" <<LFTP
           set ftp:ssl-force $ssl_force
           set ftp:ssl-protect-data $ssl_protect_data
-          set ssl:verify-certificate no
+          set ssl:verify-certificate yes
           mkdir -p "$remote_dir"
-          mirror --reverse --verbose --only-newer \
+          mirror --reverse --verbose --only-newer --delete \
             --exclude-glob ".git*" \
             --exclude-glob ".github/**" \
             --exclude-glob "node_modules/**" \
             --exclude-glob "backend/.venv/**" \
+            --exclude-glob "venv/**" \
+            --exclude-glob "backend/.env" \
             --exclude-glob "backend/storage/uploads/**" \
             --exclude-glob "storage/uploads/**" \
             --exclude-glob "__pycache__/**" \
             --exclude-glob "**/__pycache__/**" \
             --exclude-glob "*.pyc" \
-            --exclude-glob ".env" \
-            --exclude-glob ".env.*" \
+            --exclude-glob "**/.env" \
+            --exclude-glob "**/.env.*" \
+            --exclude-glob "tmp/**" \
             --exclude-glob "*.log" \
             --exclude-glob "dist-ssr/**" \
             ./ "$remote_dir"
+          mkdir -p "$remote_dir/tmp"
+          put -O "$remote_dir/tmp" tmp/restart.txt
           bye
           LFTP

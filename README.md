@@ -111,3 +111,8 @@ VITE_CONTACT_PHONE=+251900000000
 
 See `backend/README.md` for setup, migrations, and API conventions. The Flask dev
 server runs on port 5050.
+
+## Production deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the cPanel Passenger setup and the six
+FTP-only GitHub Actions secrets used by the deployment workflow.

@@ -86,14 +86,14 @@ export default function SubscriptionSection() {
         <div className="mt-7 flex flex-col items-start justify-between gap-3 rounded-2xl border border-heritage/20 bg-paper px-5 py-4 sm:flex-row sm:items-center">
           <div>
             <p className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-heritage">
-              Company pricing is separate
+              {t("Company pricing is separate")}
             </p>
             <p className="mt-1 font-body text-sm text-redacted">
-              Bulk copies, locations, and invoicing follow a quote-led business workflow.
+              {t("Bulk copies, locations, and invoicing follow a quote-led business workflow.")}
             </p>
           </div>
           <Link to="/business" className="inline-flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-[0.16em] text-heritage hover:text-ink">
-            Explore business plans
+            {t("Explore business plans")}
             <span aria-hidden>→</span>
           </Link>
         </div>

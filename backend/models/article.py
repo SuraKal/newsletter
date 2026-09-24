@@ -1,6 +1,8 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy.dialects import mysql
+
 from models import db
 
 UUID_LEN = 36
@@ -22,7 +24,9 @@ class Article(db.Model):
     headline = db.Column(db.String(255), nullable=False)
     summary = db.Column(db.Text)
     body = db.Column(db.Text)
-    image = db.Column(db.Text)
+    # Data-URL uploads commonly exceed MySQL TEXT's 64 KiB capacity. MEDIUMTEXT
+    # holds up to 16 MiB while preserving the current API contract.
+    image = db.Column(mysql.MEDIUMTEXT)
     author = db.Column(db.String(120), default="Editorial desk")
     editor = db.Column(db.String(120), default="Editorial desk")
     status = db.Column(db.String(30), default="Draft")  # Draft | Scheduled | Published

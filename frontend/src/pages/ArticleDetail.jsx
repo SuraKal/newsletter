@@ -38,7 +38,7 @@ export default function ArticleDetail() {
   const { id } = useParams();
   const location = useLocation();
   const { user } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   const [article, setArticle] = useState(() => getPublishedLocalArticle(id));
   const [loading, setLoading] = useState(() => !article);
@@ -161,7 +161,7 @@ export default function ArticleDetail() {
           text: article.summary,
           url: typeof window !== "undefined" ? window.location.href : "",
         });
-        notify("Shared to reading history");
+        notify(t("Shared to reading history"));
         return;
       } catch {
         // Fall through to clipboard copy when the user cancels the sheet.
@@ -175,7 +175,7 @@ export default function ArticleDetail() {
     ) {
       await navigator.clipboard.writeText(window.location.href).catch(() => {});
     }
-    notify("Link copied");
+    notify(t("Link copied"));
   };
 
   const handleBookmark = () => {
@@ -190,7 +190,7 @@ export default function ArticleDetail() {
         action: "toggle_save",
       })
       .catch(() => {});
-    notify(nextSaved ? "Saved to reading history" : "Removed from saved stories");
+    notify(t(nextSaved ? "Saved to reading history" : "Removed from saved stories"));
   };
 
   if (loading && !article) {
@@ -200,7 +200,7 @@ export default function ArticleDetail() {
         <main className="mx-auto max-w-[1320px] w-full px-4 py-20 text-center">
           <div className="newspaper-rule-double mb-8" />
           <p className="font-serif text-lg italic text-stone-600 animate-pulse">
-            Retrieving story from archives...
+            {t("Retrieving story from archives...")}
           </p>
         </main>
         <Footer />
@@ -215,17 +215,17 @@ export default function ArticleDetail() {
         <main className="mx-auto max-w-[1320px] w-full px-4 py-20 text-center">
           <div className="newspaper-rule-double mb-8" />
           <h1 className="font-heading text-4xl font-black text-ink mb-4">
-            Article Not Found
+            {t("Article Not Found")}
           </h1>
           <p className="font-body text-stone-600 max-w-md mx-auto mb-8">
-            The story you are looking for does not exist or has been archived.
+            {t("The story you are looking for does not exist or has been archived.")}
           </p>
           <Link
             to="/news"
             className="inline-flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-[0.2em] bg-ink text-paper px-6 py-3 transition-colors hover:bg-heritage"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Newsroom
+            {t("Back to Newsroom")}
           </Link>
         </main>
         <Footer />
@@ -245,7 +245,7 @@ export default function ArticleDetail() {
               className="inline-flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-[0.2em] text-redacted transition-colors hover:text-heritage"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Newsroom
+              {t("Back to Newsroom")}
             </Link>
             <div className="flex items-center gap-3">
               {actionMessage ? (
@@ -259,14 +259,14 @@ export default function ArticleDetail() {
               ) : null}
               <button
                 className="p-2 transition-colors hover:text-heritage"
-                aria-label="Share this story"
+                aria-label={t("Share this story")}
                 onClick={handleShare}
               >
                 <Share2 className="h-4 w-4" />
               </button>
               <button
                 className={`p-2 transition-colors ${saved ? "text-heritage" : "hover:text-heritage"}`}
-                aria-label={saved ? "Remove bookmark" : "Bookmark this story"}
+                aria-label={t(saved ? "Remove bookmark" : "Bookmark this story")}
                 aria-pressed={saved}
                 onClick={handleBookmark}
               >

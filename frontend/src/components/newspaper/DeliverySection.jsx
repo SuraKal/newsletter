@@ -51,7 +51,7 @@ export default function DeliverySection() {
         <div className="overflow-hidden">
           <img
             src={IMAGES.delivery}
-            alt="Newspaper delivery and print operations"
+            alt={t("Newspaper delivery and print operations")}
             className="editorial-image aspect-[16/9] w-full object-cover"
           />
         </div>

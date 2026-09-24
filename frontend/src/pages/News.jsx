@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/pagination";
 import { useAuth } from "@/lib/AuthContext";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
-import { getHeroArticle, getPublicListingArticles } from "@/lib/content-store";
+import { getArticleForLanguage, getHeroArticle, getPublicListingArticles } from "@/lib/content-store";
 import { getArticleAccessState } from "@/lib/demoData";
 import { useStoreVersion } from "@/lib/store-bus";
+import { useLanguage } from "@/lib/LanguageContext";
 
 const PAGE_SIZE = 6;
 
@@ -46,9 +47,10 @@ function getPageItems(currentPage, totalPages) {
 export default function News() {
   useStoreVersion();
   const { user } = useAuth();
+  const { language, t } = useLanguage();
   const hasSubscriberAccess = hasActiveReaderSubscription(user);
-  const heroArticle = getHeroArticle();
-  const listedArticles = getPublicListingArticles();
+  const heroArticle = getArticleForLanguage(getHeroArticle(), language);
+  const listedArticles = getPublicListingArticles().map((article) => getArticleForLanguage(article, language));
   const heroAccess = getArticleAccessState(heroArticle, hasSubscriberAccess);
   const [currentPage, setCurrentPage] = React.useState(1);
 
@@ -72,32 +74,32 @@ export default function News() {
       <Masthead />
       <main className="mx-auto max-w-[1320px] px-3 py-3 sm:px-5 lg:px-8">
         <div className="newspaper-sheet border border-stone-400/60 p-3 sm:p-5 lg:p-6">
-          <SectionHeader title="All News" />
+          <SectionHeader title={t("All News")} />
 
           <div className="grid grid-cols-1 gap-6 border-b border-stone-400/70 pb-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
             <div className="border-b border-stone-400/70 pb-5 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-6">
-              <p className="category-label">News Desk</p>
+              <p className="category-label">{t("News Desk")}</p>
               <h2 className="mt-2 font-display text-2xl font-black leading-tight text-ink">
-                The stories shaping today’s edition
+                {t("The stories shaping today’s edition")}
               </h2>
               <p className="mt-3 font-body text-sm leading-relaxed text-redacted">
-                Follow the latest reporting across politics, business, sport, culture, and community life.
+                {t("Browse published reporting across politics, business, sport, culture, and community. Subscriber-only stories follow their configured access and public release date.")}
               </p>
               <Link to="/subscriptions" className="mt-5 inline-flex bg-heritage px-4 py-2.5 font-sans text-xs font-bold uppercase tracking-wider text-paper hover:bg-ink">
-                Read with access
+                {t("Read with access")}
               </Link>
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(240px,0.8fr)]">
             <Link to={`/article/${heroArticle.id}`} className="group">
               <img
                 src={heroArticle.image}
-                alt={heroArticle.headline}
+                alt={t(heroArticle.headline)}
                 className="editorial-image w-full aspect-[16/9] object-cover transition-transform duration-500 group-hover:scale-[1.01]"
               />
             </Link>
             <div className="flex flex-col justify-center">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="category-label">{heroArticle.category}</span>
+                <span className="category-label">{t(heroArticle.category)}</span>
                 <span
                   className={`rounded-full border px-2.5 py-1 font-sans text-[0.6rem] font-bold uppercase tracking-[0.14em] ${
                     heroAccess.key === "locked"
@@ -107,21 +109,21 @@ export default function News() {
                         : "border-stone-300 bg-vellum text-ink"
                   }`}
                 >
-                  {heroAccess.shortLabel}
+                  {t(heroAccess.shortLabel)}
                 </span>
               </div>
               <Link to={`/article/${heroArticle.id}`} className="group">
                 <h2 className="mt-2 font-display text-2xl font-black leading-tight text-ink transition-colors group-hover:text-heritage md:text-3xl">
-                  {heroArticle.headline}
+                  {t(heroArticle.headline)}
                 </h2>
               </Link>
               <p className="mt-3 font-body text-base leading-relaxed text-redacted">
-                {heroArticle.summary}
+                {t(heroArticle.summary)}
               </p>
               <div className="mt-3 flex items-center gap-2">
-                <span className="meta-text font-semibold">By {heroArticle.author}</span>
+                <span className="meta-text font-semibold">{t("By")} {t(heroArticle.author)}</span>
                 <span className="meta-text">·</span>
-                <span className="meta-text">{heroArticle.date}</span>
+                <span className="meta-text">{t(heroArticle.date)}</span>
               </div>
             </div>
             </div>
@@ -147,6 +149,7 @@ export default function News() {
               <PaginationItem>
                 <PaginationPrevious
                   href="#news"
+                  aria-label={t("Go to previous page")}
                   className={currentPage === 1 ? "pointer-events-none opacity-40" : undefined}
                   onClick={(event) => {
                     event.preventDefault();
@@ -179,6 +182,7 @@ export default function News() {
               <PaginationItem>
                 <PaginationNext
                   href="#news"
+                  aria-label={t("Go to next page")}
                   className={currentPage === totalPages ? "pointer-events-none opacity-40" : undefined}
                   onClick={(event) => {
                     event.preventDefault();
@@ -190,7 +194,7 @@ export default function News() {
           </Pagination>
 
           <p className="text-center font-sans text-[0.65rem] font-bold uppercase tracking-[0.2em] text-redacted">
-            Page {currentPage} of {totalPages}
+            {t("Page")} {currentPage} {t("of")} {totalPages}
           </p>
         </div>
       </main>

@@ -40,7 +40,7 @@ export default function BusinessSection() {
             </div>
             <img
               src={IMAGES.boardroom}
-              alt="Business team reviewing printed newspaper delivery plans"
+              alt={t("Business team reviewing printed newspaper delivery plans")}
               className="aspect-[16/9] w-full object-cover opacity-80"
             />
           </div>

@@ -8,8 +8,10 @@ import {
   getReaderPlans,
   useSubscriptionPlans,
 } from "@/lib/subscription-catalog";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function Subscriptions() {
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedBilling = searchParams.get("billing");
   const [billing, setBilling] = useState(
@@ -36,7 +38,7 @@ export default function Subscriptions() {
 
   const getDisplayPrice = (plan) => {
     if (plan.price === "Custom") {
-      return "Custom";
+      return t("Custom");
     }
 
     return getSubscriptionPrice(plan, billing).toFixed(2);
@@ -44,10 +46,10 @@ export default function Subscriptions() {
 
   const getDisplayPeriod = (plan) => {
     if (plan.price === "Custom") {
-      return "contact sales";
+      return t("contact sales");
     }
 
-    return billing === "yearly" ? "/year" : "/month";
+    return t(billing === "yearly" ? "/year" : "/month");
   };
 
   return (
@@ -55,15 +57,12 @@ export default function Subscriptions() {
       <Masthead />
       <main>
         <section className="mx-auto max-w-5xl px-4 py-16 text-center">
-          <span className="category-label">Subscriptions and Access</span>
+          <span className="category-label">{t("Subscriptions and Access")}</span>
           <h1 className="mt-3 font-display text-4xl font-black leading-tight text-ink md:text-5xl lg:text-6xl">
-            Choose a plan with the real product rules up front.
+            {t("Choose a plan with the real product rules up front.")}
           </h1>
           <p className="mx-auto mt-4 max-w-3xl font-body text-lg leading-relaxed text-redacted">
-            Reader subscriptions are billed monthly or yearly, print delivery
-            still runs every two weeks, and recent reporting stays reserved for
-            active subscribers before it moves into the public archive 30 days
-            later.
+            {t("Reader subscriptions are billed monthly or yearly, print delivery still runs every two weeks, and recent reporting stays reserved for active subscribers before it moves into the public archive 30 days later.")}
           </p>
 
           <div className="mt-8 inline-flex flex-wrap items-center justify-center gap-3 rounded-full border border-stone-300/60 bg-paper p-2 shadow-[0_10px_24px_rgba(0,0,0,0.04)]">
@@ -76,7 +75,7 @@ export default function Subscriptions() {
                   : "text-redacted hover:text-ink"
               }`}
             >
-              Monthly billing
+              {t("Monthly billing")}
             </button>
             <button
               type="button"
@@ -87,18 +86,18 @@ export default function Subscriptions() {
                   : "text-redacted hover:text-ink"
               }`}
             >
-              Yearly billing
+              {t("Yearly billing")}
             </button>
           </div>
           <div className="mx-auto mt-5 max-w-2xl rounded-2xl border border-heritage/20 bg-heritage/[0.05] px-4 py-3 text-left">
             <p className="font-sans text-xs font-bold uppercase tracking-[0.16em] text-heritage">
-              Reader catalog
+              {t("Reader catalog")}
             </p>
             <p className="mt-1 font-body text-sm leading-6 text-redacted">
-              These plans are for individual reader access. Companies request bulk orders at their own negotiated volumes and confirmed prices on the business page.
+              {t("These plans are for individual reader access. Companies request bulk orders at their own negotiated volumes and confirmed prices on the business page.")}
             </p>
             <Link to="/business" className="mt-2 inline-flex font-sans text-xs font-bold uppercase tracking-[0.14em] text-heritage hover:text-ink">
-              Explore bulk ordering <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              {t("Explore bulk ordering")} <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </Link>
           </div>
         </section>
@@ -118,7 +117,7 @@ export default function Subscriptions() {
                 >
                   {highlighted ? (
                     <span className="mb-4 inline-block border border-cream/25 bg-cream/10 px-3 py-1 font-sans text-[0.6rem] font-bold uppercase tracking-widest text-cream">
-                      Reader favorite
+                      {t("Reader favorite")}
                     </span>
                   ) : null}
                   <p
@@ -126,21 +125,21 @@ export default function Subscriptions() {
                       highlighted ? "text-cream/60" : "text-redacted"
                     }`}
                   >
-                    {plan.audience}
+                    {t(plan.audience)}
                   </p>
                   <h3
                     className={`mt-2 font-display text-2xl font-bold ${
                       highlighted ? "text-cream" : "text-ink"
                     }`}
                   >
-                    {plan.name}
+                    {t(plan.name)}
                   </h3>
                   <p
                     className={`mt-1 font-body text-sm ${
                       highlighted ? "text-cream/75" : "text-redacted"
                     }`}
                   >
-                    {plan.description}
+                    {t(plan.description)}
                   </p>
 
                   <div className="mb-6 mt-6">
@@ -174,7 +173,7 @@ export default function Subscriptions() {
                             highlighted ? "text-cream/90" : "text-ink"
                           }`}
                         >
-                          {feature}
+                          {t(feature)}
                         </span>
                       </li>
                     ))}
@@ -192,7 +191,7 @@ export default function Subscriptions() {
                         : "border-2 border-ink text-ink hover:bg-ink hover:text-paper"
                     }`}
                   >
-                    {plan.name === "Business" ? "Request business plan" : "Continue to checkout"}
+                    {t(plan.name === "Business" ? "Request business plan" : "Continue to checkout")}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </article>

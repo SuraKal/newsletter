@@ -1,11 +1,13 @@
 import os
-from flask import Flask, jsonify
+from pathlib import Path
+
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 
 from models import db
-from config import config_by_name
+from config import config_by_name, validate_production_environment
 from routes.auth import auth_bp
 from routes.articles import articles_bp
 from routes.categories import categories_bp
@@ -35,11 +37,31 @@ def create_app(config_name=None):
     if config_name is None:
         config_name = os.getenv("FLASK_ENV", "development")
 
-    app = Flask(__name__)
+    project_root = Path(__file__).resolve().parent.parent
+    frontend_dist = project_root / "frontend" / "dist"
+    # Serve the Vite build and API from one Passenger application. This avoids
+    # a cross-origin API deployment and makes React deep links work on cPanel.
+    app = Flask(
+        __name__,
+        static_folder=str(frontend_dist / "assets"),
+        static_url_path="/assets",
+    )
     app.config.from_object(config_by_name[config_name])
 
+    if config_name == "production":
+        validate_production_environment()
+
     db.init_app(app)
-    CORS(app)
+    if config_name != "production":
+        CORS(app)
+    else:
+        allowed_origins = [
+            origin.strip()
+            for origin in os.getenv("CORS_ORIGINS", "").split(",")
+            if origin.strip()
+        ]
+        if allowed_origins:
+            CORS(app, resources={r"/api/*": {"origins": allowed_origins}})
     JWTManager(app)
     Migrate(app, db)
 
@@ -73,6 +95,25 @@ def create_app(config_name=None):
     @app.route("/api/v1/health")
     def health():
         return jsonify({"status": "ok"})
+
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve_frontend(path):
+        """Return Vite assets when present, otherwise preserve SPA routing."""
+        if path.startswith("api/"):
+            return jsonify({"error": "Not found"}), 404
+
+        index_file = frontend_dist / "index.html"
+        if not index_file.is_file():
+            return (
+                jsonify({"error": "Frontend build is not available on this server."}),
+                503,
+            )
+
+        requested_file = frontend_dist / path
+        if path and requested_file.is_file():
+            return send_from_directory(frontend_dist, path)
+        return send_from_directory(frontend_dist, "index.html")
 
     return app
 

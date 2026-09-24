@@ -10,7 +10,7 @@ function ClassicPressDesk({ related }) {
     <aside className="pb-8">
       <div className="border-t-4 border-double border-ink/70 pt-3">
         <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.26em] text-heritage">
-          From the News Desk
+          {t("From the News Desk")}
         </p>
       </div>
       <div className="mt-2 divide-y divide-stone-400/50 border-b border-stone-400/50">
@@ -41,7 +41,7 @@ function NewspaperRail({ related }) {
     <aside className="pb-4">
       <div className="border-t-4 border-ink pt-3">
         <h2 className="font-sans text-[0.65rem] font-black uppercase tracking-[0.26em] text-ink">
-          More in this Section
+          {t("More in this Section")}
         </h2>
       </div>
       <div className="mt-2 border-t border-stone-300/60">
@@ -72,7 +72,7 @@ function TabloidRail({ related }) {
     <aside className="pb-4">
       <div className="border-t-4 border-ink bg-ink pt-2">
         <h2 className="px-2 pb-2 font-sans text-[0.68rem] font-black uppercase tracking-[0.24em] text-paper">
-          More Headlines
+          {t("More Headlines")}
         </h2>
       </div>
       <div className="border-x border-b border-stone-400/60">
@@ -103,6 +103,7 @@ function TabloidRail({ related }) {
 }
 
 function StoryBody({ article, access, layoutKey }) {
+  const { t } = useLanguage();
   const rawBody = article?.body;
   const articleBody = Array.isArray(rawBody)
     ? rawBody
@@ -190,7 +191,7 @@ function StoryBody({ article, access, layoutKey }) {
       <div className={`font-body text-ink ${styles.body}`}>
         <p className="drop-cap">
           {article.summary ||
-            "In a world where the pace of change continues to accelerate, careful reporting remains more important than ever."}
+            t("In a world where the pace of change continues to accelerate, careful reporting remains more important than ever.")}
         </p>
 
         {access.canReadFull ? (
@@ -207,17 +208,17 @@ function StoryBody({ article, access, layoutKey }) {
           >
             <h2 className="font-display text-2xl font-black text-ink">
               {access.accessMode === "locked" || !access.publicAccessDate
-                ? "Full article is reserved for active subscribers."
-                : `Full article stays locked until ${access.publicAccessDate}.`}
+                ? t("Full article is reserved for active subscribers.")
+                : t("Full article stays locked until {date}.").replace("{date}", access.publicAccessDate)}
             </h2>
             <p className="mt-2 font-body text-sm text-stone-600">
-              {access.detail}
+              {t(access.detail)}
             </p>
             <Link
               to="/subscribe/checkout"
               className="mt-4 inline-block bg-heritage px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
             >
-              Subscribe now
+              {t("Subscribe now")}
             </Link>
           </div>
         )}
@@ -238,6 +239,7 @@ function useLayoutFlags(layoutKey) {
 }
 
 export function ArticleLayoutView({ article, access, related, layoutKey }) {
+  const { t } = useLanguage();
   const {
     isClassicLayout,
     isNewspaperLayout,
@@ -261,26 +263,26 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
           <div className="min-w-0">
             <div className="mx-auto mb-3 flex max-w-3xl items-center gap-3 font-sans text-[0.62rem] font-bold uppercase tracking-[0.26em] text-heritage">
               <span className="h-px flex-1 bg-heritage/40" />
-              Front Page — Lead Story
+              {t("Front Page — Lead Story")}
               <span className="h-px flex-1 bg-heritage/40" />
             </div>
             <div className="mx-auto max-w-4xl text-center">
               <h1 className="font-heading text-4xl font-black leading-[1.02] text-ink md:text-5xl lg:text-[4.35rem]">
-                {article.headline}
+                {t(article.headline)}
               </h1>
               <p className="mx-auto mt-4 max-w-3xl border-y border-ink/40 py-3 font-body text-lg italic leading-relaxed text-redacted lg:text-xl">
-                {article.summary}
+                {t(article.summary)}
               </p>
               <div className="mx-auto mt-5 flex max-w-lg flex-wrap items-center justify-center gap-3 border-b border-ink/40 pb-3">
                 {article.author ? (
                   <span className="font-sans text-sm font-bold uppercase tracking-wider text-ink">
-                    By {article.author}
+                    {t("By")} {t(article.author)}
                   </span>
                 ) : null}
-                <span className="meta-text">{article.date}</span>
+                <span className="meta-text">{t(article.date)}</span>
                 {article.readTime ? (
                   <span className="meta-text flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> {article.readTime}
+                    <Clock className="h-3 w-3" /> {t(article.readTime)}
                   </span>
                 ) : null}
               </div>
@@ -291,12 +293,12 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
                 <div className="border border-ink/60 bg-[#efe3cd] p-2">
                   <img
                     src={article.image}
-                    alt={article.headline}
+                    alt={t(article.headline)}
                     className="classic-plate-img w-full object-cover"
                   />
                 </div>
                 <figcaption className="mt-2 text-center meta-text italic">
-                  Photograph: {article.author || "Staff"} / Newspaper Desk
+                  {t("Photograph:")} {t(article.author || "Staff")} {t("/ Newspaper Desk")}
                 </figcaption>
               </figure>
             ) : null}
@@ -312,10 +314,10 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
         <div className="newspaper-article-page py-6 px-3 sm:px-5 lg:px-8">
           <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-2 border-y-2 border-ink py-2">
             <span className="font-sans text-[0.62rem] font-black uppercase tracking-[0.26em] text-heritage">
-              Front Page Report
+              {t("Front Page Report")}
             </span>
             <span className="hidden font-sans text-[0.62rem] font-bold uppercase tracking-[0.26em] text-redacted sm:block">
-              {article.date} · {article.category} Desk
+              {t(article.date)} · {t(article.category)} {t("Desk")}
             </span>
           </div>
 
@@ -323,27 +325,27 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
             <div className="min-w-0">
               <div className="max-w-5xl">
                 <div className="flex items-center gap-3">
-                  <span className="category-label">{article.category}</span>
+                  <span className="category-label">{t(article.category)}</span>
                   <span className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.2em] text-redacted">
-                    Analysis | Today
+                    {t("Analysis | Today")}
                   </span>
                 </div>
                 <h1 className="mt-3 font-heading text-4xl font-black leading-[1.04] text-ink md:text-5xl lg:text-[3.8rem]">
-                  {article.headline}
+                  {t(article.headline)}
                 </h1>
                 <p className="mt-5 max-w-3xl border-l-4 border-ink pl-4 font-body text-lg leading-relaxed text-redacted lg:text-xl">
-                  {article.summary}
+                  {t(article.summary)}
                 </p>
                 <div className="mt-5 flex flex-wrap items-center gap-3 border-y border-stone-300/70 py-3">
                   {article.author ? (
                     <span className="font-sans text-sm font-bold uppercase tracking-wider text-ink">
-                      By {article.author}
+                      {t("By")} {t(article.author)}
                     </span>
                   ) : null}
-                  <span className="meta-text">{article.date}</span>
+                  <span className="meta-text">{t(article.date)}</span>
                   {article.readTime ? (
                     <span className="meta-text flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> {article.readTime}
+                      <Clock className="h-3 w-3" /> {t(article.readTime)}
                     </span>
                   ) : null}
                 </div>
@@ -353,11 +355,11 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
                 <figure className="mt-8">
                   <img
                     src={article.image}
-                    alt={article.headline}
+                    alt={t(article.headline)}
                     className="w-full border border-stone-300/60 object-cover"
                   />
                   <figcaption className="mt-2 border-b-2 border-ink/70 pb-2 meta-text italic">
-                    Photo: {article.author || "Staff"} / Newspaper Desk
+                    {t("Photo:")} {t(article.author || "Staff")} {t("/ Newspaper Desk")}
                   </figcaption>
                 </figure>
               ) : null}
@@ -375,33 +377,33 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
           <div className="mx-auto max-w-5xl">
             <div className="border-y-4 border-double border-heritage py-2 text-center">
               <span className="font-sans text-[0.62rem] font-black uppercase tracking-[0.3em] text-heritage">
-                The Magazine — {article.category} Desk
+                {t("The Magazine")} — {t(article.category)} {t("Desk")}
               </span>
             </div>
             <div className="mt-10">
               <div className="flex items-center gap-3">
                 <span className="bg-heritage px-2.5 py-1 font-sans text-[0.6rem] font-black uppercase tracking-[0.2em] text-paper">
-                  The Big Read
+                  {t("The Big Read")}
                 </span>
                 <span className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.2em] text-redacted">
-                  {article.date}
+                  {t(article.date)}
                 </span>
               </div>
               <h1 className="mt-4 font-heading text-5xl font-black leading-[1.02] text-ink md:text-6xl lg:text-7xl">
-                {article.headline}
+                {t(article.headline)}
               </h1>
               <p className="mt-6 max-w-[60ch] font-body text-xl italic leading-relaxed text-redacted lg:text-2xl">
-                {article.summary}
+                {t(article.summary)}
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3 border-y border-stone-300/70 py-3">
                 {article.author ? (
                   <span className="font-sans text-sm font-bold uppercase tracking-wider text-ink">
-                    By {article.author}
+                    {t("By")} {t(article.author)}
                   </span>
                 ) : null}
                 {article.readTime ? (
                   <span className="meta-text flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> {article.readTime}
+                    <Clock className="h-3 w-3" /> {t(article.readTime)}
                   </span>
                 ) : null}
               </div>
@@ -411,11 +413,11 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
               <figure className="mt-10">
                 <img
                   src={article.image}
-                  alt={article.headline}
+                  alt={t(article.headline)}
                   className="w-full object-cover shadow-[0_24px_50px_rgba(0,0,0,0.12)]"
                 />
                 <figcaption className="mt-3 border-l-2 border-heritage pl-3 meta-text italic">
-                  Photo: {article.author || "Staff"} / The Magazine
+                  {t("Photo:")} {t(article.author || "Staff")} {t("/ The Magazine")}
                 </figcaption>
               </figure>
             ) : null}
@@ -430,10 +432,10 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
           <div className="bg-ink px-4 py-3 sm:px-6 lg:px-8">
             <div className="flex flex-wrap items-center justify-between gap-2 border-y-2 border-double border-heritage py-1">
               <span className="font-sans text-[0.66rem] font-black uppercase tracking-[0.3em] text-paper">
-                {article.category} Express
+                {t(article.category)} {t("Express")}
               </span>
               <span className="font-sans text-[0.66rem] font-bold uppercase tracking-[0.24em] text-paper/80">
-                {article.date} · Fast Despatch
+                {t(article.date)} · {t("Fast Despatch")}
               </span>
             </div>
           </div>
@@ -442,20 +444,20 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
             <div className="min-w-0">
               <div className="border-y-4 border-double border-ink bg-[#efe3cd] px-4 py-5 text-center">
                 <span className="font-sans text-[0.6rem] font-black uppercase tracking-[0.3em] text-heritage">
-                  Breaking · Top of the Hour
+                  {t("Breaking · Top of the Hour")}
                 </span>
                 <h1 className="mt-2 font-sans text-[2rem] font-black uppercase leading-[0.98] tracking-[-0.01em] text-ink md:text-5xl lg:text-[3.4rem]">
-                  {article.headline}
+                  {t(article.headline)}
                 </h1>
                 <div className="mx-auto mt-4 flex max-w-lg flex-wrap items-center justify-center gap-3 border-t border-ink/40 pt-3">
                   {article.author ? (
                     <span className="font-sans text-sm font-black uppercase tracking-wider text-ink">
-                      By {article.author}
+                      {t("By")} {t(article.author)}
                     </span>
                   ) : null}
                   {article.readTime ? (
                     <span className="meta-text flex items-center gap-1 font-black">
-                      <Clock className="h-3 w-3" /> {article.readTime}
+                      <Clock className="h-3 w-3" /> {t(article.readTime)}
                     </span>
                   ) : null}
                 </div>
@@ -463,7 +465,7 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
 
               <div className="mt-6 border-l-8 border-heritage bg-paper px-4 py-4 shadow-[inset_0_0_0_1px_rgba(120,113,108,0.2)]">
                 <p className="font-sans text-lg font-bold leading-relaxed text-ink">
-                  {article.summary}
+                  {t(article.summary)}
                 </p>
               </div>
 
@@ -471,15 +473,15 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
                 <figure className="mt-8">
                   <img
                     src={article.image}
-                    alt={article.headline}
+                    alt={t(article.headline)}
                     className="w-full border-4 border-ink object-cover"
                   />
                   <figcaption className="mt-2 flex items-center justify-between gap-3 border-y-2 border-ink px-1 py-2">
                     <span className="meta-text italic">
-                      Photo: {article.author || "Staff"} / Express Desk
+                      {t("Photo:")} {t(article.author || "Staff")} {t("/ Express Desk")}
                     </span>
                     <span className="hidden font-sans text-[0.58rem] font-black uppercase tracking-[0.2em] text-heritage sm:block">
-                      Immediate
+                      {t("Immediate")}
                     </span>
                   </figcaption>
                 </figure>
@@ -498,19 +500,19 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
           <div className="mx-auto max-w-[780px]">
             <div className="newsletter-masthead py-3 text-center">
               <span className="font-sans text-[0.6rem] font-black uppercase tracking-[0.34em] text-heritage">
-                Independent Dispatch — {article.category} Desk
+                {t("Independent Dispatch")} — {t(article.category)} {t("Desk")}
               </span>
               <h2 className="mt-2 font-display text-4xl font-black tracking-tight text-ink md:text-5xl">
-                THE DISPATCH
+                {t("THE DISPATCH")}
               </h2>
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-3 border-b-2 border-ink pb-3 font-sans text-[0.62rem] font-bold uppercase tracking-[0.24em] text-redacted">
-              <span>Issue No. 07</span>
+              <span>{t("Issue No. 07")}</span>
               <span className="h-3 w-px bg-stone-400/70" />
-              <span>{article.date}</span>
+              <span>{t(article.date)}</span>
               {article.readTime ? (
                 <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" /> {article.readTime}
+                  <Clock className="h-3 w-3" /> {t(article.readTime)}
                 </span>
               ) : null}
             </div>
@@ -518,28 +520,27 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
             <div className="mt-8">
               <div className="flex items-center gap-3">
                 <span className="rounded-full border border-stone-300/70 bg-paper px-3 py-1 font-sans text-[0.6rem] font-bold uppercase tracking-[0.18em] text-heritage">
-                  {article.category}
+                  {t(article.category)}
                 </span>
                 <span className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.2em] text-redacted">
-                  The Read
+                  {t("The Read")}
                 </span>
               </div>
               <h1 className="mt-4 font-display text-4xl font-black leading-[1.05] text-ink md:text-5xl">
-                {article.headline}
+                {t(article.headline)}
               </h1>
               <p className="mt-5 border-l-4 border-heritage bg-vellum/70 px-4 py-3 font-body text-lg italic leading-relaxed text-redacted lg:text-xl">
-                {article.summary}
+                {t(article.summary)}
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-3 border-y border-stone-300/70 py-3">
                 {article.author ? (
                   <span className="font-sans text-sm font-bold uppercase tracking-wider text-ink">
-                    By {article.author}
+                    {t("By")} {t(article.author)}
                   </span>
                 ) : null}
                 {article.readTime ? (
                   <span className="meta-text flex items-center gap-1">
-                    <span className="text-heritage">✉</span> Delivered to{" "}
-                    {article.author || "readers"}
+                    <span className="text-heritage">✉</span> {t("Delivered to")} {t(article.author || "readers")}
                   </span>
                 ) : null}
               </div>
@@ -549,11 +550,11 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
               <figure className="mt-8 border border-stone-300/60 p-2">
                 <img
                   src={article.image}
-                  alt={article.headline}
+                  alt={t(article.headline)}
                   className="w-full object-cover"
                 />
                 <figcaption className="mt-2 px-1 pb-1 meta-text italic">
-                  Photo: {article.author || "Staff"} / Dispatch
+                  {t("Photo:")} {t(article.author || "Staff")} {t("/ Dispatch")}
                 </figcaption>
               </figure>
             ) : null}
@@ -569,7 +570,7 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
           <div className="min-w-0 lg:border-r lg:pr-8 lg:border-stone-300/40">
             <div className="max-w-4xl">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="category-label">{article.category}</span>
+                <span className="category-label">{t(article.category)}</span>
                 <span
                   className={`rounded-full border px-2.5 py-1 font-sans text-[0.6rem] font-bold uppercase tracking-[0.14em] ${
                     access.key === "locked"
@@ -579,25 +580,25 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
                         : "border-stone-300 bg-vellum text-ink"
                   }`}
                 >
-                  {access.shortLabel}
+                  {t(access.shortLabel)}
                 </span>
               </div>
               <h1 className="mt-3 font-display text-4xl font-black leading-[1.02] text-ink md:text-5xl lg:text-6xl">
-                {article.headline}
+                {t(article.headline)}
               </h1>
               <p className="mt-4 max-w-3xl border-l-4 border-heritage pl-4 font-body text-lg leading-relaxed text-redacted">
-                {article.summary}
+                {t(article.summary)}
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-3 border-y border-stone-300/50 py-3">
                 {article.author ? (
                   <span className="font-sans text-sm font-semibold uppercase tracking-wider text-ink">
-                    By {article.author}
+                    {t("By")} {t(article.author)}
                   </span>
                 ) : null}
-                <span className="meta-text">{article.date}</span>
+                <span className="meta-text">{t(article.date)}</span>
                 {article.readTime ? (
                   <span className="meta-text flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> {article.readTime}
+                    <Clock className="h-3 w-3" /> {t(article.readTime)}
                   </span>
                 ) : null}
               </div>
@@ -607,11 +608,11 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
               <figure className="mt-8">
                 <img
                   src={article.image}
-                  alt={article.headline}
+                  alt={t(article.headline)}
                   className="w-full border border-stone-300/50 object-cover shadow-[0_18px_40px_rgba(0,0,0,0.08)]"
                 />
                 <figcaption className="meta-text mt-2 italic">
-                  Photo: {article.author || "Staff"} / Newspaper Desk
+                  {t("Photo:")} {t(article.author || "Staff")} {t("/ Newspaper Desk")}
                 </figcaption>
               </figure>
             ) : null}
@@ -625,7 +626,7 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
             <div className="sticky top-6 space-y-6">
               <div className="border border-stone-300/60 bg-paper p-5 shadow-[0_12px_30px_rgba(0,0,0,0.04)]">
                 <h2 className="font-display text-2xl font-black text-ink">
-                  Related Stories
+                  {t("Related Stories")}
                 </h2>
                 <div className="mt-5 grid grid-cols-1 gap-4">
                   {related.map((item) => (
@@ -643,6 +644,7 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
 
 export function ArticleLayoutSwitcher({ layoutKey, options }) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   return (
     <>
       <div className="sm:hidden">
@@ -653,11 +655,11 @@ export function ArticleLayoutSwitcher({ layoutKey, options }) {
             if (opt) navigate(opt.path);
           }}
           className="rounded border border-stone-300 bg-paper px-2 py-1 font-sans text-xs font-semibold text-stone-700 outline-none"
-          aria-label="Select layout style"
+          aria-label={t("Select layout style")}
         >
           {options.map((option) => (
             <option key={option.key} value={option.key}>
-              {option.label}
+              {t(option.label)}
             </option>
           ))}
         </select>
@@ -676,7 +678,7 @@ export function ArticleLayoutSwitcher({ layoutKey, options }) {
                   : "text-redacted hover:text-heritage"
               }`}
             >
-              {option.label}
+              {t(option.label)}
             </Link>
           );
         })}
@@ -686,6 +688,7 @@ export function ArticleLayoutSwitcher({ layoutKey, options }) {
 }
 
 export function ArticleMoreFromSection({ layoutKey, related }) {
+  const { t } = useLanguage();
   const {
     isClassicLayout,
     isNewspaperLayout,
@@ -699,16 +702,16 @@ export function ArticleMoreFromSection({ layoutKey, related }) {
       <div className="newspaper-rule-double mb-6" />
       <h2 className="mb-6 font-display text-3xl font-black uppercase text-ink">
         {isClassicLayout
-          ? "More from this Edition"
+          ? t("More from this Edition")
           : isNewspaperLayout
-            ? "More From Today's Paper"
+            ? t("More From Today's Paper")
             : isMagazineLayout
-              ? "More From the Magazine"
+              ? t("More From the Magazine")
               : isTabloidLayout
-                ? "More From the Express"
+                ? t("More From the Express")
                 : isNewsletterLayout
-                  ? "More From the Dispatch"
-                  : "More From The Paper"}
+                  ? t("More From the Dispatch")
+                  : t("More From The Paper")}
       </h2>
       <div
         className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 ${
