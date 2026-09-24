@@ -28,6 +28,8 @@ export default function LatestNewsSection() {
   const { t } = useLanguage();
   const latestNews = getLatestNews();
 
+  if (!latestNews.length) return null;
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-12">
       <SectionHeader title="Latest News" viewAllLink="/news" />
