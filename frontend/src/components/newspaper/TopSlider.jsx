@@ -6,7 +6,7 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
-import { getHeroArticle, getPublicListingArticles } from "@/lib/content-store";
+import { getSyncedPublishedArticles } from "@/lib/content-store";
 import { IMAGES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -15,28 +15,26 @@ import { useStoreVersion } from "@/lib/store-bus";
 
 const SLIDER_FALLBACK_IMAGES = [IMAGES.hero, IMAGES.politics, IMAGES.economy, IMAGES.culture];
 
+// Builds slider slides exclusively from the backend-synced snapshot. Returns an
+// empty array when the Flask backend has not pushed articles yet, so no demo or
+// seed content can ever leak into the landing slider.
 function buildSliderSlides() {
-  const hero = getHeroArticle();
-  const listings = getPublicListingArticles();
-  return [hero, ...listings]
-    .filter(Boolean)
-    .slice(0, 4)
-    .map((article, index) => ({
-      id: article.id,
-      image: article.image || SLIDER_FALLBACK_IMAGES[index % SLIDER_FALLBACK_IMAGES.length],
-      category: article.category || "News",
-      headline: article.headline,
-      summary: article.summary,
-      cta: index === 0 ? "Read full coverage" : "Read the story",
-      href: `/article/${article.id}`,
-    }));
+  const articles = getSyncedPublishedArticles();
+  return articles.slice(0, 4).map((article, index) => ({
+    id: article.id,
+    image: article.image || SLIDER_FALLBACK_IMAGES[index % SLIDER_FALLBACK_IMAGES.length],
+    category: article.category || "News",
+    headline: article.headline,
+    summary: article.summary,
+    cta: index === 0 ? "Read full coverage" : "Read the story",
+    href: `/article/${article.id}`,
+  }));
 }
-
-const topSliderSlides = buildSliderSlides();
 
 export default function TopSlider() {
   useStoreVersion();
   const { t } = useLanguage();
+  const topSliderSlides = buildSliderSlides();
   const [api, setApi] = React.useState(null);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [headerHeight, setHeaderHeight] = React.useState(0);
@@ -114,6 +112,8 @@ export default function TopSlider() {
 
     return () => window.clearInterval(interval);
   }, [api]);
+
+  if (!topSliderSlides.length) return null;
 
   return (
     <section

@@ -5,10 +5,7 @@ import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carouse
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  getHeroArticle,
-  getLatestNews,
-  getPublicListingArticles,
-  getSidebarArticles,
+  getSyncedPublishedArticles,
 } from "@/lib/content-store";
 import NewsCard from "@/components/newspaper/NewsCard";
 import { IMAGES } from "@/lib/constants";
@@ -43,8 +40,7 @@ export default function HeroSection() {
     return () => window.clearInterval(interval);
   }, [api]);
 
-  const heroSlides = [getHeroArticle(), ...getPublicListingArticles()]
-    .filter(Boolean)
+  const heroSlides = getSyncedPublishedArticles()
     .slice(0, 4)
     .map((article, index) => ({
       id: article.id,
@@ -55,8 +51,10 @@ export default function HeroSection() {
       cta: index === 0 ? "Read full coverage" : "Read the story",
       href: `/article/${article.id}`,
     }));
-  const lowerStories = getLatestNews().slice(1, 3);
-  const sidebarArticles = getSidebarArticles();
+  const lowerStories = getSyncedPublishedArticles().slice(1, 3);
+  const sidebarArticles = getSyncedPublishedArticles();
+
+  if (!heroSlides.length) return null;
 
   return (
     <section className="mx-auto max-w-[1320px] px-3 py-3 sm:px-5 lg:px-8">

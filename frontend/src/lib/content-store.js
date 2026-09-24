@@ -220,6 +220,19 @@ function readPublic() {
   return readSynced() || readAll();
 }
 
+// Backend-only read source. Returns the raw synced snapshot (already stored in
+// the canonical store shape) or an empty array when the backend has never
+// pushed one. Consumers that must never render demo/seed content (e.g. the
+// landing sliders) should use this instead of `readPublic`.
+export function getSyncedArticles() {
+  return readSynced() || [];
+}
+
+export function hasSyncedArticles() {
+  const synced = readSynced();
+  return Array.isArray(synced) && synced.length > 0;
+}
+
 function writeAll(articles) {
   if (storage) storage.setItem(contentKey, JSON.stringify(articles));
   notifyStoreChange();
@@ -330,6 +343,14 @@ export function getPlacementLabel(source) {
 
 export function getAllArticles() {
   return readPublic()
+    .filter((item) => item.status === "Published")
+    .map(toRenderArticle);
+}
+
+// Backend-only published listing. Used by surfaces that should never fall back
+// to demo/seed content (landing sliders, etc.).
+export function getSyncedPublishedArticles() {
+  return getSyncedArticles()
     .filter((item) => item.status === "Published")
     .map(toRenderArticle);
 }
