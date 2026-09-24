@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import ScrollReveal from "@/components/newspaper/ScrollReveal";
-import { IMAGES } from "@/lib/constants";
+import placeholderImage from "@/assets/placeholders/2.jpg";
 import { useLanguage } from "@/lib/LanguageContext";
 
 const stats = [
@@ -63,7 +63,7 @@ export default function About() {
 
       <section className="mx-auto max-w-7xl px-4 pb-16">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14">
-          <ScrollReveal effect="wipe"><div className="relative"><div aria-hidden className="absolute -left-3 -top-3 h-full w-full rounded-[1.15rem] border border-heritage/25" /><img src={IMAGES.boardroom} alt={t("Nekedem platform operations")} className="editorial-image relative aspect-[16/10] w-full rounded-[1.15rem] object-cover shadow-[0_24px_60px_-24px_rgba(76,43,8,0.32)]" /></div></ScrollReveal>
+          <ScrollReveal effect="wipe"><div className="relative"><div aria-hidden className="absolute -left-3 -top-3 h-full w-full rounded-[1.15rem] border border-heritage/25" /><img src={placeholderImage} alt={t("Nekedem platform operations")} className="editorial-image relative aspect-[16/10] w-full rounded-[1.15rem] object-cover shadow-[0_24px_60px_-24px_rgba(76,43,8,0.32)]" /></div></ScrollReveal>
           <ScrollReveal effect="fade" delay={80}><div><span className="font-sans text-[0.6rem] font-bold uppercase tracking-widest text-heritage">{t("How the platform works")}</span><h2 className="mt-3 font-display text-3xl font-black leading-tight text-ink md:text-4xl">{t("A platform built for readers and delivery teams")}</h2><div className="mt-6 space-y-4 font-body text-base leading-relaxed text-redacted">{story.map((paragraph) => <p key={paragraph.slice(0, 24)}>{t(paragraph)}</p>)}</div></div></ScrollReveal>
         </div>
       </section>

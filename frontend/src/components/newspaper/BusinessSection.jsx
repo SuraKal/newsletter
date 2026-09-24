@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FileText, MapPinned, ReceiptText, Users } from "lucide-react";
-import { IMAGES } from "@/lib/constants";
+import placeholderImage from "@/assets/placeholders/1.jpg";
 import {
   businessBenefits,
   businessHighlights,
@@ -39,7 +39,7 @@ export default function BusinessSection() {
               ))}
             </div>
             <img
-              src={IMAGES.boardroom}
+              src={placeholderImage}
               alt={t("Business team reviewing printed newspaper delivery plans")}
               className="aspect-[16/9] w-full object-cover opacity-80"
             />
