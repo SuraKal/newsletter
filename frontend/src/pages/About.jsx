@@ -5,6 +5,7 @@ import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import ScrollReveal from "@/components/newspaper/ScrollReveal";
 import placeholderImage from "@/assets/placeholders/2.jpg";
+import { homepageHeroSlides } from "@/lib/demoData";
 import { useLanguage } from "@/lib/LanguageContext";
 
 const stats = [
@@ -58,6 +59,31 @@ export default function About() {
       <section className="mx-auto max-w-7xl px-4 py-12 md:py-16">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {stats.map((stat, index) => <ScrollReveal key={stat.label} effect="rise" delay={index * 40}><article className="rounded-[1.15rem] border border-stone-300/60 bg-vellum p-6 shadow-[0_12px_30px_rgba(0,0,0,0.04)]"><p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">{t(stat.label)}</p><h2 className="mt-3 font-heading text-2xl font-bold leading-tight text-ink md:text-3xl">{t(stat.value)}</h2></article></ScrollReveal>)}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-12 md:py-16">
+        <ScrollReveal effect="rise">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="font-sans text-[0.6rem] font-bold uppercase tracking-widest text-heritage">{t("Explore the platform")}</span>
+            <h2 className="mt-3 font-display text-3xl font-black leading-tight text-ink md:text-4xl">{t("Get started with ንቐደም")}</h2>
+            <p className="mt-4 font-body text-base leading-relaxed text-redacted">{t("Three ways to experience the newsroom, subscriptions, and print delivery platform.")}</p>
+          </div>
+        </ScrollReveal>
+        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+          {homepageHeroSlides.map((slide, index) => (
+            <ScrollReveal key={slide.id} effect="rise" delay={index * 40}>
+              <Link to={slide.href} className="group block h-full overflow-hidden rounded-[1.15rem] border border-stone-300/60 bg-paper shadow-[0_12px_30px_rgba(0,0,0,0.04)]">
+                <img src={slide.image} alt={t(slide.headline)} className="aspect-[16/10] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
+                <div className="p-6">
+                  <span className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.22em] text-heritage">{t(slide.category)}</span>
+                  <h3 className="mt-3 font-display text-xl font-bold leading-snug text-ink">{t(slide.headline)}</h3>
+                  <p className="mt-3 font-body text-sm leading-relaxed text-redacted">{t(slide.summary)}</p>
+                  <span className="mt-4 inline-flex items-center gap-1.5 font-sans text-[0.68rem] font-bold uppercase tracking-wider text-heritage">{t(slide.cta)}<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" /></span>
+                </div>
+              </Link>
+            </ScrollReveal>
+          ))}
         </div>
       </section>
 

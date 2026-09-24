@@ -4,11 +4,18 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { homepageHeroSlides } from "@/lib/demoData";
-import { getLatestNews, getSidebarArticles } from "@/lib/content-store";
+import {
+  getHeroArticle,
+  getLatestNews,
+  getPublicListingArticles,
+  getSidebarArticles,
+} from "@/lib/content-store";
 import NewsCard from "@/components/newspaper/NewsCard";
+import { IMAGES } from "@/lib/constants";
 import { useLanguage } from "@/lib/LanguageContext";
 import { useStoreVersion } from "@/lib/store-bus";
+
+const FRONT_PAGE_FALLBACK_IMAGES = [IMAGES.hero, IMAGES.politics, IMAGES.economy, IMAGES.culture];
 
 export default function HeroSection() {
   useStoreVersion();
@@ -36,6 +43,18 @@ export default function HeroSection() {
     return () => window.clearInterval(interval);
   }, [api]);
 
+  const heroSlides = [getHeroArticle(), ...getPublicListingArticles()]
+    .filter(Boolean)
+    .slice(0, 4)
+    .map((article, index) => ({
+      id: article.id,
+      image: article.image || FRONT_PAGE_FALLBACK_IMAGES[index % FRONT_PAGE_FALLBACK_IMAGES.length],
+      category: article.category || "News",
+      headline: article.headline,
+      summary: article.summary,
+      cta: index === 0 ? "Read full coverage" : "Read the story",
+      href: `/article/${article.id}`,
+    }));
   const lowerStories = getLatestNews().slice(1, 3);
   const sidebarArticles = getSidebarArticles();
 
@@ -72,7 +91,7 @@ export default function HeroSection() {
           <div className="min-w-0">
             <Carousel setApi={setApi} opts={{ loop: true }} className="group relative" aria-label="Homepage lead story carousel">
               <CarouselContent>
-                {homepageHeroSlides.map((slide) => (
+                {heroSlides.map((slide) => (
                   <CarouselItem key={slide.id}>
                     <Link to={slide.href} className="group block">
                       <article>
@@ -107,7 +126,7 @@ export default function HeroSection() {
 
               <div className="mt-3 flex items-center justify-between border-b border-stone-400/70 pb-3">
                 <div className="flex items-center gap-2">
-                  {homepageHeroSlides.map((slide, index) => (
+                  {heroSlides.map((slide, index) => (
                     <button key={slide.id} type="button" onClick={() => api?.scrollTo(index)} className={cn("h-1.5 transition-all duration-300", selectedIndex === index ? "w-8 bg-heritage" : "w-3 bg-stone-400/70")} aria-label={`Go to slide ${index + 1}`} />
                   ))}
                 </div>
