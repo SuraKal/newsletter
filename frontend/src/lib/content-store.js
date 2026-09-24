@@ -4,11 +4,16 @@ import {
   categoryArticles,
   editorials,
   featuredStory,
+  formatArticleDate,
   heroArticle,
   latestNews,
   parseArticleDate,
   rightColumnArticle,
   sidebarArticles,
+  toDisplayDate,
+  toDisplayTime,
+  toISODate,
+  toISOTime,
 } from "@/lib/demoData";
 import { notifyStoreChange } from "@/lib/store-bus";
 
@@ -25,7 +30,9 @@ const byDateDesc = (a, b) => {
 
 function publishWindowFor(item) {
   if (item.publishWindow) return item.publishWindow;
-  const parts = [item.publishDate, item.publishTime].filter(Boolean);
+  const displayDate = toDisplayDate(item.publishDate || item.date);
+  const displayTime = toDisplayTime(item.publishTime);
+  const parts = [displayDate || item.publishDate, displayTime || item.publishTime].filter(Boolean);
   return parts.length ? parts.join(" · ") : "Awaiting editor sign-off";
 }
 
@@ -46,6 +53,7 @@ function normalizeSeedArticle(item, source, extra = {}) {
     readTime: item.readTime || null,
     accessLabel: item.accessLabel || null,
     publicAccessDate: item.publicAccessDate || null,
+    accessMode: item.accessMode || item.meta?.accessMode || "auto",
     body: bodyValue,
     status: item.status || "Published",
     tone: item.tone || "success",
@@ -160,7 +168,8 @@ export function toStoreArticle(article) {
     author: article.author || "Editorial desk",
     readTime: article.readTime || null,
     accessLabel: article.accessLabel || null,
-    publicAccessDate: article.publicAccessDate || null,
+    publicAccessDate: article.publicAccessDate || article.meta?.publicAccessDate || null,
+    accessMode: article.accessMode || article.meta?.accessMode || "auto",
     body: Array.isArray(article.body)
       ? article.body.join("\n\n")
       : String(article.body || ""),
@@ -204,14 +213,26 @@ function writeAll(articles) {
   notifyStoreChange();
 }
 
-function toRenderArticle(article) {
+export function toRenderArticle(article) {
+  if (!article) return null;
   const bodyValue = Array.isArray(article.body)
     ? article.body.join("\n\n")
     : String(article.body || "");
-  return {
+  const category =
+    article.category || article.categoryLabel || article.sector || "News";
+  const categoryLabel =
+    article.categoryLabel || article.category || article.sector || "News";
+  const rawDate = article.date || article.publishDate || "";
+  const date = toDisplayDate(rawDate) || rawDate;
+  const rendered = {
     ...article,
+    category,
+    categoryLabel,
+    date,
     body: bodyValue.split("\n\n").filter(Boolean),
   };
+  rendered.article = rendered;
+  return rendered;
 }
 
 function categoryKeyFor(category) {
@@ -273,7 +294,9 @@ export function getAllArticles() {
 
 export function getArticleById(id) {
   if (!id) return null;
-  const article = readPublic().find((item) => item.id === id);
+  const article =
+    readPublic().find((item) => item.id === id) ||
+    readAll().find((item) => item.id === id);
   return article ? toRenderArticle(article) : null;
 }
 
@@ -390,7 +413,7 @@ export function resetContentStore() {
 }
 
 export function getAdminContentRows() {
-  return readAll()
+  return readPublic()
     .sort(byDateDesc)
     .map((article) => ({
       id: article.id,
@@ -434,3 +457,13 @@ export function getAdminScheduleRows() {
       release: releaseLabelFor(article),
     }));
 }
+
+export {
+  parseArticleDate,
+  formatArticleDate,
+  toISODate,
+  toDisplayDate,
+  toISOTime,
+  toDisplayTime,
+};
+

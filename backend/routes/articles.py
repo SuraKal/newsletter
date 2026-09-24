@@ -42,6 +42,7 @@ def _parse_data(data):
         "category_label": "categoryLabel",
         "date": "date",
         "public_access_date": "publicAccessDate",
+        "access_mode": "accessMode",
         "publish_date": "publishDate",
         "publish_time": "publishTime",
     }
@@ -196,6 +197,7 @@ def create_article():
         publish_date=fields.get("publish_date"),
         publish_time=fields.get("publish_time"),
         clicks=fields.get("clicks") or 0,
+        access_mode=fields.get("access_mode") or "auto",
         meta=fields.get("meta") or {},
     )
     db.session.add(article)
@@ -237,6 +239,7 @@ def update_article(key):
         "public_access_date",
         "publish_date",
         "publish_time",
+        "access_mode",
         "clicks",
         "meta",
     ):

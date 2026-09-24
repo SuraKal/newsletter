@@ -40,7 +40,14 @@ import {
 } from "@/lib/demoData";
 import { getCategories, syncCategoriesFromBackend } from "@/lib/category-store";
 import { notifyStoreChange } from "@/lib/store-bus";
-import { syncArticlesFromBackend, getAllArticles, getAdminContentRows } from "@/lib/content-store";
+import {
+  syncArticlesFromBackend,
+  getAllArticles,
+  getAdminContentRows,
+  getArticleById,
+  toStoreArticle,
+  toRenderArticle,
+} from "@/lib/content-store";
 import {
   getBusinessCompanySnapshot,
   getCompanyLeads,
@@ -1072,6 +1079,34 @@ export const appClient = {
   articles: {
     list() {
       return getAllArticles();
+    },
+    async adminList() {
+      try {
+        const serverArticles = await backendArticles.adminList();
+        if (Array.isArray(serverArticles) && serverArticles.length) {
+          return serverArticles.map((item) => toRenderArticle(toStoreArticle(item)));
+        }
+      } catch (error) {
+        if (!isNetworkError(error) && error?.status !== 401 && error?.status !== 403) {
+          console.warn("Failed to fetch admin articles from backend:", error);
+        }
+      }
+      return getAdminContentRows();
+    },
+    async get(id) {
+      if (!id) return null;
+      try {
+        const serverArticle = await backendArticles.get(id);
+        if (serverArticle) {
+          const storeArticle = toStoreArticle(serverArticle);
+          return toRenderArticle(storeArticle);
+        }
+      } catch (error) {
+        if (!isNetworkError(error) && error?.status !== 404) {
+          console.warn("Failed to fetch article from backend:", error);
+        }
+      }
+      return getArticleById(id);
     },
     refresh() {
       return refreshArticlesFromBackend();

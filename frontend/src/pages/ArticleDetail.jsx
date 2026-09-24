@@ -4,15 +4,13 @@ import { ArrowLeft, Bookmark, Share2 } from "lucide-react";
 import Masthead from "@/components/newspaper/Masthead";
 import Footer from "@/components/newspaper/Footer";
 import {
-  ArticleLayoutSwitcher,
   ArticleLayoutView,
-  ArticleMoreFromSection,
 } from "@/components/newspaper/ArticleTemplateView";
 
 import { useAuth } from "@/lib/AuthContext";
 import { appClient } from "@/api/appClient";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
-import { getHeroArticle, getPublicListingArticles, registerArticleClick } from "@/lib/content-store";
+import { getArticleById, getPublicListingArticles, registerArticleClick } from "@/lib/content-store";
 import {
   isArticleSaved,
   recordArticleShare,
@@ -24,13 +22,63 @@ import { getCategoryTemplate } from "@/lib/category-store";
 import { isValidArticleTemplate } from "@/lib/article-templates";
 import { useStoreVersion } from "@/lib/store-bus";
 
+const getPublishedLocalArticle = (id) => {
+  const localArticle = getArticleById(id);
+  return localArticle?.status === "Published" ? localArticle : null;
+};
+
 export default function ArticleDetail() {
   useStoreVersion();
   const { id } = useParams();
   const location = useLocation();
   const { user } = useAuth();
 
-  const [article, setArticle] = useState(() => getHeroArticle());
+  const [article, setArticle] = useState(() => getPublishedLocalArticle(id));
+  const [loading, setLoading] = useState(() => !article);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const initialLocal = getPublishedLocalArticle(id);
+    if (initialLocal) {
+      setArticle(initialLocal);
+      setNotFound(false);
+      setLoading(false);
+    } else {
+      setArticle(null);
+      setLoading(true);
+      setNotFound(false);
+    }
+
+    (async () => {
+      try {
+        const payload = await appClient.articles.get(id);
+        if (!isMounted) return;
+        if (payload?.status === "Published") {
+          setArticle(payload);
+          setNotFound(false);
+        } else {
+          setArticle(null);
+          setNotFound(true);
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        if (!initialLocal) {
+          setArticle(null);
+          setNotFound(true);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
   const layout = new URLSearchParams(location.search).get("layout");
   const categoryTemplate = getCategoryTemplate(article?.category);
   const layoutKey = isValidArticleTemplate(layout) ? layout : categoryTemplate;
@@ -41,32 +89,11 @@ export default function ArticleDetail() {
   const isTabloidLayout = layoutKey === "tabloid";
   const isNewsletterLayout = layoutKey === "newsletter";
 
-  const layoutOptions = [
-    { key: "feature", label: "Feature", path: `/article/${id}` },
-    { key: "classic", label: "Classic", path: `/article/${id}?layout=classic` },
-    { key: "newspaper", label: "Newspaper", path: `/article/${id}?layout=newspaper` },
-    { key: "magazine", label: "Magazine", path: `/article/${id}?layout=magazine` },
-    { key: "tabloid", label: "Tabloid", path: `/article/${id}?layout=tabloid` },
-    { key: "newsletter", label: "Newsletter", path: `/article/${id}?layout=newsletter` },
-  ];
-
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const payload = await appClient.articles.get(id);
-        setArticle(payload.article);
-      } catch (error) {
-        // Fall back to hero article on error
-        setArticle(getHeroArticle());
-      }
-    })();
-  }, [id]);
-
   const related = getPublicListingArticles()
     .filter((item) => item.id !== article?.id)
     .slice(0, 3);
   const access = getArticleAccessState(
-    article || getHeroArticle(),
+    article,
     hasActiveReaderSubscription(user),
   );
 
@@ -157,6 +184,46 @@ export default function ArticleDetail() {
     notify(nextSaved ? "Saved to reading history" : "Removed from saved stories");
   };
 
+  if (loading && !article) {
+    return (
+      <div className="min-h-screen bg-paper newspaper-page flex flex-col justify-between">
+        <Masthead />
+        <main className="mx-auto max-w-[1320px] w-full px-4 py-20 text-center">
+          <div className="newspaper-rule-double mb-8" />
+          <p className="font-serif text-lg italic text-stone-600 animate-pulse">
+            Retrieving story from archives...
+          </p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (notFound || !article) {
+    return (
+      <div className="min-h-screen bg-paper newspaper-page flex flex-col justify-between">
+        <Masthead />
+        <main className="mx-auto max-w-[1320px] w-full px-4 py-20 text-center">
+          <div className="newspaper-rule-double mb-8" />
+          <h1 className="font-heading text-4xl font-black text-ink mb-4">
+            Article Not Found
+          </h1>
+          <p className="font-body text-stone-600 max-w-md mx-auto mb-8">
+            The story you are looking for does not exist or has been archived.
+          </p>
+          <Link
+            to="/news"
+            className="inline-flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-[0.2em] bg-ink text-paper px-6 py-3 transition-colors hover:bg-heritage"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Newsroom
+          </Link>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen bg-paper newspaper-page ${isClassicLayout ? "classic-article-page" : isNewspaperLayout ? "newspaper-article-page" : isMagazineLayout ? "magazine-article-page" : isTabloidLayout ? "tabloid-article-page" : isNewsletterLayout ? "newsletter-article-page" : ""}`}>
       <Masthead />
@@ -181,7 +248,6 @@ export default function ArticleDetail() {
                   {actionMessage}
                 </span>
               ) : null}
-              <ArticleLayoutSwitcher layoutKey={layoutKey} options={layoutOptions} />
               <button
                 className="p-2 transition-colors hover:text-heritage"
                 aria-label="Share this story"
@@ -208,7 +274,6 @@ export default function ArticleDetail() {
           layoutKey={layoutKey}
         />
 
-        <ArticleMoreFromSection layoutKey={layoutKey} related={related} />
       </main>
       <Footer />
     </div>

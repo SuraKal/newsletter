@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowRight, Clock3, Eye, EyeOff, FileText, Info, Send } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowRight, Eye, EyeOff, FileText, Info, Send } from "lucide-react";
 import {
-  DashboardFilterBar,
   DashboardPageHeader,
   DashboardPanel,
   DashboardStatusBadge,
@@ -10,12 +9,22 @@ import {
 import AdminArticleForm from "@/components/forms/AdminArticleForm";
 import {
   ARTICLE_PLACEMENTS,
+  getArticleById,
   getPlacementLabel,
   getRawArticleById,
   saveArticle,
+  toStoreArticle,
 } from "@/lib/content-store";
+import { appClient } from "@/api/appClient";
 import { backendArticles, backendCategories, isNetworkError } from "@/api/backendClient";
-import { adminEditorTemplateFields, getArticleAccessState } from "@/lib/demoData";
+import {
+  adminEditorTemplateFields,
+  getArticleAccessState,
+  toDisplayDate,
+  toDisplayTime,
+  toISODate,
+  toISOTime,
+} from "@/lib/demoData";
 
 const accessToneClassMap = {
   subscriber: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -33,31 +42,35 @@ const placementPrecedence = {
   admin: "Shown in the main News grid; other placements keep their own reserved slots.",
 };
 
-const createDefaultArticle = () => ({
-  id: "new",
-  headline: "",
-  editor: "Editorial desk",
-  status: "Draft",
-  tone: "neutral",
-  summary: "",
-  author: "Nael Desk",
-  source: "latest",
-  category: "News",
-  image: "",
-  video: "",
-  readTime: "",
-  accessLabel: "",
-  date: "",
-  publicAccessDate: "September 11, 2026",
-  publishDate: "August 11, 2026",
-  publishTime: "2:00 PM",
-  body: "",
-  councilSession: "",
-  eventDate: "",
-  location: "",
-  scorelineFocus: "",
-  marketImpact: "",
-});
+const createDefaultArticle = () => {
+  const todayIso = new Date().toISOString().slice(0, 10);
+  return {
+    id: "new",
+    headline: "",
+    editor: "Editorial desk",
+    status: "Draft",
+    tone: "neutral",
+    summary: "",
+    author: "Nael Desk",
+    source: "latest",
+    category: "News",
+    image: "",
+    video: "",
+    readTime: "",
+    accessLabel: "",
+    date: todayIso,
+    publicAccessDate: "",
+    accessMode: "auto",
+    publishDate: todayIso,
+    publishTime: "14:00",
+    body: "",
+    councilSession: "",
+    eventDate: "",
+    location: "",
+    scorelineFocus: "",
+    marketImpact: "",
+  };
+};
 
 // Keys inside the backend `meta` JSON that map onto the editor form's
 // category-specific template fields.
@@ -74,6 +87,11 @@ const META_FORM_KEYS = [
 function toEditorForm(source, fallback = createDefaultArticle) {
   if (!source) return fallback();
   const meta = source.meta && typeof source.meta === "object" ? source.meta : {};
+  const rawPublishDate = source.publishDate || source.date || "";
+  const rawPublicAccessDate = source.publicAccessDate || meta.publicAccessDate || "";
+  const rawPublishTime = source.publishTime || "";
+  const rawDate = source.date || source.publishDate || "";
+
   return {
     ...fallback(),
     id: source.id,
@@ -89,10 +107,11 @@ function toEditorForm(source, fallback = createDefaultArticle) {
     video: source.video || meta.video || "",
     readTime: source.readTime || "",
     accessLabel: source.accessLabel || "",
-    date: source.date || "",
-    publicAccessDate: source.publicAccessDate || "",
-    publishDate: source.publishDate || "",
-    publishTime: source.publishTime || "",
+    date: toISODate(rawDate) || rawDate,
+    publicAccessDate: toISODate(rawPublicAccessDate),
+    accessMode: source.accessMode || meta.accessMode || "auto",
+    publishDate: toISODate(rawPublishDate),
+    publishTime: toISOTime(rawPublishTime) || rawPublishTime,
     body: Array.isArray(source.body)
       ? source.body.join("\n\n")
       : String(source.body || ""),
@@ -114,6 +133,12 @@ function toArticlePayload(form) {
   });
   const videoValue = String(form.video || "").trim();
   if (videoValue) meta.video = videoValue;
+  meta.accessMode = form.accessMode || "auto";
+
+  const displayPublishDate = toDisplayDate(form.publishDate) || form.publishDate || "";
+  const displayPublicAccessDate = toDisplayDate(form.publicAccessDate) || form.publicAccessDate || "";
+  const displayPublishTime = toDisplayTime(form.publishTime) || form.publishTime || "";
+
   return {
     headline: form.headline,
     summary: form.summary,
@@ -127,10 +152,11 @@ function toArticlePayload(form) {
     categoryLabel: form.category || "News",
     readTime: form.readTime,
     accessLabel: form.accessLabel,
-    date: form.date || form.publishDate || "",
-    publicAccessDate: form.publicAccessDate,
-    publishDate: form.publishDate,
-    publishTime: form.publishTime,
+    date: displayPublishDate || form.date || "",
+    publicAccessDate: displayPublicAccessDate,
+    accessMode: form.accessMode || "auto",
+    publishDate: displayPublishDate,
+    publishTime: displayPublishTime,
     clicks: Number(form.clicks) || 0,
     meta,
   };
@@ -403,6 +429,7 @@ function PlacementPreviewPanel({ article }) {
 
 export default function AdminContentEditor() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [form, setForm] = useState(() => toEditorForm(null));
   const [categoryOptions, setCategoryOptions] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -438,23 +465,24 @@ export default function AdminContentEditor() {
         active = false;
       };
     }
-    const mockArticle = getRawArticleById(id);
-    setForm(toEditorForm(mockArticle));
-    backendArticles
-      .adminList()
-      .then((list) => {
+    const localArticle = getArticleById(id) || getRawArticleById(id);
+    if (localArticle) {
+      setForm(toEditorForm(localArticle));
+    }
+    (async () => {
+      try {
+        const fetched = await appClient.articles.get(id);
         if (!active) return;
-        const found = (Array.isArray(list) ? list : []).find(
-          (article) => article.id === id,
-        );
-        if (found) setForm(toEditorForm(found));
-      })
-      .catch((error) => {
-        if (!active) return;
-        if (!isNetworkError(error)) {
-          setForm(toEditorForm(mockArticle));
+        if (fetched) {
+          setForm(toEditorForm(fetched));
         }
-      });
+      } catch (error) {
+        if (!active) return;
+        if (localArticle) {
+          setForm(toEditorForm(localArticle));
+        }
+      }
+    })();
     return () => {
       active = false;
     };
@@ -470,20 +498,44 @@ export default function AdminContentEditor() {
     }));
   };
 
+  const applySavedArticle = (saved, success) => {
+    const stored = saveArticle(toStoreArticle(saved));
+    const editorForm = toEditorForm(stored);
+    setForm(editorForm);
+    setIsSaving(false);
+    setSuccessMessage(success);
+
+    if (isNewArticle) {
+      navigate(`/admin/content/${stored.id}`, { replace: true });
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!form.headline.trim()) {
+      setActionError("Article headline is required before saving.");
+      setSuccessMessage("");
+      return;
+    }
     setIsSaving(true);
     setSuccessMessage("");
     setActionError("");
 
     const saveFallback = () => {
       window.setTimeout(() => {
-        const draft = { ...form, date: form.date || form.publishDate || "" };
-        const saved = saveArticle(draft);
-        setIsSaving(false);
-        if (form.id === "new") handleChange("id", saved.id);
-        setSuccessMessage(
-          saved.status === "Published"
+        const displayPublishDate = toDisplayDate(form.publishDate) || form.publishDate || "";
+        const displayPublicAccessDate = toDisplayDate(form.publicAccessDate) || form.publicAccessDate || "";
+        const displayPublishTime = toDisplayTime(form.publishTime) || form.publishTime || "";
+        const draft = {
+          ...form,
+          date: displayPublishDate || form.date || "",
+          publishDate: displayPublishDate,
+          publicAccessDate: displayPublicAccessDate,
+          publishTime: displayPublishTime,
+        };
+        applySavedArticle(
+          draft,
+          draft.status === "Published"
             ? "Article is live in the public newsroom and ready for reader access."
             : "Editorial draft saved to the publishing queue.",
         );
@@ -496,9 +548,8 @@ export default function AdminContentEditor() {
         form.id && form.id !== "new"
           ? await backendArticles.adminUpdate(form.id, payload)
           : await backendArticles.adminCreate(payload);
-      setIsSaving(false);
-      if (form.id === "new") handleChange("id", saved.id);
-      setSuccessMessage(
+      applySavedArticle(
+        saved,
         saved.status === "Published"
           ? "Article is live in the public newsroom and ready for reader access."
           : "Editorial draft saved to the publishing queue.",
@@ -526,15 +577,19 @@ export default function AdminContentEditor() {
 
     const publishFallback = () => {
       window.setTimeout(() => {
+        const displayPublishDate = toDisplayDate(form.publishDate) || form.publishDate || "";
+        const displayPublicAccessDate = toDisplayDate(form.publicAccessDate) || form.publicAccessDate || "";
+        const displayPublishTime = toDisplayTime(form.publishTime) || form.publishTime || "";
         const draft = {
           ...form,
           status: "Published",
-          date: form.date || form.publishDate || "",
+          date: displayPublishDate || form.date || "",
+          publishDate: displayPublishDate,
+          publicAccessDate: displayPublicAccessDate,
+          publishTime: displayPublishTime,
         };
-        const saved = saveArticle(draft);
-        setIsSaving(false);
-        if (form.id === "new") handleChange("id", saved.id);
-        setSuccessMessage(
+        applySavedArticle(
+          { ...draft, id: form.id },
           "Article is live in the public newsroom and ready for reader access.",
         );
       }, 300);
@@ -549,9 +604,8 @@ export default function AdminContentEditor() {
           toArticlePayload({ ...form, status: "Published" }),
         );
       }
-      setIsSaving(false);
-      if (form.id === "new") handleChange("id", saved.id);
-      setSuccessMessage(
+      applySavedArticle(
+        saved,
         "Article is live in the public newsroom and ready for reader access.",
       );
     } catch (error) {
@@ -569,7 +623,7 @@ export default function AdminContentEditor() {
       <DashboardPageHeader
         eyebrow="Admin editor"
         title={isNewArticle ? "Create a new article" : "Edit article"}
-        description="The editor should make category-specific template fields, publish timing, and article state obvious without sending admins back to a generic article list."
+        description="Write, schedule, and publish a story."
         breadcrumbs={[
           { label: "Admin workspace", to: "/admin/overview" },
           { label: "Content", to: "/admin/content" },
@@ -586,28 +640,9 @@ export default function AdminContentEditor() {
         }
       />
 
-      <DashboardFilterBar
-        searchPlaceholder="Search editorial notes or template fields"
-        filters={[
-          `${form.category || "News"} template`,
-          form.status,
-          `${form.publishDate} · ${form.publishTime}`,
-        ]}
-        action={
-          <Link
-            to="/admin/schedule"
-            className="inline-flex items-center gap-2 rounded-full border border-stone-200/80 bg-white px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition-colors hover:bg-stone-50"
-          >
-            Publishing schedule
-            <Clock3 className="h-4 w-4" />
-          </Link>
-        }
-      />
-
-      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
         <DashboardPanel
-          title="Category-aware editor"
-          description="Template fields change with the article category so publishing stays structured across business, events, and the other public sections."
+          title="Article details"
         >
           <AdminArticleForm
             form={form}
@@ -615,16 +650,14 @@ export default function AdminContentEditor() {
             onSubmit={handleSubmit}
             isSaving={isSaving}
             successMessage={successMessage}
+            errorMessage={actionError}
             templateFields={templateFields}
             categoryOptions={categoryOptions}
           />
         </DashboardPanel>
 
         <div className="space-y-4">
-          <DashboardPanel
-            title="Editorial state"
-            description="Article state should stay visible while the editor works."
-          >
+          <DashboardPanel title="Publishing">
             <div className="space-y-4">
               <div className="dashboard-panel-soft p-4">
                 <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500">
@@ -655,65 +688,7 @@ export default function AdminContentEditor() {
                   </>
                 ) : null}
               </div>
-<div className="dashboard-panel-soft p-4">
-            <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500">
-              Publish window
-            </p>
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                type="date"
-                value={form.publishDate || ""}
-                onChange={(e) =>
-                  handleChange(
-                    "publishDate",
-                    e.target.value === "" ? "" : (e.target.value),
-                  )
-                }
-                className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 font-sans text-base text-stone-900 outline-none transition-colors focus:border-[#4A2A08] focus:ring-2 focus:ring-[#4A2A08]/15"
-                disabled={isSaving}
-                title="Select the date this article should go live"
-              />
-              <span className="font-sans text-sm text-stone-500">
-                {form.publishDate || "Not set"}
-              </span>
-            </div>
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                type="time"
-                value={form.publishTime || ""}
-                onChange={(e) => handleChange("publishTime", e.target.value || "")}
-                className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 font-sans text-base text-stone-900 outline-none transition-colors focus:border-[#4A2A08] focus:ring-2 focus:ring-[#4A2A08]/15"
-                disabled={isSaving}
-                title="Select the time this article should go live"
-              />
-              <span className="font-sans text-sm text-stone-500">
-                {form.publishTime || "Not set"}
-              </span>
-            </div>
-          </div>
-          <div className="dashboard-panel-soft p-4">
-            <p className="font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-stone-500">
-              Public archive date
-            </p>
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                type="date"
-                value={form.publicAccessDate || ""}
-                onChange={(e) =>
-                  handleChange(
-                    "publicAccessDate",
-                    e.target.value === "" ? "" : (e.target.value),
-                  )
-                }
-                className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 font-sans text-base text-stone-900 outline-none transition-colors focus:border-[#4A2A08] focus:ring-2 focus:ring-[#4A2A08]/15"
-                disabled={isSaving}
-                title="Select the date this article should become publicly accessible"
-              />
-              <span className="font-sans text-sm text-stone-500">
-                {form.publicAccessDate || "Not set"}
-              </span>
-            </div>
-          </div>
+
             </div>
           </DashboardPanel>
 

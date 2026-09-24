@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Clock } from "lucide-react";
 import NewsCard from "@/components/newspaper/NewsCard";
 import { useLanguage } from "@/lib/LanguageContext";
@@ -31,17 +31,6 @@ function ClassicPressDesk({ related }) {
           </Link>
         ))}
       </div>
-      <div className="mt-6 border-2 border-ink/60 p-4">
-        <p className="font-sans text-[0.62rem] font-bold uppercase tracking-[0.26em] text-heritage">
-          In This Edition
-        </p>
-        <ul className="mt-3 space-y-2 font-body text-sm leading-relaxed text-ink">
-          <li>· Today&apos;s council and parliament session calendar</li>
-          <li>· Print run ships Friday — biweekly delivery window opens</li>
-          <li>· Weekend fixtures and event listings live by desk</li>
-          <li>· Subscriber archive opens 30 days after first release</li>
-        </ul>
-      </div>
     </aside>
   );
 }
@@ -72,25 +61,6 @@ function NewspaperRail({ related }) {
             </p>
           </Link>
         ))}
-      </div>
-      <div className="mt-6 bg-vellum p-4">
-        <p className="font-sans text-[0.6rem] font-black uppercase tracking-[0.24em] text-heritage">
-          Editor&apos;s Note
-        </p>
-        <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-          Headlines and summaries are reviewed by the desk before each edition
-          ships to readers.
-        </p>
-      </div>
-      <div className="mt-4 border border-stone-300/70 p-4">
-        <p className="font-sans text-[0.6rem] font-black uppercase tracking-[0.24em] text-ink">
-          In Brief
-        </p>
-        <ul className="mt-3 space-y-2 font-body text-sm leading-relaxed text-redacted">
-          <li>· Today&apos;s council session calendar is live.</li>
-          <li>· Weekend fixtures posted by each section desk.</li>
-          <li>· Subscriber archive updated with the latest edition.</li>
-        </ul>
       </div>
     </aside>
   );
@@ -128,51 +98,17 @@ function TabloidRail({ related }) {
           </Link>
         ))}
       </div>
-      <div className="mt-6 border-y-4 border-double border-ink bg-[#efe3cd] p-4">
-        <p className="font-sans text-[0.62rem] font-black uppercase tracking-[0.24em] text-heritage">
-          The Express Line
-        </p>
-        <p className="mt-2 font-heading text-xl font-bold italic leading-snug text-ink">
-          “Stories briefed at full speed every morning — verified, trimmed, and
-          on your desk before sunrise.”
-        </p>
-      </div>
     </aside>
   );
 }
 
 function StoryBody({ article, access, layoutKey }) {
-  const articleBody = article.body || [];
-  const fallbackParagraphs = [
-    "The newsroom continues to track the story as officials, residents, and stakeholders respond to the latest developments.",
-    "Our correspondents are speaking with local voices and reviewing the full implications for families, businesses, and public services.",
-  ];
-  const comments = [
-    {
-      id: "c1",
-      name: "Amina K.",
-      time: "12 min ago",
-      text: "This reads much more like a printed front-page analysis than a typical blog post.",
-    },
-    {
-      id: "c2",
-      name: "James W.",
-      time: "38 min ago",
-      text: "The extra context and the sidebar notes help a lot. Keep the newspaper feel going.",
-    },
-    {
-      id: "c3",
-      name: "Lina M.",
-      time: "1 hour ago",
-      text: "The pull quote and the column layout make the article feel more editorial and credible.",
-    },
-  ];
-
-  const isClassicLayout = layoutKey === "classic";
-  const isNewspaperLayout = layoutKey === "newspaper";
-  const isMagazineLayout = layoutKey === "magazine";
-  const isTabloidLayout = layoutKey === "tabloid";
-  const isNewsletterLayout = layoutKey === "newsletter";
+  const rawBody = article?.body;
+  const articleBody = Array.isArray(rawBody)
+    ? rawBody
+    : typeof rawBody === "string" && rawBody.trim()
+    ? rawBody.split("\n\n").filter(Boolean)
+    : [];
 
   const styles = {
     classic: {
@@ -259,55 +195,24 @@ function StoryBody({ article, access, layoutKey }) {
 
         {access.canReadFull ? (
           <>
-            {(articleBody.length > 0 ? articleBody : fallbackParagraphs).map(
-              (paragraph) => (
-                <p key={paragraph} className="mt-6">
-                  {paragraph}
-                </p>
-              ),
-            )}
-            {isTabloidLayout ? (
-              <blockquote className="mt-8 border-y-4 border-double border-heritage bg-[#efe3cd] px-6 py-6 text-center">
-                <span className="font-display text-4xl font-black text-heritage">
-                  “
-                </span>
-                <p className="mt-1 font-sans text-xl font-black uppercase tracking-wide text-ink md:text-2xl">
-                  “The details matter, and the public deserves the full
-                  record.”
-                </p>
-              </blockquote>
-            ) : (
-              <blockquote
-                className={`mt-8 border-y px-6 py-5 text-center font-heading text-xl font-semibold italic leading-snug text-ink md:text-2xl ${styles.pullQuote}`}
-              >
-                {isClassicLayout ||
-                isNewspaperLayout ||
-                isMagazineLayout ||
-                isNewsletterLayout ? (
-                  <>
-                    <span className="mb-1 block font-display text-5xl font-black leading-none text-heritage">
-                      “
-                    </span>
-                    The details matter, and the public deserves the full record.
-                  </>
-                ) : (
-                  "“The details matter, and the public deserves the full record.”"
-                )}
-              </blockquote>
-            )}
-            <p className="mt-6">
-              The article will continue to be updated as new information
-              becomes available, with editors placing emphasis on verified
-              sourcing and readable context rather than a generic blog format.
-            </p>
+            {articleBody.map((paragraph, index) => (
+              <p key={`${index}-${paragraph.slice(0, 24)}`} className="mt-6">
+                {paragraph}
+              </p>
+            ))}
           </>
         ) : (
           <div
             className={`mt-8 rounded-[1.25rem] border border-dashed border-amber-300 bg-amber-50/75 p-6 ${styles.lockPanel}`}
           >
             <h2 className="font-display text-2xl font-black text-ink">
-              Full article stays locked until {access.publicAccessDate}.
+              {access.accessMode === "locked" || !access.publicAccessDate
+                ? "Full article is reserved for active subscribers."
+                : `Full article stays locked until ${access.publicAccessDate}.`}
             </h2>
+            <p className="mt-2 font-body text-sm text-stone-600">
+              {access.detail}
+            </p>
             <Link
               to="/subscribe/checkout"
               className="mt-4 inline-block bg-heritage px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
@@ -318,70 +223,6 @@ function StoryBody({ article, access, layoutKey }) {
         )}
       </div>
 
-      <div className={`mt-12 pt-8 ${styles.comments}`}>
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="font-display text-2xl font-black uppercase text-ink">
-            {isClassicLayout
-              ? "Letters to the Editor"
-              : isNewspaperLayout
-                ? "Join the Discussion"
-                : isMagazineLayout
-                  ? "Reader Voices"
-                  : isTabloidLayout
-                    ? "Call the Desk"
-                    : isNewsletterLayout
-                      ? "Reply to This Dispatch"
-                      : "Reader Comments"}
-          </h2>
-          <span className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.22em] text-redacted">
-            {comments.length} Voices
-          </span>
-        </div>
-
-        <form className={`mt-6 p-5 ${styles.form}`}>
-          <label className="font-sans text-xs font-bold uppercase tracking-wider text-ink">
-            {styles.label}
-          </label>
-          <textarea
-            rows={4}
-            placeholder={
-              access.canReadFull
-                ? "Share your thoughts on this story..."
-                : `Comments unlock with full access until ${access.publicAccessDate}.`
-            }
-            disabled={!access.canReadFull}
-            className={`mt-3 w-full resize-none border border-stone-300/60 bg-paper p-3 font-body text-sm text-ink outline-none placeholder:text-redacted/60 focus:border-heritage disabled:cursor-not-allowed disabled:opacity-70 ${styles.textarea}`}
-          />
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <button
-              type="button"
-              disabled={!access.canReadFull}
-              className={`px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60 ${styles.button}`}
-            >
-              {styles.buttonLabel}
-            </button>
-          </div>
-        </form>
-
-        <div className="mt-6 space-y-4">
-          {comments.map((comment) => (
-            <article
-              key={comment.id}
-              className={`border-b pb-4 last:border-b-0 last:pb-0 ${styles.commentBorder}`}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="font-sans text-sm font-bold uppercase tracking-wider text-ink">
-                  {comment.name}
-                </h3>
-                <span className="meta-text">{comment.time}</span>
-              </div>
-              <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                {comment.text}
-              </p>
-            </article>
-          ))}
-        </div>
-      </div>
     </>
   );
 }
@@ -721,21 +562,6 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
               <StoryBody article={article} access={access} layoutKey={layoutKey} />
             </div>
 
-            <div className="mt-12 border-2 border-dashed border-stone-300/70 bg-vellum/60 p-6 text-center">
-              <p className="font-display text-xl font-black text-ink">
-                Like this briefing?
-              </p>
-              <p className="mt-2 font-body text-sm leading-relaxed text-redacted">
-                The Dispatch lands in your inbox every morning — top headlines,
-                context, and a full subscriber archive.
-              </p>
-              <Link
-                to="/subscribe/checkout"
-                className="mt-4 inline-block bg-heritage px-6 py-3 font-sans text-xs font-bold uppercase tracking-wider text-paper transition-colors hover:bg-ink"
-              >
-                Get The Dispatch
-              </Link>
-            </div>
           </div>
         </div>
       ) : (
@@ -816,26 +642,46 @@ export function ArticleLayoutView({ article, access, related, layoutKey }) {
 }
 
 export function ArticleLayoutSwitcher({ layoutKey, options }) {
+  const navigate = useNavigate();
   return (
-    <div className="flex flex-wrap items-center border border-stone-300/70 p-0.5">
-      {options.map((option) => {
-        const active = layoutKey === option.key;
-        return (
-          <Link
-            key={option.key}
-            to={option.path}
-            aria-current={active ? "page" : undefined}
-            className={`px-2.5 py-1.5 font-sans text-[0.6rem] font-bold uppercase tracking-[0.12em] transition-colors ${
-              active
-                ? "bg-heritage text-paper"
-                : "text-redacted hover:text-heritage"
-            }`}
-          >
-            {option.label}
-          </Link>
-        );
-      })}
-    </div>
+    <>
+      <div className="sm:hidden">
+        <select
+          value={layoutKey}
+          onChange={(e) => {
+            const opt = options.find((o) => o.key === e.target.value);
+            if (opt) navigate(opt.path);
+          }}
+          className="rounded border border-stone-300 bg-paper px-2 py-1 font-sans text-xs font-semibold text-stone-700 outline-none"
+          aria-label="Select layout style"
+        >
+          {options.map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="hidden sm:flex flex-wrap items-center border border-stone-300/70 p-0.5">
+        {options.map((option) => {
+          const active = layoutKey === option.key;
+          return (
+            <Link
+              key={option.key}
+              to={option.path}
+              aria-current={active ? "page" : undefined}
+              className={`px-2.5 py-1.5 font-sans text-[0.6rem] font-bold uppercase tracking-[0.12em] transition-colors ${
+                active
+                  ? "bg-heritage text-paper"
+                  : "text-redacted hover:text-heritage"
+              }`}
+            >
+              {option.label}
+            </Link>
+          );
+        })}
+      </div>
+    </>
   );
 }
 

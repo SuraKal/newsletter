@@ -403,6 +403,8 @@ export const toAppArticle = (article) => ({
   categoryLabel: article.categoryLabel || "",
   readTime: article.readTime || "",
   accessLabel: article.accessLabel || "",
+  publicAccessDate: article.publicAccessDate || article.meta?.publicAccessDate || "",
+  accessMode: article.accessMode || article.meta?.accessMode || "auto",
   publishDate: article.publishDate || "",
   publishTime: article.publishTime || "",
   clicks: Number(article.clicks) || 0,
@@ -432,8 +434,20 @@ export const backendArticles = {
   },
 
   async adminList() {
-    const payload = await request("/admin/articles");
-    return (payload.articles || []).map(toAppArticle);
+    try {
+      const payload = await request("/admin/articles");
+      return (payload.articles || []).map(toAppArticle);
+    } catch (adminError) {
+      try {
+        const publicPayload = await request("/articles", { auth: false });
+        if (publicPayload?.articles) {
+          return publicPayload.articles.map(toAppArticle);
+        }
+      } catch (publicError) {
+        // Ignore fallback error and throw primary admin error
+      }
+      throw adminError;
+    }
   },
 
   async adminCreate(data) {

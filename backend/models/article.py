@@ -39,6 +39,7 @@ class Article(db.Model):
     category_label = db.Column(db.String(200))
     date = db.Column(db.String(50))
     public_access_date = db.Column(db.String(50))
+    access_mode = db.Column(db.String(30), default="auto")  # auto | locked | public
     publish_date = db.Column(db.String(50))
     publish_time = db.Column(db.String(50))
     clicks = db.Column(db.Integer, default=0)
@@ -66,6 +67,7 @@ class Article(db.Model):
             "categoryLabel": self.category_label,
             "date": self.date,
             "publicAccessDate": self.public_access_date,
+            "accessMode": self.access_mode or "auto",
             "publishDate": self.publish_date,
             "publishTime": self.publish_time,
             "clicks": self.clicks or 0,

@@ -2431,37 +2431,79 @@ export const businessGovernanceActionNotes = [
 ];
 
 const MONTH_INDEX = {
-  January: 0,
-  February: 1,
-  March: 2,
-  April: 3,
+  January: 0, Jan: 0,
+  February: 1, Feb: 1,
+  March: 2, Mar: 2,
+  April: 3, Apr: 3,
   May: 4,
-  June: 5,
-  July: 6,
-  August: 7,
-  September: 8,
-  October: 9,
-  November: 10,
-  December: 11,
+  June: 5, Jun: 5,
+  July: 6, Jul: 6,
+  August: 7, Aug: 7,
+  September: 8, Sep: 8, Sept: 8,
+  October: 9, Oct: 9,
+  November: 10, Nov: 10,
+  December: 11, Dec: 11,
 };
 
 const ACCESS_REFERENCE_DATE = new Date(Date.UTC(2026, 7, 10));
 
-export function parseArticleDate(dateLabel) {
-  if (!dateLabel) {
+export function parseArticleDate(dateInput) {
+  if (!dateInput) {
     return null;
   }
-
-  const [monthName, dayLabel, yearLabel] = dateLabel.replace(",", "").split(" ");
-  const month = MONTH_INDEX[monthName];
-  const day = Number(dayLabel);
-  const year = Number(yearLabel);
-
-  if (Number.isNaN(day) || Number.isNaN(year) || month === undefined) {
-    return null;
+  if (dateInput instanceof Date) {
+    return Number.isNaN(dateInput.getTime()) ? null : dateInput;
+  }
+  if (typeof dateInput !== "string") {
+    const d = new Date(dateInput);
+    return Number.isNaN(d.getTime()) ? null : d;
   }
 
-  return new Date(Date.UTC(year, month, day));
+  const str = dateInput.trim();
+  if (!str) return null;
+
+  // 1. ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+  const isoMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (isoMatch) {
+    const year = Number(isoMatch[1]);
+    const month = Number(isoMatch[2]) - 1;
+    const day = Number(isoMatch[3]);
+    if (!Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)) {
+      return new Date(Date.UTC(year, month, day));
+    }
+  }
+
+  // 2. Month Day, Year or Day Month Year
+  const cleaned = str.replace(/,/g, " ").replace(/\s+/g, " ").trim();
+  const parts = cleaned.split(" ");
+  if (parts.length >= 3) {
+    // e.g. "September 10 2026"
+    if (MONTH_INDEX[parts[0]] !== undefined) {
+      const month = MONTH_INDEX[parts[0]];
+      const day = Number(parts[1]);
+      const year = Number(parts[2]);
+      if (!Number.isNaN(day) && !Number.isNaN(year)) {
+        return new Date(Date.UTC(year, month, day));
+      }
+    }
+    // e.g. "10 September 2026"
+    if (MONTH_INDEX[parts[1]] !== undefined) {
+      const day = Number(parts[0]);
+      const month = MONTH_INDEX[parts[1]];
+      const year = Number(parts[2]);
+      if (!Number.isNaN(day) && !Number.isNaN(year)) {
+        return new Date(Date.UTC(year, month, day));
+      }
+    }
+  }
+
+  // 3. Fallback to native Date.parse
+  const parsed = new Date(str);
+  if (!Number.isNaN(parsed.getTime())) {
+    return new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()));
+  }
+
+  return null;
 }
 
 function addDays(date, days) {
@@ -2470,9 +2512,13 @@ function addDays(date, days) {
   return next;
 }
 
-function formatArticleDate(date) {
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+export function formatArticleDate(dateOrStr) {
+  if (!dateOrStr) {
     return "";
+  }
+  const date = dateOrStr instanceof Date ? dateOrStr : parseArticleDate(dateOrStr);
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return typeof dateOrStr === "string" ? dateOrStr : "";
   }
 
   return date.toLocaleDateString("en-US", {
@@ -2483,29 +2529,131 @@ function formatArticleDate(date) {
   });
 }
 
+export function toISODate(dateOrStr) {
+  if (!dateOrStr) return "";
+  if (typeof dateOrStr === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateOrStr.trim())) {
+    return dateOrStr.trim();
+  }
+  const date = dateOrStr instanceof Date ? dateOrStr : parseArticleDate(dateOrStr);
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return "";
+  }
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+export function toDisplayDate(dateOrStr) {
+  return formatArticleDate(dateOrStr);
+}
+
+export function toISOTime(timeStr) {
+  if (!timeStr) return "";
+  const str = String(timeStr).trim();
+  if (!str) return "";
+
+  // 24-hour format: HH:mm or HH:mm:ss
+  const match24 = str.match(/^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
+  if (match24) {
+    const hours = match24[1].padStart(2, "0");
+    const minutes = match24[2];
+    return `${hours}:${minutes}`;
+  }
+
+  // 12-hour format: H:mm AM/PM
+  const match12 = str.match(/^(\d{1,2}):([0-5]\d)(?::[0-5]\d)?\s*([ap]m)$/i);
+  if (match12) {
+    let hours = Number(match12[1]);
+    const minutes = match12[2];
+    const meridiem = match12[3].toUpperCase();
+    if (meridiem === "PM" && hours < 12) {
+      hours += 12;
+    } else if (meridiem === "AM" && hours === 12) {
+      hours = 0;
+    }
+    return `${String(hours).padStart(2, "0")}:${minutes}`;
+  }
+
+  return "";
+}
+
+export function toDisplayTime(timeStr) {
+  if (!timeStr) return "";
+  const str = String(timeStr).trim();
+  if (!str) return "";
+
+  // If already 12-hour with AM/PM e.g. "2:00 PM"
+  const match12 = str.match(/^([01]?\d):([0-5]\d)\s*([ap]m)$/i);
+  if (match12) {
+    const hours = Number(match12[1]);
+    const minutes = match12[2];
+    const meridiem = match12[3].toUpperCase();
+    return `${hours}:${minutes} ${meridiem}`;
+  }
+
+  // 24-hour HH:mm
+  const match24 = str.match(/^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
+  if (match24) {
+    let hours = Number(match24[1]);
+    const minutes = match24[2];
+    const meridiem = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
+    return `${hours}:${minutes} ${meridiem}`;
+  }
+
+  return str;
+}
+
 export function getArticleAccessState(article, hasSubscriberAccess = false) {
+  const mode = article?.accessMode || article?.meta?.accessMode || "auto";
+
   const publishedAt = parseArticleDate(article?.date);
   const derivedPublicAccessAt = publishedAt ? addDays(publishedAt, 30) : null;
   const publicAccessAt = article?.publicAccessDate
     ? parseArticleDate(article.publicAccessDate)
     : derivedPublicAccessAt;
+
   const isArchiveOpen =
-    publicAccessAt instanceof Date &&
-    !Number.isNaN(publicAccessAt.getTime()) &&
-    publicAccessAt <= ACCESS_REFERENCE_DATE;
+    mode === "public" ||
+    (mode === "auto" &&
+      publicAccessAt instanceof Date &&
+      !Number.isNaN(publicAccessAt.getTime()) &&
+      publicAccessAt <= ACCESS_REFERENCE_DATE);
 
   if (hasSubscriberAccess) {
     return {
       key: "subscriber",
       label: "Subscriber access active",
       shortLabel: "Subscriber access",
-      detail: publicAccessAt
-        ? `Full article access is active. Public archive opens on ${formatArticleDate(publicAccessAt)}.`
-        : "Full article access is active for signed-in readers.",
+      detail:
+        mode === "locked"
+          ? "Full article access is active for subscribers (locked to public by Editorial Desk)."
+          : mode === "public"
+          ? "Full article access is active for all readers (unlocked by Editorial Desk)."
+          : publicAccessAt
+          ? `Full article access is active. Public archive opens on ${formatArticleDate(publicAccessAt)}.`
+          : "Full article access is active for signed-in readers.",
       publicAccessDate: publicAccessAt ? formatArticleDate(publicAccessAt) : null,
       canReadFull: true,
       isLocked: false,
       isArchiveOpen,
+      accessMode: mode,
+    };
+  }
+
+  if (mode === "locked") {
+    return {
+      key: "locked",
+      label: "Subscriber-only story (Locked)",
+      shortLabel: "Locked by Editorial Desk",
+      detail: "This reporting is reserved for active subscribers by the Editorial Desk.",
+      publicAccessDate: publicAccessAt ? formatArticleDate(publicAccessAt) : null,
+      canReadFull: false,
+      isLocked: true,
+      isArchiveOpen: false,
+      accessMode: mode,
     };
   }
 
@@ -2514,11 +2662,15 @@ export function getArticleAccessState(article, hasSubscriberAccess = false) {
       key: "public",
       label: "Public archive access",
       shortLabel: "Public archive",
-      detail: "This story is now open to all readers because the 30-day access window has passed.",
+      detail:
+        mode === "public"
+          ? "This story has been opened to all readers by the Editorial Desk."
+          : "This story is now open to all readers because the access window has passed.",
       publicAccessDate: publicAccessAt ? formatArticleDate(publicAccessAt) : null,
       canReadFull: true,
       isLocked: false,
       isArchiveOpen: true,
+      accessMode: mode,
     };
   }
 
@@ -2535,5 +2687,6 @@ export function getArticleAccessState(article, hasSubscriberAccess = false) {
     canReadFull: false,
     isLocked: true,
     isArchiveOpen: false,
+    accessMode: mode,
   };
 }

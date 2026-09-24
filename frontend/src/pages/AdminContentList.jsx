@@ -13,8 +13,8 @@ import {
 } from "@/components/dashboard/DashboardPrimitives";
 import { useTableFilters, useTableQuery } from "@/lib/useTableQuery";
 import { appClient } from "@/api/appClient";
-import { backendArticles, isNetworkError } from "@/api/backendClient";
-import { getAdminContentRows, getPlacementLabel } from "@/lib/content-store";
+import { backendArticles } from "@/api/backendClient";
+import { getAdminContentRows, getPlacementLabel, syncArticlesFromBackend } from "@/lib/content-store";
 
 const contentColumns = [
   {
@@ -261,15 +261,16 @@ export default function AdminContentList() {
       .adminList()
       .then((list) => {
         if (!active) return;
-        setAdminContentRows(
-          Array.isArray(list) && list.length ? list.map(toAdminContentRow) : [],
-        );
-      })
-      .catch((error) => {
-        if (!active) return;
-        if (isNetworkError(error)) {
+        if (Array.isArray(list) && list.length) {
+          setAdminContentRows(list.map(toAdminContentRow));
+          syncArticlesFromBackend(list);
+        } else {
           setAdminContentRows(getAdminContentRows());
         }
+      })
+      .catch(() => {
+        if (!active) return;
+        setAdminContentRows(getAdminContentRows());
       });
     return () => {
       active = false;

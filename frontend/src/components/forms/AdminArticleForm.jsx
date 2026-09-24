@@ -1,13 +1,10 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ARTICLE_PLACEMENTS } from "@/lib/content-store";
-import { getCategoryLabels, getCategoryTemplate } from "@/lib/category-store";
-import { getTemplateLabel } from "@/lib/article-templates";
-import { useStoreVersion } from "@/lib/store-bus";
+import { getCategoryLabels } from "@/lib/category-store";
 
 const MAX_IMAGE_DIMENSION = 1200;
 
@@ -17,10 +14,10 @@ export default function AdminArticleForm({
   onSubmit,
   isSaving,
   successMessage,
+  errorMessage,
   templateFields = [],
   categoryOptions,
 }) {
-  useStoreVersion();
   const CATEGORY_OPTIONS =
     Array.isArray(categoryOptions) && categoryOptions.length
       ? categoryOptions
@@ -54,16 +51,15 @@ export default function AdminArticleForm({
     reader.readAsDataURL(file);
   };
 
-  const selectedPlacement = ARTICLE_PLACEMENTS.find(
-    (option) => option.value === form.source,
-  );
-  const selectedTemplate = getCategoryTemplate(form.category);
-  const previewUrl = `/templates?layout=${selectedTemplate}`;
-
   return (
     <form onSubmit={onSubmit} className="space-y-5">
+      {errorMessage ? (
+        <div className="rounded-[1rem] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          {errorMessage}
+        </div>
+      ) : null}
       {successMessage ? (
-        <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
           {successMessage}
         </div>
       ) : null}
@@ -99,11 +95,6 @@ export default function AdminArticleForm({
               </option>
             ))}
           </select>
-          {selectedPlacement ? (
-            <p className="text-xs leading-5 text-stone-500">
-              {selectedPlacement.note}
-            </p>
-          ) : null}
         </div>
 
         <div className="space-y-2">
@@ -120,19 +111,54 @@ export default function AdminArticleForm({
               </option>
             ))}
           </select>
-          <p className="text-xs leading-5 text-stone-500">
-            Controls the badge and category page grouping. Articles in this
-            category use the <span className="font-semibold">{getTemplateLabel(selectedTemplate)}</span> layout by default.
-          </p>
-          <Link
-            to={previewUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 inline-flex items-center gap-1.5 font-sans text-[0.68rem] font-bold uppercase tracking-[0.18em] text-heritage hover:text-ink"
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="article-publish-date">Publish date</Label>
+          <Input
+            id="article-publish-date"
+            type="date"
+            value={form.publishDate || ""}
+            onChange={(e) => onChange("publishDate", e.target.value)}
+            disabled={isSaving}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="article-publish-time">Publish time</Label>
+          <Input
+            id="article-publish-time"
+            type="time"
+            value={form.publishTime || ""}
+            onChange={(e) => onChange("publishTime", e.target.value)}
+            disabled={isSaving}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="article-access-mode">Access mode</Label>
+          <select
+            id="article-access-mode"
+            value={form.accessMode || "auto"}
+            onChange={(e) => onChange("accessMode", e.target.value)}
+            disabled={isSaving}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Preview this layout
-            <span aria-hidden="true">&nearr;</span>
-          </Link>
+            <option value="auto">Scheduled release</option>
+            <option value="locked">Subscribers only</option>
+            <option value="public">Public access</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="article-public-access-date">Public access date</Label>
+          <Input
+            id="article-public-access-date"
+            type="date"
+            value={form.publicAccessDate || ""}
+            onChange={(e) => onChange("publicAccessDate", e.target.value)}
+            disabled={isSaving || form.accessMode !== "auto"}
+          />
         </div>
 
         <div className="space-y-2 md:col-span-2">
@@ -197,10 +223,6 @@ export default function AdminArticleForm({
                 onChange={(e) => onChange("image", e.target.value)}
                 placeholder="Paste an image URL, or upload from your device"
               />
-              <p className="text-xs leading-5 text-stone-500">
-                Upload from your device or paste a hosted image URL. Uploaded
-                images are compressed before saving.
-              </p>
             </div>
           </div>
         </div>
@@ -213,11 +235,6 @@ export default function AdminArticleForm({
             onChange={(e) => onChange("video", e.target.value)}
             placeholder="Paste a YouTube link or direct video URL"
           />
-          <p className="text-xs leading-5 text-stone-500">
-            When set, article cards play this video inline instead of showing
-            the cover image. YouTube links and direct .mp4/.webm/.ogg URLs are
-            supported.
-          </p>
         </div>
 
         <div className="space-y-2">
@@ -237,50 +254,6 @@ export default function AdminArticleForm({
             value={form.readTime || ""}
             onChange={(e) => onChange("readTime", e.target.value)}
             placeholder="e.g. 5 min read"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="article-access-label">Public access label</Label>
-          <Input
-            id="article-access-label"
-            value={form.accessLabel || ""}
-            onChange={(e) => onChange("accessLabel", e.target.value)}
-            placeholder="e.g. Subscribers now"
-          />
-          <p className="text-xs leading-5 text-stone-500">
-            Badge shown on latest news cards. Leave empty to auto-derive from
-            the access window.
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="article-public-date">Public archive date</Label>
-          <Input
-            id="article-public-date"
-            value={form.publicAccessDate}
-            onChange={(e) => onChange("publicAccessDate", e.target.value)}
-            placeholder="September 10, 2026"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="article-publish-date">Publish date</Label>
-          <Input
-            id="article-publish-date"
-            value={form.publishDate}
-            onChange={(e) => onChange("publishDate", e.target.value)}
-            placeholder="August 11, 2026"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="article-publish-time">Publish time</Label>
-          <Input
-            id="article-publish-time"
-            value={form.publishTime}
-            onChange={(e) => onChange("publishTime", e.target.value)}
-            placeholder="2:00 PM"
           />
         </div>
 
@@ -331,13 +304,6 @@ export default function AdminArticleForm({
           className="h-11 rounded-2xl bg-stone-900 px-6 font-sans text-xs font-bold uppercase tracking-[0.22em] text-white hover:bg-stone-700"
         >
           {isSaving ? "Saving draft..." : "Save editorial draft"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11 rounded-2xl px-6 font-sans text-xs font-bold uppercase tracking-[0.22em]"
-        >
-          Queue publish review
         </Button>
       </div>
     </form>
