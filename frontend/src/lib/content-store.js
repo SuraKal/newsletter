@@ -69,6 +69,12 @@ function normalizeSeedArticle(item, source, extra = {}) {
     scorelineFocus: item.scorelineFocus || "",
     marketImpact: item.marketImpact || "",
     clicks: Number(item.clicks) || 0,
+    translations:
+      item.translations && typeof item.translations === "object"
+        ? item.translations
+        : item.meta?.translations && typeof item.meta.translations === "object"
+          ? item.meta.translations
+          : {},
   };
 }
 
@@ -187,6 +193,12 @@ export function toStoreArticle(article) {
     scorelineFocus: article.meta?.scorelineFocus || article.scorelineFocus || "",
     marketImpact: article.meta?.marketImpact || article.marketImpact || "",
     clicks: Number(article.clicks) || 0,
+    translations:
+      article.translations && typeof article.translations === "object"
+        ? article.translations
+        : article.meta?.translations && typeof article.meta.translations === "object"
+          ? article.meta.translations
+          : {},
   };
 }
 
@@ -233,6 +245,36 @@ export function toRenderArticle(article) {
   };
   rendered.article = rendered;
   return rendered;
+}
+
+// Dynamic editorial content is authored per language. English stays on the
+// article's primary fields while Tigrinya lives in `meta.translations.ti` on
+// the API and is flattened into `translations` in the local store. Empty
+// translated fields deliberately fall back to their English counterpart.
+export function getArticleForLanguage(article, language) {
+  if (!article || language !== "ti") return article;
+  const translation = article.translations?.ti || article.meta?.translations?.ti;
+  if (!translation || typeof translation !== "object") return article;
+
+  const localized = { ...article };
+  [
+    "headline",
+    "summary",
+    "body",
+    "author",
+    "readTime",
+    "councilSession",
+    "eventDate",
+    "location",
+    "scorelineFocus",
+    "marketImpact",
+  ].forEach((key) => {
+    const value = translation[key];
+    if (typeof value === "string" && value.trim()) {
+      localized[key] = value;
+    }
+  });
+  return localized;
 }
 
 function categoryKeyFor(category) {
@@ -466,4 +508,3 @@ export {
   toISOTime,
   toDisplayTime,
 };
-

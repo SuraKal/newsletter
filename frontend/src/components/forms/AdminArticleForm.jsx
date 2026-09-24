@@ -17,6 +17,9 @@ export default function AdminArticleForm({
   errorMessage,
   templateFields = [],
   categoryOptions,
+  editingLanguage = "en",
+  onEditingLanguageChange,
+  onTranslationChange,
 }) {
   const CATEGORY_OPTIONS =
     Array.isArray(categoryOptions) && categoryOptions.length
@@ -50,6 +53,16 @@ export default function AdminArticleForm({
     };
     reader.readAsDataURL(file);
   };
+  const isTigrinya = editingLanguage === "ti";
+  const contentValue = (key) =>
+    isTigrinya ? form.translations?.ti?.[key] || "" : form[key] || "";
+  const updateContent = (key, value) => {
+    if (isTigrinya) {
+      onTranslationChange?.(key, value);
+      return;
+    }
+    onChange(key, value);
+  };
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
@@ -64,8 +77,45 @@ export default function AdminArticleForm({
         </div>
       ) : null}
 
+      <fieldset className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+        <legend className="px-1 font-sans text-xs font-bold uppercase tracking-[0.16em] text-stone-600">
+          Article language
+        </legend>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            aria-pressed={!isTigrinya}
+            onClick={() => onEditingLanguageChange?.("en")}
+            className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+              !isTigrinya
+                ? "bg-stone-900 text-white"
+                : "bg-white text-stone-700 hover:bg-stone-100"
+            }`}
+          >
+            English
+          </button>
+          <button
+            type="button"
+            aria-pressed={isTigrinya}
+            onClick={() => onEditingLanguageChange?.("ti")}
+            className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+              isTigrinya
+                ? "bg-stone-900 text-white"
+                : "bg-white text-stone-700 hover:bg-stone-100"
+            }`}
+          >
+            ትግርኛ
+          </button>
+        </div>
+        <p className="mt-2 text-xs text-stone-600">
+          {isTigrinya
+            ? "Enter the Tigrinya version of every reader-facing field. Empty fields use English on the public page."
+            : "Enter the English version. Publishing settings and media are shared by both languages."}
+        </p>
+      </fieldset>
+
       <div className="grid gap-5 md:grid-cols-2">
-        <div className="space-y-2">
+        {!isTigrinya ? <div className="space-y-2">
           <Label htmlFor="article-status">Publishing state</Label>
           <select
             id="article-status"
@@ -79,9 +129,9 @@ export default function AdminArticleForm({
               </option>
             ))}
           </select>
-        </div>
+        </div> : null}
 
-        <div className="space-y-2">
+        {!isTigrinya ? <div className="space-y-2">
           <Label htmlFor="article-source">Placement</Label>
           <select
             id="article-source"
@@ -95,9 +145,9 @@ export default function AdminArticleForm({
               </option>
             ))}
           </select>
-        </div>
+        </div> : null}
 
-        <div className="space-y-2">
+        {!isTigrinya ? <div className="space-y-2">
           <Label htmlFor="article-category">Public category</Label>
           <select
             id="article-category"
@@ -111,9 +161,9 @@ export default function AdminArticleForm({
               </option>
             ))}
           </select>
-        </div>
+        </div> : null}
 
-        <div className="space-y-2">
+        {!isTigrinya ? <div className="space-y-2">
           <Label htmlFor="article-publish-date">Publish date</Label>
           <Input
             id="article-publish-date"
@@ -122,9 +172,9 @@ export default function AdminArticleForm({
             onChange={(e) => onChange("publishDate", e.target.value)}
             disabled={isSaving}
           />
-        </div>
+        </div> : null}
 
-        <div className="space-y-2">
+        {!isTigrinya ? <div className="space-y-2">
           <Label htmlFor="article-publish-time">Publish time</Label>
           <Input
             id="article-publish-time"
@@ -133,9 +183,9 @@ export default function AdminArticleForm({
             onChange={(e) => onChange("publishTime", e.target.value)}
             disabled={isSaving}
           />
-        </div>
+        </div> : null}
 
-        <div className="space-y-2">
+        {!isTigrinya ? <div className="space-y-2">
           <Label htmlFor="article-access-mode">Access mode</Label>
           <select
             id="article-access-mode"
@@ -148,9 +198,9 @@ export default function AdminArticleForm({
             <option value="locked">Subscribers only</option>
             <option value="public">Public access</option>
           </select>
-        </div>
+        </div> : null}
 
-        <div className="space-y-2">
+        {!isTigrinya ? <div className="space-y-2">
           <Label htmlFor="article-public-access-date">Public access date</Label>
           <Input
             id="article-public-access-date"
@@ -159,14 +209,14 @@ export default function AdminArticleForm({
             onChange={(e) => onChange("publicAccessDate", e.target.value)}
             disabled={isSaving || form.accessMode !== "auto"}
           />
-        </div>
+        </div> : null}
 
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="article-headline">Headline</Label>
           <Input
             id="article-headline"
-            value={form.headline}
-            onChange={(e) => onChange("headline", e.target.value)}
+            value={contentValue("headline")}
+            onChange={(e) => updateContent("headline", e.target.value)}
             placeholder="Article headline"
           />
         </div>
@@ -175,14 +225,14 @@ export default function AdminArticleForm({
           <Label htmlFor="article-summary">Summary</Label>
           <Textarea
             id="article-summary"
-            value={form.summary}
-            onChange={(e) => onChange("summary", e.target.value)}
+            value={contentValue("summary")}
+            onChange={(e) => updateContent("summary", e.target.value)}
             placeholder="Short summary for list and preview surfaces"
             className="min-h-[110px]"
           />
         </div>
 
-        <div className="space-y-2 md:col-span-2">
+        {!isTigrinya ? <div className="space-y-2 md:col-span-2">
           <Label htmlFor="article-image">Cover image</Label>
           <div className="grid gap-3 md:grid-cols-[180px_minmax(0,1fr)]">
             <div className="flex min-h-[120px] items-center justify-center overflow-hidden rounded-md border border-dashed border-input bg-background">
@@ -225,9 +275,9 @@ export default function AdminArticleForm({
               />
             </div>
           </div>
-        </div>
+        </div> : null}
 
-        <div className="space-y-2 md:col-span-2">
+        {!isTigrinya ? <div className="space-y-2 md:col-span-2">
           <Label htmlFor="article-video">Video (optional)</Label>
           <Input
             id="article-video"
@@ -235,14 +285,14 @@ export default function AdminArticleForm({
             onChange={(e) => onChange("video", e.target.value)}
             placeholder="Paste a YouTube link or direct video URL"
           />
-        </div>
+        </div> : null}
 
         <div className="space-y-2">
           <Label htmlFor="article-author">Author</Label>
           <Input
             id="article-author"
-            value={form.author}
-            onChange={(e) => onChange("author", e.target.value)}
+            value={contentValue("author")}
+            onChange={(e) => updateContent("author", e.target.value)}
             placeholder="Editorial author or desk"
           />
         </div>
@@ -251,8 +301,8 @@ export default function AdminArticleForm({
           <Label htmlFor="article-read-time">Read time</Label>
           <Input
             id="article-read-time"
-            value={form.readTime || ""}
-            onChange={(e) => onChange("readTime", e.target.value)}
+            value={contentValue("readTime")}
+            onChange={(e) => updateContent("readTime", e.target.value)}
             placeholder="e.g. 5 min read"
           />
         </div>
@@ -266,16 +316,16 @@ export default function AdminArticleForm({
             {field.type === "textarea" ? (
               <Textarea
                 id={`article-${field.key}`}
-                value={form[field.key] || ""}
-                onChange={(e) => onChange(field.key, e.target.value)}
+                value={contentValue(field.key)}
+                onChange={(e) => updateContent(field.key, e.target.value)}
                 placeholder={field.placeholder}
                 className="min-h-[96px]"
               />
             ) : (
               <Input
                 id={`article-${field.key}`}
-                value={form[field.key] || ""}
-                onChange={(e) => onChange(field.key, e.target.value)}
+                value={contentValue(field.key)}
+                onChange={(e) => updateContent(field.key, e.target.value)}
                 placeholder={field.placeholder}
               />
             )}
@@ -289,8 +339,8 @@ export default function AdminArticleForm({
           <Label htmlFor="article-body">Body draft</Label>
           <Textarea
             id="article-body"
-            value={form.body}
-            onChange={(e) => onChange("body", e.target.value)}
+            value={contentValue("body")}
+            onChange={(e) => updateContent("body", e.target.value)}
             placeholder="Long-form body draft"
             className="min-h-[180px]"
           />

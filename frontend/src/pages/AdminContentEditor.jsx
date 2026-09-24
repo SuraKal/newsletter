@@ -69,6 +69,7 @@ const createDefaultArticle = () => {
     location: "",
     scorelineFocus: "",
     marketImpact: "",
+    translations: { ti: {} },
   };
 };
 
@@ -82,6 +83,15 @@ const META_FORM_KEYS = [
   "marketImpact",
 ];
 
+const TRANSLATABLE_FORM_KEYS = [
+  "headline",
+  "summary",
+  "body",
+  "author",
+  "readTime",
+  ...META_FORM_KEYS,
+];
+
 // Flattens a backend article (camelCase + `meta` JSON) into the editor form
 // shape. Falls back to the mock record shape for offline seeding.
 function toEditorForm(source, fallback = createDefaultArticle) {
@@ -91,6 +101,12 @@ function toEditorForm(source, fallback = createDefaultArticle) {
   const rawPublicAccessDate = source.publicAccessDate || meta.publicAccessDate || "";
   const rawPublishTime = source.publishTime || "";
   const rawDate = source.date || source.publishDate || "";
+  const translations =
+    source.translations && typeof source.translations === "object"
+      ? source.translations
+      : meta.translations && typeof meta.translations === "object"
+        ? meta.translations
+        : {};
 
   return {
     ...fallback(),
@@ -120,6 +136,12 @@ function toEditorForm(source, fallback = createDefaultArticle) {
     location: source.location || meta.location || "",
     scorelineFocus: source.scorelineFocus || meta.scorelineFocus || "",
     marketImpact: source.marketImpact || meta.marketImpact || "",
+    translations: {
+      ti:
+        translations.ti && typeof translations.ti === "object"
+          ? translations.ti
+          : {},
+    },
   };
 }
 
@@ -134,6 +156,14 @@ function toArticlePayload(form) {
   const videoValue = String(form.video || "").trim();
   if (videoValue) meta.video = videoValue;
   meta.accessMode = form.accessMode || "auto";
+  const tigrinyaTranslation = {};
+  TRANSLATABLE_FORM_KEYS.forEach((key) => {
+    const value = String(form.translations?.ti?.[key] || "").trim();
+    if (value) tigrinyaTranslation[key] = value;
+  });
+  if (Object.keys(tigrinyaTranslation).length) {
+    meta.translations = { ti: tigrinyaTranslation };
+  }
 
   const displayPublishDate = toDisplayDate(form.publishDate) || form.publishDate || "";
   const displayPublicAccessDate = toDisplayDate(form.publicAccessDate) || form.publicAccessDate || "";
@@ -432,6 +462,7 @@ export default function AdminContentEditor() {
   const navigate = useNavigate();
   const [form, setForm] = useState(() => toEditorForm(null));
   const [categoryOptions, setCategoryOptions] = useState(null);
+  const [editingLanguage, setEditingLanguage] = useState("en");
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [actionError, setActionError] = useState("");
@@ -459,6 +490,7 @@ export default function AdminContentEditor() {
     let active = true;
     setSuccessMessage("");
     setActionError("");
+    setEditingLanguage("en");
     if (!id || id === "new") {
       setForm(toEditorForm(null));
       return () => {
@@ -495,6 +527,19 @@ export default function AdminContentEditor() {
     setForm((current) => ({
       ...current,
       [key]: value,
+    }));
+  };
+
+  const handleTranslationChange = (key, value) => {
+    setForm((current) => ({
+      ...current,
+      translations: {
+        ...current.translations,
+        ti: {
+          ...(current.translations?.ti || {}),
+          [key]: value,
+        },
+      },
     }));
   };
 
@@ -653,6 +698,9 @@ export default function AdminContentEditor() {
             errorMessage={actionError}
             templateFields={templateFields}
             categoryOptions={categoryOptions}
+            editingLanguage={editingLanguage}
+            onEditingLanguageChange={setEditingLanguage}
+            onTranslationChange={handleTranslationChange}
           />
         </DashboardPanel>
 

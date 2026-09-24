@@ -10,7 +10,12 @@ import {
 import { useAuth } from "@/lib/AuthContext";
 import { appClient } from "@/api/appClient";
 import { hasActiveReaderSubscription } from "@/lib/reader-subscription";
-import { getArticleById, getPublicListingArticles, registerArticleClick } from "@/lib/content-store";
+import {
+  getArticleById,
+  getArticleForLanguage,
+  getPublicListingArticles,
+  registerArticleClick,
+} from "@/lib/content-store";
 import {
   isArticleSaved,
   recordArticleShare,
@@ -21,6 +26,7 @@ import { getArticleAccessState } from "@/lib/demoData";
 import { getCategoryTemplate } from "@/lib/category-store";
 import { isValidArticleTemplate } from "@/lib/article-templates";
 import { useStoreVersion } from "@/lib/store-bus";
+import { useLanguage } from "@/lib/LanguageContext";
 
 const getPublishedLocalArticle = (id) => {
   const localArticle = getArticleById(id);
@@ -32,6 +38,7 @@ export default function ArticleDetail() {
   const { id } = useParams();
   const location = useLocation();
   const { user } = useAuth();
+  const { language } = useLanguage();
 
   const [article, setArticle] = useState(() => getPublishedLocalArticle(id));
   const [loading, setLoading] = useState(() => !article);
@@ -80,7 +87,8 @@ export default function ArticleDetail() {
   }, [id]);
 
   const layout = new URLSearchParams(location.search).get("layout");
-  const categoryTemplate = getCategoryTemplate(article?.category);
+  const localizedArticle = getArticleForLanguage(article, language);
+  const categoryTemplate = getCategoryTemplate(localizedArticle?.category);
   const layoutKey = isValidArticleTemplate(layout) ? layout : categoryTemplate;
 
   const isClassicLayout = layoutKey === "classic";
@@ -91,6 +99,7 @@ export default function ArticleDetail() {
 
   const related = getPublicListingArticles()
     .filter((item) => item.id !== article?.id)
+    .map((item) => getArticleForLanguage(item, language))
     .slice(0, 3);
   const access = getArticleAccessState(
     article,
@@ -268,7 +277,7 @@ export default function ArticleDetail() {
         </section>
 
         <ArticleLayoutView
-          article={article}
+          article={localizedArticle}
           access={access}
           related={related}
           layoutKey={layoutKey}
