@@ -135,7 +135,10 @@ jobs:
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" -p "$port" "$protocol://$FTP_SERVER" <<LFTP
           set ftp:ssl-force $ssl_force
           set ftp:ssl-protect-data $ssl_protect_data
-          set ssl:verify-certificate yes
+          # cPanel shared hosts often serve an IP/SNI certificate whose common
+          # name does not match the FTP host, so skip certificate verification.
+          set ssl:verify-hostname no
+          set ssl:verify-certificate no
           mkdir -p "$remote_dir"
           mirror --reverse --verbose --only-newer --delete \
             --exclude-glob ".git*" \
